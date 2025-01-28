@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="dual_view">
+        <file>dual_chart/test_bipartite.html</file>
+        <file>dual_chart/bipartite_chart.tools.js</file>
+		<file>dual_chart/d3-bipartite.js</file>
+    </qresource>
+    <qresource prefix="dual_view">
+        <file>js_libs/qwebchannel.tools.js</file>
+   </qresource>
+   <qresource prefix="dual_view">
+        <file>shaders/EmbeddingLines.frag</file>
+        <file>shaders/EmbeddingLines.vert</file>
+		<file>shaders/EmbeddingLines.geom</file>
+		<file>shaders/PointPlot.frag</file>
+        <file>shaders/PointPlot.vert</file>
+   </qresource>
+</RCC>

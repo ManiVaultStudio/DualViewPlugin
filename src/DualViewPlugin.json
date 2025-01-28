@@ -1,0 +1,5 @@
+{
+    "name" : "Dual View",
+    "version" : "1.0",
+    "dependencies" : ["Points"]
+}

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>D3 Bipartite Graph Example</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="d3-bipartite.js"></script>
+    <style>
+        .link {
+            stroke: #999;
+            stroke-opacity: 0.6;
+            fill: none;
+        }
+        .node rect {
+            fill: #ccc;
+            stroke: #333;
+        }
+        .node text {
+            pointer-events: none;
+            font: 10px sans-serif;
+			text-anchor: middle;
+        }
+    </style>
+</head>
+<body>
+    <svg width="600" height="800"></svg>
+    <script>
+	var margin = { top: 40, right: 40, bottom: 40, left: 40 };
+        var width = 600 - margin.left - margin.right;
+        var height = 800 - margin.top - margin.bottom;
+        // Example data
+        var data = [
+    { source: "C", target: "C", value: 12.770369213552774 },
+    { source: "A", target: "D", value: 1.0739340917560112 },
+    { source: "G", target: "C", value: 30.275935093530812 },
+    { source: "C", target: "F", value: 0.9628441566258727 },
+    { source: "A", target: "C", value: 201.47830688859864 },
+    { source: "C", target: "G", value: 5.348676090327479 },
+    { source: "G", target: "E", value: 1.7363442890849008 },
+    { source: "D", target: "G", value: 0.7198079485140787 },
+    { source: "A", target: "F", value: 0.03208229922509781 },
+    { source: "E", target: "C", value: 7.4932764147299045 },
+    { source: "F", target: "C", value: 0.37810853940329425 },
+    { source: "D", target: "G", value: 0.42835440331231694 },
+    { source: "E", target: "B", value: 4.0114538346227775 },
+    { source: "A", target: "A", value: 1.539975283038146 },
+    { source: "B", target: "E", value: 13.658585811196065 },
+    { source: "F", target: "B", value: 14.760010088664131 },
+    { source: "G", target: "A", value: 18.67697914268212 },
+    { source: "A", target: "C", value: 0.26464052882199723 },
+    { source: "C", target: "E", value: 28.263381005066755 },
+    { source: "C", target: "A", value: 0.06269519389883103 },
+    { source: "A", target: "D", value: 0.529605869463499 },
+    { source: "B", target: "D", value: 22.425129632901548 },
+    { source: "B", target: "E", value: 0.20613377621773266 },
+    { source: "G", target: "A", value: 3.2971485721502733 }
+];
+        var svg = d3.select("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+        var layout = bipartite()
+            .width(width)
+            .height(height)
+            .padding(5)
+            .source(d => d.source)
+            .target(d => d.target)
+            .value(d => d.value);
+
+        var result = layout(data);
+
+        // Visualize the layout
+        var link = svg.append("g")
+            .selectAll(".link")
+            .data(result.flows)
+            .enter().append("path")
+            .attr("class", "link")
+            .attr("d", d => d.path)
+            .attr("stroke-width", d => Math.sqrt(d.value));
+
+        var node = svg.append("g")
+            .selectAll(".node")
+            .data(result.sources.concat(result.targets))
+            .enter().append("g")
+            .attr("class", "node")
+            .attr("transform", d => "translate(" + d.x + "," + d.y + ")");
+
+        node.append("rect")
+            .attr("width", 10)
+            .attr("height", d => d.height)
+            .attr("y", d => -d.height / 2);
+
+        node.append("text")
+            .attr("x", 15)
+            .attr("y", d => -d.height / 2 )
+            .text(d => d.key);
+    </script>
+</body>
+</html>
