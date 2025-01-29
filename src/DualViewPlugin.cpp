@@ -49,6 +49,7 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
 {
     _embeddingAToolbarAction.addAction(&_settingsAction.getEmbeddingAPointPlotAction());
     _embeddingAToolbarAction.addAction(&getSamplerAction());
+    _embeddingAToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction());
 
     _embeddingBToolbarAction.addAction(&_settingsAction.getEmbeddingBPointPlotAction());
     _embeddingBToolbarAction.addAction(&_settingsAction.getReversePointSizeBAction());
@@ -1062,6 +1063,20 @@ void DualViewPlugin::highlightSelectedLines(mv::Dataset<Points> dataset)
 	{
 		_embeddingLinesWidget->setHighlights(localSelectionIndices, false); //true: A, false: B
 	}
+
+}
+
+void DualViewPlugin::highlightInputGenes()
+{
+    int dimension = _settingsAction.getDimensionSelectionAction().getDimensionAction().getCurrentDimensionIndex();
+
+    if (dimension < 0)
+		return;
+
+    std::vector<char> highlights(_embeddingPositionsA.size(), 0);
+    highlights[dimension] = 1;
+
+    _embeddingWidgetA->setHighlights(highlights, 1);
 
 }
 
@@ -2153,6 +2168,7 @@ void DualViewPlugin::computeTopCellForEachGene()
     qDebug() << "DualViewPlugin: computeTopCellForEachGene() done";
 
 }
+
 
 // =============================================================================
 // Serialization

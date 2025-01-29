@@ -18,7 +18,8 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     _coloringActionB(this, "Coloring B"),
     _coloringActionA(this, "Coloring A"),
     _selectionAction(this, "Selection"),
-    _reversePointSizeBAction(this, "Reverse Point Size B")
+    _reversePointSizeBAction(this, "Reverse Point Size B"),
+    _dimensionSelectionAction(this, "Gene search")
 
 {
     setConnectionPermissionsToForceNone();

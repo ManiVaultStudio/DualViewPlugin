@@ -11,6 +11,8 @@
 #include "SelectionAction.h"
 #include "LoadedDatasetsAction.h"
 
+#include "DimensionSelectionAction.h"
+
 //#include "ClusteringAction.h"
 
 //#include "ExportAction.h"
@@ -73,6 +75,7 @@ public: // Action getters
 
     // experimental actions
     ToggleAction& getReversePointSizeBAction() { return _reversePointSizeBAction; }
+    DimensionSelectionAction& getDimensionSelectionAction() { return _dimensionSelectionAction; }
 
 protected:
     DualViewPlugin*                   _dualViewPlugin;         /** Pointer to dual view plugin */
@@ -87,4 +90,5 @@ protected:
 
     // experimental actions
     ToggleAction                      _reversePointSizeBAction;
+    DimensionSelectionAction          _dimensionSelectionAction;
 };

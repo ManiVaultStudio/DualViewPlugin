@@ -61,6 +61,10 @@ set(Actions
 	src/Actions/SelectionAction.cpp
 	src/Actions/LoadedDatasetsAction.h
 	src/Actions/LoadedDatasetsAction.cpp
+	src/Actions/GenePickerAction.h
+	src/Actions/GenePickerAction.cpp
+	src/Actions/DimensionSelectionAction.h
+	src/Actions/DimensionSelectionAction.cpp
 
 )
 

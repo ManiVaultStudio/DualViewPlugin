@@ -62,6 +62,8 @@ public:
     // experimental actions
     void reversePointSizeB(bool reversePointSizeB);
 
+    void highlightInputGenes();
+
 
 private:
     QString getCurrentEmebeddingDataSetID(mv::Dataset<Points> dataset) const;
