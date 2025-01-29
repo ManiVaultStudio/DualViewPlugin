@@ -1068,13 +1068,28 @@ void DualViewPlugin::highlightSelectedLines(mv::Dataset<Points> dataset)
 
 void DualViewPlugin::highlightInputGenes()
 {
+    // FIX ME
+    // Temp fix for the changed order in dimension names in DimensionSelectionAction
     int dimension = _settingsAction.getDimensionSelectionAction().getDimensionAction().getCurrentDimensionIndex();
+    QString geneName = _settingsAction.getDimensionSelectionAction().getDimensionAction().getCurrentDimensionName();
 
     if (dimension < 0)
 		return;
 
+    // find the gene index in the current embedding B source dataset dimensions
+    int geneIndex = -1;
+    const std::vector<QString> dimNames = _embeddingSourceDatasetB->getDimensionNames();
+    for (int i = 0; i < dimNames.size(); i++)
+    {
+        if (dimNames[i] == geneName)
+        {
+			geneIndex = i;
+			break;
+		}
+	}
+
     std::vector<char> highlights(_embeddingPositionsA.size(), 0);
-    highlights[dimension] = 1;
+    highlights[geneIndex] = 1;
 
     _embeddingWidgetA->setHighlights(highlights, 1);
 
