@@ -20,7 +20,7 @@ DimensionSelectionAction::DimensionSelectionAction(QObject* parent, const QStrin
 
     connect(&_dimensionAction, &GenePickerAction::currentDimensionIndexChanged, [this, plugin](const std::uint32_t& currentDimensionIndex) {
         qDebug() << "DimensionSelectionAction::currentDimensionIndexChanged";
-        if (_dimensionAction.getCurrentDimensionIndex() != -1) // add condition that embedding A is valid}
+        if (_dimensionAction.getCurrentDimensionIndex() != -1 && plugin->getEmbeddingDatasetA().isValid()) // add condition that embedding A is valid}
         {
             plugin->highlightInputGenes();
         }
