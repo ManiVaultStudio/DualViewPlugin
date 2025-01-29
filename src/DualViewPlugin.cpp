@@ -1071,12 +1071,16 @@ void DualViewPlugin::highlightInputGenes()
     // FIX ME
     // Temp fix for the changed order in dimension names in DimensionSelectionAction
     int dimension = _settingsAction.getDimensionSelectionAction().getDimensionAction().getCurrentDimensionIndex();
-    QString geneName = _settingsAction.getDimensionSelectionAction().getDimensionAction().getCurrentDimensionName();
 
     if (dimension < 0)
-		return;
+        return;
+
+    QString geneName = _settingsAction.getDimensionSelectionAction().getDimensionAction().getCurrentDimensionName();   
 
     // find the gene index in the current embedding B source dataset dimensions
+    if (!_embeddingSourceDatasetB.isValid()) // temp condition
+		return;
+
     int geneIndex = -1;
     const std::vector<QString> dimNames = _embeddingSourceDatasetB->getDimensionNames();
     for (int i = 0; i < dimNames.size(); i++)
