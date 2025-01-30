@@ -1066,34 +1066,48 @@ void DualViewPlugin::highlightSelectedLines(mv::Dataset<Points> dataset)
 
 }
 
-void DualViewPlugin::highlightInputGenes()
+void DualViewPlugin::highlightInputGenes(const QStringList& dimensionNames)
 {
-    // FIX ME
-    // Temp fix for the changed order in dimension names in DimensionSelectionAction
-    int dimension = _settingsAction.getDimensionSelectionAction().getDimensionAction().getCurrentDimensionIndex();
-
-    if (dimension < 0)
-        return;
-
-    QString geneName = _settingsAction.getDimensionSelectionAction().getDimensionAction().getCurrentDimensionName();   
-
-    // find the gene index in the current embedding B source dataset dimensions
+    if (dimensionNames.isEmpty())
+		return;
+   
     if (!_embeddingSourceDatasetB.isValid()) // temp condition
 		return;
 
-    int geneIndex = -1;
-    const std::vector<QString> dimNames = _embeddingSourceDatasetB->getDimensionNames();
-    for (int i = 0; i < dimNames.size(); i++)
-    {
-        if (dimNames[i] == geneName)
-        {
-			geneIndex = i;
-			break;
-		}
-	}
+    // find the gene index in the current embedding B source dataset dimensions
+    const std::vector<QString> allDimensionNames = _embeddingSourceDatasetB->getDimensionNames();
 
+    QList<int> indices;
+    for (int i = 0; i < dimensionNames.size(); i++)
+    {
+        QString gene = dimensionNames[i];
+        bool found = false;
+        for (int j = 0; j < allDimensionNames.size(); j++)
+        {
+            if (allDimensionNames[j] == gene)
+            {
+                indices.append(j);
+                found = true;
+				break;
+            }
+        }
+        if (!found)
+        {
+			qDebug() << "highlightInputGenes: Gene not found: " << gene;
+		}
+    }
+
+    if (indices.isEmpty())
+		return;
+
+    //qDebug() << "highlightInputGenes() indices size" << indices.size();
+
+    // set the selected indices to 1 in highlights
     std::vector<char> highlights(_embeddingPositionsA.size(), 0);
-    highlights[geneIndex] = 1;
+    for (int i = 0; i < indices.size(); i++)
+    {
+		highlights[indices[i]] = 1;
+	}
 
     _embeddingWidgetA->setHighlights(highlights, 1);
 

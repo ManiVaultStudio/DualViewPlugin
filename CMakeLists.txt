@@ -65,7 +65,8 @@ set(Actions
 	src/Actions/GenePickerAction.cpp
 	src/Actions/DimensionSelectionAction.h
 	src/Actions/DimensionSelectionAction.cpp
-
+	src/Actions/MyOptionAction.h
+    src/Actions/MyOptionAction.cpp
 )
 
 set(PLUGIN_MOC_HEADERS

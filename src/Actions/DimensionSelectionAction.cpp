@@ -18,14 +18,6 @@ DimensionSelectionAction::DimensionSelectionAction(QObject* parent, const QStrin
     if (plugin == nullptr)
         return;
 
-    connect(&_dimensionAction, &GenePickerAction::currentDimensionIndexChanged, [this, plugin](const std::uint32_t& currentDimensionIndex) {
-        qDebug() << "DimensionSelectionAction::currentDimensionIndexChanged";
-        if (_dimensionAction.getCurrentDimensionIndex() != -1 && plugin->getEmbeddingDatasetA().isValid()) // add condition that embedding A is valid}
-        {
-            plugin->highlightInputGenes();
-        }
-        });
-
     connect(&plugin->getEmbeddingDatasetB(), &Dataset<Points>::changed, this, [this, plugin]() {
         qDebug() << "DimensionSelectionAction::embeddingDatasetChanged";
         auto sortedGeneNames = plugin->getEmbeddingDatasetB()->getSourceDataset<Points>()->getDimensionNames();
@@ -49,6 +41,26 @@ DimensionSelectionAction::DimensionSelectionAction(QObject* parent, const QStrin
 
         _dimensionAction.setDimensionNames(sortedGeneNamesList);
         _dimensionAction.setCurrentDimensionIndex(-1);
+        });
+
+    // TODO: not needed anymore
+    //connect(&_dimensionAction, &GenePickerAction::currentDimensionNameChanged, [this, plugin](const QString& currentDimensionName) {
+    //    qDebug() << "DimensionSelectionAction::currentDimensionNameChanged";
+    //    if (_dimensionAction.getCurrentDimensionIndex() != -1 && plugin->getEmbeddingDatasetA().isValid()) // if the index is -1, it means that the user has not selected any dimension??
+    //    {
+    //        QList<QString> inputGeneName;
+    //        inputGeneName.append(currentDimensionName);
+    //        plugin->highlightInputGenes(inputGeneName);
+    //    }
+    //    });
+
+
+    connect(&_dimensionAction, &GenePickerAction::currentDimensionNamesChanged, [this, plugin](const QStringList& names) {
+            //qDebug() << "DimensionSelectionAction::currentDimensionNamesChanged - multiple";
+            //qDebug() << names;
+            if (!names.isEmpty() && plugin->getEmbeddingDatasetA().isValid()) {
+                plugin->highlightInputGenes(names);  
+            }
         });
 
 }

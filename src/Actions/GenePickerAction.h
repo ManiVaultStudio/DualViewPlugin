@@ -4,11 +4,13 @@
 //
 // Modifications:
 // - Adapted to use setDimensionNames instead of setPointsDataset to remove the dependency on Dataset<Points>.
+// - Adapted to support multiple dimension names seperated by commas.
+// - Adapted to use a local customized MyOptionAction instead of OptionAction in core.
 
 #pragma once
 
 #include "actions/WidgetAction.h"
-#include "actions/OptionAction.h"
+#include "MyOptionAction.h"
 
 
 using namespace mv;
@@ -90,6 +92,8 @@ public:
      */
     void setCurrentDimensionName(const QString& dimensionName);
 
+    void setCurrentDimensionNames(const QStringList& dimensionNames);
+
     /** Get search threshold */
     std::uint32_t getSearchThreshold() const;
 
@@ -124,6 +128,8 @@ signals:
      */
     void currentDimensionIndexChanged(const std::int32_t& currentDimensionIndex);
 
+    void currentDimensionNamesChanged(const QStringList& names);
+
     /**
      * Signals that the current dimension name changed
      * @param currentDimensionName Name of the current dimension
@@ -132,11 +138,12 @@ signals:
 
 public: /** Action getters */
 
-    OptionAction& getCurrentDimensionAction() { return _currentDimensionAction; }
+    //OptionAction& getCurrentDimensionAction() { return _currentDimensionAction; }
+    MyOptionAction& getCurrentDimensionAction() { return _currentDimensionAction; }
 
 protected:
     QStringList         _dimensionNames;            /** Names of the dimensions */
-    OptionAction        _currentDimensionAction;    /** Current dimension action */
+    MyOptionAction      _currentDimensionAction;    /** Current dimension action */
     std::uint32_t       _searchThreshold;           /** Select from a drop-down below the threshold and above use a search bar */
 
 protected:

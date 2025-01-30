@@ -24,7 +24,7 @@ GenePickerAction::GenePickerAction(QObject* parent, const QString& title) :
     };
 
     // Relay current index/text changed signal from the current dimension action
-    connect(&_currentDimensionAction, &OptionAction::currentIndexChanged, this, selectionChanged);
+    connect(&_currentDimensionAction, &MyOptionAction::currentIndexChanged, this, selectionChanged);
 }
 
 void GenePickerAction::setPointsDataset()
@@ -73,8 +73,15 @@ void GenePickerAction::setCurrentDimensionIndex(const std::int32_t& dimensionInd
 }
 
 void GenePickerAction::setCurrentDimensionName(const QString& dimensionName)
-{
+{   
     _currentDimensionAction.setCurrentText(dimensionName);
+}
+
+void GenePickerAction::setCurrentDimensionNames(const QStringList& dimensionNames)
+{
+    //qDebug() << "GenePickerAction::setCurrentDimensionNames: " << dimensionNames;
+
+    emit currentDimensionNamesChanged(dimensionNames);
 }
 
 std::uint32_t GenePickerAction::getSearchThreshold() const
@@ -124,11 +131,31 @@ GenePickerAction::Widget::Widget(QWidget* parent, GenePickerAction* genePickerAc
     layout->setContentsMargins(0, 0, 0, 0);
 
     // Create widgets
-    auto comboBoxWidget = genePickerAction->getCurrentDimensionAction().createWidget(this, OptionAction::ComboBox);
-    auto lineEditWidget = genePickerAction->getCurrentDimensionAction().createWidget(this, OptionAction::LineEdit);
+    auto comboBoxWidget = genePickerAction->getCurrentDimensionAction().createWidget(this, MyOptionAction::ComboBox);
+    auto lineEditWidget = genePickerAction->getCurrentDimensionAction().createWidget(this, MyOptionAction::LineEdit);
 
     // Gets search icon to decorate the line edit
     const auto searchIcon = Application::getIconFont("FontAwesome").getIcon("search");
+
+    auto lineEdit = lineEditWidget->findChild<QLineEdit*>("LineEdit");
+    lineEdit->setPlaceholderText("Enter genes (comma-separated)");
+    lineEdit->setClearButtonEnabled(true);
+
+    // Connect editing finished signal (press enter)
+    connect(lineEdit, &QLineEdit::editingFinished, [this, genePickerAction, lineEdit]() {
+        QString text = lineEdit->text().trimmed();
+
+        //qDebug() << "GenePickerAction::Widget::editingFinished " << text;
+
+        if (!text.isEmpty()) {
+            QStringList geneList = text.split(",", Qt::SkipEmptyParts);
+            for (QString& gene : geneList) {
+                gene = gene.trimmed(); 
+            }
+
+            genePickerAction->setCurrentDimensionNames(geneList);
+        }
+        });
 
     // Add the icon to the line edit
     lineEditWidget->findChild<QLineEdit*>("LineEdit")->addAction(searchIcon, QLineEdit::TrailingPosition);
@@ -149,7 +176,7 @@ GenePickerAction::Widget::Widget(QWidget* parent, GenePickerAction* genePickerAc
     };
 
     // Update widgets visibility when the dimensions change
-    connect(&genePickerAction->getCurrentDimensionAction(), &OptionAction::modelChanged, this, updateWidgetsVisibility);
+    connect(&genePickerAction->getCurrentDimensionAction(), &MyOptionAction::modelChanged, this, updateWidgetsVisibility);
 
     // Initial update of widgets visibility
     updateWidgetsVisibility();

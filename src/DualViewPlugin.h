@@ -62,7 +62,7 @@ public:
     // experimental actions
     void reversePointSizeB(bool reversePointSizeB);
 
-    void highlightInputGenes();
+    void highlightInputGenes(const QStringList& dimensionNames);
 
 
 private:
