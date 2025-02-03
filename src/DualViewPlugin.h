@@ -159,6 +159,8 @@ private:
     mv::Dataset<Points>        _meanExpressionScalars; 
     std::vector<float>         _selectedGeneMeanExpression; // TODO: remove dataset or vector, only keep one
 
+    std::vector<float>         _connectedCellsPerGene; // number of connected cells for each gene
+
     mv::Dataset<Clusters>      _topCellForEachGeneDataset; // Dragged in to color embedding A
 
     float				       _thresholdLines = 0.f;

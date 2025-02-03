@@ -304,32 +304,43 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
         // return the gene symbols 
         assert(_embeddingDatasetA->getNumPoints() == _embeddingSourceDatasetB->getNumDimensions());
 
+        std::vector<QString> dimensionNames = _embeddingSourceDatasetB->getDimensionNames(); // TODO: hardcode, assume embedding A is gene map and embedding B stores all the genes in A
+
+        QStringList geneSymbols;
+        for (const auto& globalPointIndex : toolTipContext["GlobalPointIndices"].toList())
+        {
+            QString geneSymbol = dimensionNames[globalPointIndex.toInt()];
+            geneSymbols << geneSymbol;
+        }
+
         QString outputText;
         QString chartTitle;
 		if (ASelected)
 		{
-			std::vector<QString> dimensionNames = _embeddingSourceDatasetB->getDimensionNames(); // TODO: hardcode, assume embedding A is gene map and embedding B stores all the genes in A
-
-			QStringList geneSymbols;
-			for (const auto& globalPointIndex : toolTipContext["GlobalPointIndices"].toList())
-			{
-				QString geneSymbol = dimensionNames[globalPointIndex.toInt()];
-				geneSymbols << geneSymbol;
-			}
-
-			outputText = QString("<table style='font-size:14px;'> \
+			outputText = QString(
+                "<p style='font-size:14px;'>Gene embedding is selected.</p>"
+                "<table style='font-size:14px;'> \
                 <tr> \
-                    <td><b>Gene Symbols: </b></td> \
+                    <td><b>Selected Genes: </b></td> \
                     <td>%2</td> \
                 </tr> \
                </table>")
 				.arg(geneSymbols.join(", "));
 
-            chartTitle = "<b>Cell proportion (10% highest expression of avg. selected genes)</b>"; // </b> bold tag
+            chartTitle = "<b>Connected cell proportion (10% highest expression of avg. selected genes)</b>"; // </b> bold tag
 		}
 		else
 		{
-            outputText = QString("<p style='font-size:14px;'>%1</p>").arg("Cell embedding is selected");
+            outputText = QString(
+                "<p style='font-size:14px;'>Cell embedding is selected.</p>"
+                "<table style='font-size:14px;'> \
+                <tr> \
+                    <td><b>Connected Genes: </b></td> \
+                    <td>%2</td> \
+                </tr> \
+               </table>")
+                .arg(geneSymbols.join(", "));
+
             chartTitle = "<b>Cell proportion</b>";
 		}
 
@@ -1278,7 +1289,7 @@ void DualViewPlugin::sendDataToSampleScope() {
         getSamplerAction().setSampleContext({
             { "ASelected", _isEmbeddingASelected},
             { "ColorDatasetID", _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId() },
-            { "GlobalPointIndices", globalPointIndices },
+            { "GlobalPointIndices", globalPointIndices },// selected genes
             { "labels", labels},// for pie chart
             { "data", data},// for pie chart
             { "backgroundColors", backgroundColors}// for pie chart
@@ -1292,7 +1303,19 @@ void DualViewPlugin::sendDataToSampleScope() {
     else
     {
         // B selected, send cell types to samplerAction
-        // if no metadata B avaliable, only send gene ids
+        
+        // send genes that are connected to selected cells (use _connectedCellsPerGene)
+        QVariantList globalPointIndices;
+        for (int i = 0; i < _connectedCellsPerGene.size(); i++)
+        {
+            if (_connectedCellsPerGene[i] > 0)
+            {
+				globalPointIndices << i;
+			
+			}
+		}
+        
+        // if no metadata B avaliable
         if (!_metaDatasetB.isValid())
         {
             //qDebug() << "metaDatasetB is not valid";
@@ -1300,6 +1323,7 @@ void DualViewPlugin::sendDataToSampleScope() {
             getSamplerAction().setSampleContext({
                 { "ASelected", _isEmbeddingASelected},
                 { "ColorDatasetID", _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId() },
+                { "GlobalPointIndices", globalPointIndices },// connected genes
                 });
             return;
         }
@@ -1358,6 +1382,7 @@ void DualViewPlugin::sendDataToSampleScope() {
         getSamplerAction().setSampleContext({
             { "ASelected", _isEmbeddingASelected},
             { "ColorDatasetID", _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId() },
+            { "GlobalPointIndices", globalPointIndices },// connected genes
             { "labels", labels},// for proportion chart
             { "data", data},// for proportion chart
             { "backgroundColors", backgroundColors}// for proportion chart
@@ -1496,7 +1521,9 @@ void DualViewPlugin::updateEmbeddingAColor()
     qDebug() << "DualViewPlugin: " << selection->indices.size() << " points in B selected";
 
     // get how many connected points in B per point in A
-    std::vector<float> connectedCellsPerGene(numPointsA, 0.0f);
+    _connectedCellsPerGene.clear();
+    _connectedCellsPerGene.resize(numPointsA, 0.0f);
+    //std::vector<float> connectedCellsPerGene(numPointsA, 0.0f);
 #pragma omp parallel for
     for (int i = 0; i < _lines.size(); i++)
     {
@@ -1504,7 +1531,7 @@ void DualViewPlugin::updateEmbeddingAColor()
         if (pointB < selected.size() && selected[pointB])
         {
 #pragma omp atomic
-            connectedCellsPerGene[_lines[i].first] += 1.0f;
+            _connectedCellsPerGene[_lines[i].first] += 1.0f;
         }
     }
     //qDebug() << "connectedCellsPerGene.size() = " << connectedCellsPerGene.size();
@@ -1514,19 +1541,20 @@ void DualViewPlugin::updateEmbeddingAColor()
     //_embeddingWidgetA->setScalarEffect(PointEffect::Color);
 
     //set size scalars
-    auto min_max = std::minmax_element(connectedCellsPerGene.begin(), connectedCellsPerGene.end());
+    auto min_max = std::minmax_element(_connectedCellsPerGene.begin(), _connectedCellsPerGene.end());
     float min_val = *min_max.first;
     float max_val = *min_max.second;
     //qDebug() << "min_val" << min_val << "max_val" << max_val;
     float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointSizeActionA().getValue();
 
 #pragma omp parallel for
-    for (int i = 0; i < connectedCellsPerGene.size(); i++)
+    for (int i = 0; i < _connectedCellsPerGene.size(); i++)
     {
-        connectedCellsPerGene[i] = ((connectedCellsPerGene[i] - min_val) / (max_val - min_val)) * ptSize * 3; // TODO: hardcoded factor 10
+        _connectedCellsPerGene[i] = ((_connectedCellsPerGene[i] - min_val) / (max_val - min_val)) * ptSize * 3; // TODO: hardcoded factor 10
     }
     //qDebug() << "scalars A computed";
-    _embeddingWidgetA->setPointSizeScalars(connectedCellsPerGene);
+    _embeddingWidgetA->setPointSizeScalars(_connectedCellsPerGene);
+
 
 
     // test2 - use average expression of selected cells in B for the point size in A
