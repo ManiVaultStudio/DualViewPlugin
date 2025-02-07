@@ -516,6 +516,9 @@ void DualViewPlugin::init()
         if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
 			return;
 
+        auto test = _embeddingDatasetA->getSelection<Points>()->indices.size();
+        qDebug() << "embeddingDatasetA dataSelectionChanged" << test;
+
         _isEmbeddingASelected = true;
         highlightSelectedLines(_embeddingDatasetA);
         highlightSelectedEmbeddings(_embeddingWidgetA, _embeddingDatasetA);
@@ -525,11 +528,7 @@ void DualViewPlugin::init()
         else 
         {
             updateEmbeddingBColor();//if selected in embedding A and coloring/sizing embedding B by the mean expression of the selected genes     
-            auto start = std::chrono::high_resolution_clock::now();
             sendDataToSampleScope();
-            auto end = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-            qDebug() << "sendDataToSampleScope() took " << duration.count() << "ms";
         }
             
     });
@@ -1606,6 +1605,7 @@ void DualViewPlugin::updateEmbeddingAColor()
 
 void DualViewPlugin::samplePoints() 
 {
+    
     // for now only for embedding A
     auto& samplerPixelSelectionTool = _embeddingWidgetA->getSamplerPixelSelectionTool();
 
@@ -1683,18 +1683,7 @@ void DualViewPlugin::samplePoints()
         numberOfPoints++;
     }
 
-    //if (getSamplerAction().getHighlightFocusedElementsAction().isChecked())
-        //const_cast<PointRenderer&>(_embeddingWidgetA->getPointRenderer()).setFocusHighlights(focusHighlights, static_cast<std::int32_t>(focusHighlights.size()));
-
-    //_embeddingWidgetA->update(); // repeated when dataselection changed
-
-    //auto& coloringAction = _settingsAction.getColoringAction();
-
-    getSamplerAction().setSampleContext({
-        { "ColorDatasetID", _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId() },
-        { "LocalPointIndices", localPointIndices },
-        { "GlobalPointIndices", globalPointIndices },
-        });
+    qDebug() << "DualViewPlugin samplePoints" << numberOfPoints << "points sampled";
 
     // connect sampled points as selected points
     _embeddingDatasetA->setSelectionIndices(targetSelectionIndices);
