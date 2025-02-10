@@ -406,7 +406,7 @@ void EmbeddingLinesWidget::onWidgetRendered()
 
             // pass foreground and background colors as uniforms
             _shader.uniform4f("backgroundColor", _color.redF(), _color.greenF(), _color.blueF(), _alpha);
-            _shader.uniform4f("foregroundColor", 252.0f / 255.0f, 102.0f / 255.0f, 0.0f / 255.0f, 0.3f); // Orange for highlights
+            _shader.uniform4f("foregroundColor", 252.0f / 255.0f, 102.0f / 255.0f, 0.0f / 255.0f, 0.3f); // Orange for highlights, not used anymore
 
             glBindVertexArray(_vao);
 
@@ -414,7 +414,7 @@ void EmbeddingLinesWidget::onWidgetRendered()
             glDrawElements(GL_LINES, static_cast<GLsizei>(2 * _lines.size()), GL_UNSIGNED_INT, 0);
 
             // FIXME: whether to keep the current shader with foreground and background colors, and mode buffer
-            _shader.uniform4f("backgroundColor", 252.0f / 255.0f, 102.0f / 255.0f, 0.0f / 255.0f, 0.1f); // TEMP: set color and alpha for highlighted lines
+            _shader.uniform4f("backgroundColor", 252.0f / 255.0f, 102.0f / 255.0f, 0.0f / 255.0f, 0.07f); // TEMP: set color and alpha for highlighted lines
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _highlightedLineConnections);
             glDrawElements(GL_LINES, _highlightedLineCount, GL_UNSIGNED_INT, 0);
 

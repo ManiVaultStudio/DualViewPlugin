@@ -306,43 +306,66 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
 
         std::vector<QString> dimensionNames = _embeddingSourceDatasetB->getDimensionNames(); // TODO: hardcode, assume embedding A is gene map and embedding B stores all the genes in A
 
+        // show first 80 genes and the rest in expandable box
         QStringList geneSymbols;
+        QStringList additionalSymbols;
+        bool hasMoreThan80 = false;
+
         for (const auto& globalPointIndex : toolTipContext["GlobalPointIndices"].toList())
         {
             QString geneSymbol = dimensionNames[globalPointIndex.toInt()];
-            geneSymbols << geneSymbol;
+            if (geneSymbols.size() < 80) 
+            {
+                geneSymbols << geneSymbol;
+            }
+            else 
+            {
+                hasMoreThan80 = true;
+                additionalSymbols << geneSymbol;
+            }
         }
 
         QString outputText;
         QString chartTitle;
-		if (ASelected)
-		{
-			outputText = QString(
-                "<p style='font-size:14px;'>Gene embedding is selected.</p>"
-                "<table style='font-size:14px;'> \
-                <tr> \
-                    <td><b>Selected Genes: </b></td> \
-                    <td>%2</td> \
-                </tr> \
-               </table>")
-				.arg(geneSymbols.join(", "));
+        QString additionalGenesHtml;
 
-            chartTitle = "<b>Connected cell proportion (10% highest expression of avg. selected genes)</b>"; // </b> bold tag
-		}
-		else
-		{
+        if (hasMoreThan80) 
+        {
+            additionalGenesHtml = QString(            
+                "<details><summary style='font-size:14px;;'>and more... </summary>"
+                "<p style='font-size:14px;'>%1</p>"
+                "</details>")
+                .arg(additionalSymbols.join(", "));
+        }
+
+        if (ASelected) {
+            outputText = QString(
+                "<p style='font-size:14px;'>Gene embedding is selected.</p>"
+                "<table style='font-size:14px;'>"
+                "<tr>"
+                "<td><b>Selected Genes: </b></td>"
+                "<td>%1 %2</td>"  // add the expandable section right inside the same <td>
+                "</tr>"
+                "</table>")
+                .arg(geneSymbols.join(", "))
+                .arg(additionalGenesHtml);  // append the expandable section here
+
+            chartTitle = "<b>Connected cell proportion (10% highest expression of avg. selected genes)</b>";
+        }
+        else {
             outputText = QString(
                 "<p style='font-size:14px;'>Cell embedding is selected.</p>"
-                "<table style='font-size:14px;'> \
-                <tr> \
-                    <td><b>Connected Genes: </b></td> \
-                    <td>%2</td> \
-                </tr> \
-               </table>")
-                .arg(geneSymbols.join(", "));
+                "<table style='font-size:14px;'>"
+                "<tr>"
+                "<td><b>Connected Genes: </b></td>"
+                "<td>%1 %2</td>"  // add the expandable section right inside the same <td>
+                "</tr>"
+                "</table>")
+                .arg(geneSymbols.join(", "))
+                .arg(additionalGenesHtml);
 
             chartTitle = "<b>Cell proportion</b>";
-		}
+        }
 
         // get current color dataset B name
         QString colorDatasetID = toolTipContext["ColorDatasetID"].toString();
