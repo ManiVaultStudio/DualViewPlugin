@@ -332,7 +332,7 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
         if (hasMoreThan80) 
         {
             additionalGenesHtml = QString(            
-                "<details><summary style='font-size:14px;;'>and more... </summary>"
+                "<details><summary style='font-size:14px; cursor:pointer;'>and more... </summary>"
                 "<p style='font-size:14px;'>%1</p>"
                 "</details>")
                 .arg(additionalSymbols.join(", "));
