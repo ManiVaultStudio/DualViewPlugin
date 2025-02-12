@@ -67,6 +67,19 @@ set(Actions
 	src/Actions/DimensionSelectionAction.cpp
 	src/Actions/MyOptionAction.h
     src/Actions/MyOptionAction.cpp
+	src/Actions/ScalarAction.h
+    src/Actions/ScalarAction.cpp
+    src/Actions/ScalarSourceAction.h
+    src/Actions/ScalarSourceAction.cpp
+	src/Actions/PointPlotAction.h
+    src/Actions/PointPlotAction.cpp
+	src/Actions/PointPlotActionB.h
+    src/Actions/PointPlotActionB.cpp
+)
+
+set(Models
+    src/Models/ScalarSourceModel.h
+    src/Models/ScalarSourceModel.cpp
 )
 
 set(PLUGIN_MOC_HEADERS
@@ -94,6 +107,7 @@ qt6_add_resources(RESOURCE_FILES res/dual_chart.qrc)
 
 source_group( Plugin FILES ${PLUGIN_SOURCES})
 source_group( Actions FILES ${Actions})
+source_group( Models FILES ${Models})
 source_group( Web FILES ${WEB})
 source_group( Shaders FILES ${SHADERS})
 source_group( Aux FILES ${AUX})
@@ -103,7 +117,7 @@ source_group( Aux FILES ${AUX})
 # CMake Target
 # -----------------------------------------------------------------------------
 # Create dynamic library for the plugin
-add_library(${PROJECT_NAME} SHARED ${PLUGIN_SOURCES} ${Actions} ${SHADERS} ${AUX} ${WEB} ${RESOURCE_FILES})
+add_library(${PROJECT_NAME} SHARED ${PLUGIN_SOURCES} ${Actions} ${Models} ${SHADERS} ${AUX} ${WEB} ${RESOURCE_FILES})
 
 # -----------------------------------------------------------------------------
 # Target include directories

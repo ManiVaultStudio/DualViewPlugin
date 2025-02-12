@@ -1,6 +1,10 @@
 #pragma once
 #include <actions/DecimalAction.h>
 #include <actions/VerticalGroupAction.h>
+
+#include "PointPlotAction.h"
+
+
 using namespace mv::gui;
 
 class DualViewPlugin;
@@ -43,16 +47,22 @@ public: // Serialization
 
 public: // Action getters
 
-    DecimalAction& getPointSizeActionA() { return _pointSizeActionA; }
+    //DecimalAction& getPointSizeActionA() { return _pointSizeActionA; }
     //DecimalAction& getPointSizeActionB() { return _pointSizeActionB; }
-    DecimalAction& getPointOpacityActionA() { return _pointOpacityActionA; }
+    //DecimalAction& getPointOpacityActionA() { return _pointOpacityActionA; }
     //DecimalAction& getPointOpacityActionB() { return _pointOpacityActionB; }
 
+    PointPlotAction& getPointPlotAction() { return _pointPlotAction; }
+
+
 private:
-    DecimalAction           _pointSizeActionA;           /** point size action for embedding A*/
+    //DecimalAction           _pointSizeActionA;           /** point size action for embedding A*/
     //DecimalAction           _pointSizeActionB;           /** point size action for embedding B*/
-    DecimalAction           _pointOpacityActionA;        /** point opacity action for embedding A*/
+    //DecimalAction           _pointOpacityActionA;        /** point opacity action for embedding A*/
     //DecimalAction           _pointOpacityActionB;        /** point opacity action  for embedding B*/
+
+    PointPlotAction         _pointPlotAction;            /** point plot action*/
+
 };
 
 Q_DECLARE_METATYPE(EmbeddingAPointPlotAction)

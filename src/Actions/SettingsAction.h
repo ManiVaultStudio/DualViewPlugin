@@ -5,6 +5,10 @@
 #include <actions/ToggleAction.h>
 
 #include "EmbeddingAPointPlotAction.h"
+
+//#include "PointPlotAction.h"
+
+
 #include "EmbeddingBPointPlotAction.h"
 #include "ColoringActionB.h"
 #include "ColoringActionA.h" // TODO: combine coloring actions for embedding A and B
@@ -67,6 +71,8 @@ public: // Serialization
 public: // Action getters
     
     EmbeddingAPointPlotAction& getEmbeddingAPointPlotAction() { return _embeddingAPointPlotAction; }
+    //PointPlotAction& getPointPlotAction() { return _pointPlotAction; }
+
     EmbeddingBPointPlotAction& getEmbeddingBPointPlotAction() { return _embeddingBPointPlotAction; }
     DecimalAction& getThresholdLinesAction() { return _thresholdLinesAction; }
     ColoringActionB& getColoringActionB() { return _coloringActionB; }
@@ -82,6 +88,8 @@ protected:
 
     LoadedDatasetsAction			  _currentDatasetsAction;    /** Action for managing loaded datasets */
     EmbeddingAPointPlotAction         _embeddingAPointPlotAction;           /** Action for configuring point plots */
+    //PointPlotAction 				  _pointPlotAction;           /** Action for configuring point plots */
+
     EmbeddingBPointPlotAction         _embeddingBPointPlotAction;           /** Action for configuring point plots */
     DecimalAction                     _thresholdLinesAction;      
     ColoringActionB                   _coloringActionB;            /** Action for configuring point coloring - for embedding B*/

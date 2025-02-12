@@ -48,6 +48,8 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _linesToolbarAction(this, "Lines Toolbar")
 {
     _embeddingAToolbarAction.addAction(&_settingsAction.getEmbeddingAPointPlotAction());
+    //_embeddingAToolbarAction.addAction(&_settingsAction.getPointPlotAction());
+
     _embeddingAToolbarAction.addAction(&getSamplerAction());
     _embeddingAToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction());
 
@@ -1451,7 +1453,8 @@ void DualViewPlugin::updateEmbeddingBColor()
     {
 		range = 1;
 	}
-	float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointSizeActionB().getValue();
+	//float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointSizeActionB().getValue();
+    float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getSizeAction().getMagnitudeAction().getValue();// FIXME: 12/2, mew actions
 
     std::vector<float> selectedGeneMeanExpression(_selectedGeneMeanExpression.size());
 
@@ -1494,7 +1497,8 @@ void DualViewPlugin::reversePointSizeB(bool reversePointSizeB)
     {
 		range = 1;
 	}
-    float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointSizeActionB().getValue();
+    //float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointSizeActionB().getValue();
+    float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getSizeAction().getMagnitudeAction().getValue(); // FIXME: 12/2, mew actions
 
     std::vector<float> selectedGeneMeanExpression(_selectedGeneMeanExpression.size());
     // In case the user wants to reverse the point size
@@ -1567,7 +1571,12 @@ void DualViewPlugin::updateEmbeddingAColor()
     float min_val = *min_max.first;
     float max_val = *min_max.second;
     //qDebug() << "min_val" << min_val << "max_val" << max_val;
-    float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointSizeActionA().getValue();
+    
+    //float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointSizeActionA().getValue();
+    //float ptSize = 10.0f; // FIXME, test
+    float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue(); // FIXME: 12/2, mew actions
+
+
 
 #pragma omp parallel for
     for (int i = 0; i < _connectedCellsPerGene.size(); i++)
@@ -1990,30 +1999,30 @@ QString DualViewPlugin::getCurrentEmebeddingDataSetID(mv::Dataset<Points> datase
 
 void DualViewPlugin::updateEmbeddingPointSizeA()
 {
-    float size = _settingsAction.getEmbeddingAPointPlotAction().getPointSizeActionA().getValue();
+    /*float size = _settingsAction.getEmbeddingAPointPlotAction().getPointSizeActionA().getValue();
     std::vector<float> ptSizeScalars(_embeddingPositionsA.size(), size);
-    _embeddingWidgetA->setPointSizeScalars(ptSizeScalars);
+    _embeddingWidgetA->setPointSizeScalars(ptSizeScalars);*/
 }
 
 void DualViewPlugin::updateEmbeddingOpacityA()
 {
-    float opacity = _settingsAction.getEmbeddingAPointPlotAction().getPointOpacityActionA().getValue();
+  /*  float opacity = _settingsAction.getEmbeddingAPointPlotAction().getPointOpacityActionA().getValue();
     std::vector<float> ptOpacityScalars(_embeddingPositionsA.size(), opacity);
-    _embeddingWidgetA->setPointOpacityScalars(ptOpacityScalars);
+    _embeddingWidgetA->setPointOpacityScalars(ptOpacityScalars);*/
 }
 
 void DualViewPlugin::updateEmbeddingPointSizeB()
 {
-    float size = _settingsAction.getEmbeddingBPointPlotAction().getPointSizeActionB().getValue();
+    /*float size = _settingsAction.getEmbeddingBPointPlotAction().getPointSizeActionB().getValue();
     std::vector<float> ptSizeScalars(_embeddingPositionsB.size(), size);
-    _embeddingWidgetB->setPointSizeScalars(ptSizeScalars);
+    _embeddingWidgetB->setPointSizeScalars(ptSizeScalars);*/
 }
 
 void DualViewPlugin::updateEmbeddingOpacityB()
 {
-    float opacity = _settingsAction.getEmbeddingBPointPlotAction().getPointOpacityActionB().getValue();
+    /*float opacity = _settingsAction.getEmbeddingBPointPlotAction().getPointOpacityActionB().getValue();
     std::vector<float> ptOpacityScalars(_embeddingPositionsB.size(), opacity);
-    _embeddingWidgetB->setPointOpacityScalars(ptOpacityScalars);
+    _embeddingWidgetB->setPointOpacityScalars(ptOpacityScalars);*/
 }
 
 void DualViewPlugin::updateThresholdLines()
