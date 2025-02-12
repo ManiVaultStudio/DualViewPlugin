@@ -45,18 +45,6 @@ public:
     /** This function is called by the core after the view plugin has been created */
     void init() override;
 
-
-
-    void updateEmbeddingPointSizeA();
-
-    void updateEmbeddingPointSizeB();
-
-    void updateEmbeddingOpacityA();
-
-    void updateEmbeddingOpacityB();
-
-
-
     void updateThresholdLines();
 
     // experimental actions

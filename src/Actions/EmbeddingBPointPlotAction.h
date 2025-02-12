@@ -46,18 +46,9 @@ public: // Serialization
 
 public: // Action getters
 
-    //DecimalAction& getPointSizeActionA() { return _pointSizeActionA; }
-    //DecimalAction& getPointSizeActionB() { return _pointSizeActionB; }
-    //DecimalAction& getPointOpacityActionA() { return _pointOpacityActionA; }
-    //DecimalAction& getPointOpacityActionB() { return _pointOpacityActionB; }
-
     PointPlotActionB& getPointPlotActionB() { return _pointPlotActionB; }
 
 private:
-    //DecimalAction           _pointSizeActionA;           /** point size action for embedding A*/
-    //DecimalAction           _pointSizeActionB;           /** point size action for embedding B*/
-    //DecimalAction           _pointOpacityActionA;        /** point opacity action for embedding A*/
-    //DecimalAction           _pointOpacityActionB;        /** point opacity action  for embedding B*/
 
     PointPlotActionB        _pointPlotActionB;           /** point plot action for embedding B*/
 };

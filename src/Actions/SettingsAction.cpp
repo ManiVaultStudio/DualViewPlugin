@@ -59,9 +59,7 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     WidgetAction::fromVariantMap(variantMap);
 
     _currentDatasetsAction.fromParentVariantMap(variantMap);
-    //_embeddingAPointPlotAction.fromParentVariantMap(variantMap);
-
-
+    _embeddingAPointPlotAction.fromParentVariantMap(variantMap);
     _embeddingBPointPlotAction.fromParentVariantMap(variantMap);
     _thresholdLinesAction.fromParentVariantMap(variantMap);
     _coloringActionB.fromParentVariantMap(variantMap);
@@ -74,9 +72,7 @@ QVariantMap SettingsAction::toVariantMap() const
     QVariantMap variantMap = WidgetAction::toVariantMap();
 
     _currentDatasetsAction.insertIntoVariantMap(variantMap);
-    //_embeddingAPointPlotAction.insertIntoVariantMap(variantMap);
-    
-
+    _embeddingAPointPlotAction.insertIntoVariantMap(variantMap);
     _embeddingBPointPlotAction.insertIntoVariantMap(variantMap);
     _thresholdLinesAction.insertIntoVariantMap(variantMap);
     _coloringActionB.insertIntoVariantMap(variantMap);

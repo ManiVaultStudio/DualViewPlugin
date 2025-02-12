@@ -542,15 +542,13 @@ void DualViewPlugin::init()
 			return;
 
         auto test = _embeddingDatasetA->getSelection<Points>()->indices.size();
-        qDebug() << "embeddingDatasetA dataSelectionChanged" << test;
+        //qDebug() << "embeddingDatasetA dataSelectionChanged" << test;
 
         _isEmbeddingASelected = true;
         highlightSelectedLines(_embeddingDatasetA);
         highlightSelectedEmbeddings(_embeddingWidgetA, _embeddingDatasetA);
 
-        if (_embeddingDatasetA->getSelection<Points>()->indices.size() == 0)
-            updateEmbeddingPointSizeB();
-        else 
+        if (_embeddingDatasetA->getSelection<Points>()->indices.size() != 0)
         {
             updateEmbeddingBColor();//if selected in embedding A and coloring/sizing embedding B by the mean expression of the selected genes     
             sendDataToSampleScope();
@@ -566,9 +564,7 @@ void DualViewPlugin::init()
         highlightSelectedLines(_embeddingDatasetB);// TODO: this step is the slow part of the interface?
         highlightSelectedEmbeddings(_embeddingWidgetB, _embeddingDatasetB);
 
-        if (_embeddingDatasetB->getSelection<Points>()->indices.size() == 0)
-			updateEmbeddingPointSizeA();
-		else
+        if (_embeddingDatasetB->getSelection<Points>()->indices.size() != 0)
         { 
 			updateEmbeddingAColor();//if selected in embedding B and coloring/sizing embedding A by the number of connected cells
             sendDataToSampleScope();
@@ -1995,34 +1991,6 @@ QString DualViewPlugin::getCurrentEmebeddingDataSetID(mv::Dataset<Points> datase
         return dataset->getId();
     else
         return QString{};
-}
-
-void DualViewPlugin::updateEmbeddingPointSizeA()
-{
-    /*float size = _settingsAction.getEmbeddingAPointPlotAction().getPointSizeActionA().getValue();
-    std::vector<float> ptSizeScalars(_embeddingPositionsA.size(), size);
-    _embeddingWidgetA->setPointSizeScalars(ptSizeScalars);*/
-}
-
-void DualViewPlugin::updateEmbeddingOpacityA()
-{
-  /*  float opacity = _settingsAction.getEmbeddingAPointPlotAction().getPointOpacityActionA().getValue();
-    std::vector<float> ptOpacityScalars(_embeddingPositionsA.size(), opacity);
-    _embeddingWidgetA->setPointOpacityScalars(ptOpacityScalars);*/
-}
-
-void DualViewPlugin::updateEmbeddingPointSizeB()
-{
-    /*float size = _settingsAction.getEmbeddingBPointPlotAction().getPointSizeActionB().getValue();
-    std::vector<float> ptSizeScalars(_embeddingPositionsB.size(), size);
-    _embeddingWidgetB->setPointSizeScalars(ptSizeScalars);*/
-}
-
-void DualViewPlugin::updateEmbeddingOpacityB()
-{
-    /*float opacity = _settingsAction.getEmbeddingBPointPlotAction().getPointOpacityActionB().getValue();
-    std::vector<float> ptOpacityScalars(_embeddingPositionsB.size(), opacity);
-    _embeddingWidgetB->setPointOpacityScalars(ptOpacityScalars);*/
 }
 
 void DualViewPlugin::updateThresholdLines()
