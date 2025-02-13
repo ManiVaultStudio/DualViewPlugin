@@ -1638,7 +1638,7 @@ void DualViewPlugin::samplePoints()
     // for now only for embedding A
     auto& samplerPixelSelectionTool = _embeddingWidgetA->getSamplerPixelSelectionTool();
 
-    if (!_embeddingDatasetA.isValid())
+    if (!_embeddingDatasetA.isValid() || _embeddingWidgetA->isNavigating())
         return;
 
     auto selectionAreaImage = samplerPixelSelectionTool.getAreaPixmap().toImage();
@@ -1653,11 +1653,13 @@ void DualViewPlugin::samplePoints()
 
     _embeddingDatasetA->getGlobalIndices(localGlobalIndices);
 
-    const auto dataBounds = _embeddingWidgetA->getBounds();
+    auto& zoomRectangleAction = _embeddingWidgetA->getNavigationAction().getZoomRectangleAction();
+
     const auto width = selectionAreaImage.width();
     const auto height = selectionAreaImage.height();
     const auto size = width < height ? width : height;
     const auto uvOffset = QPoint((selectionAreaImage.width() - size) / 2.0f, (selectionAreaImage.height() - size) / 2.0f);
+
 
     QPointF pointUvNormalized;
 
@@ -1668,7 +1670,7 @@ void DualViewPlugin::samplePoints()
     std::vector<std::pair<float, std::uint32_t>> sampledPoints;
 
     for (std::uint32_t localPointIndex = 0; localPointIndex < _embeddingPositionsA.size(); localPointIndex++) {
-        pointUvNormalized = QPointF((_embeddingPositionsA[localPointIndex].x - dataBounds.getLeft()) / dataBounds.getWidth(), (dataBounds.getTop() - _embeddingPositionsA[localPointIndex].y) / dataBounds.getHeight());
+        pointUvNormalized = QPointF((_embeddingPositionsA[localPointIndex].x - zoomRectangleAction.getLeft()) / zoomRectangleAction.getWidth(), (zoomRectangleAction.getTop() - _embeddingPositionsA[localPointIndex].y) / zoomRectangleAction.getHeight());
         pointUv = uvOffset + QPoint(pointUvNormalized.x() * size, pointUvNormalized.y() * size);
 
         if (pointUv.x() >= selectionAreaImage.width() || pointUv.x() < 0 || pointUv.y() >= selectionAreaImage.height() || pointUv.y() < 0)
@@ -1724,7 +1726,7 @@ void DualViewPlugin::samplePoints()
 void DualViewPlugin::selectPoints(ScatterplotWidget* widget, mv::Dataset<Points> embeddingDataset, const std::vector<mv::Vector2f>& embeddingPositions)
 {
     // Only proceed with a valid points position dataset and when the pixel selection tool is active
-    if (!embeddingDataset.isValid() || !widget->getPixelSelectionTool().isActive() )
+    if (!embeddingDataset.isValid() || !widget->getPixelSelectionTool().isActive() || widget->isNavigating())
         return;
 
     //qDebug() << _positionDataset->getGuiName() << "selectPoints";
