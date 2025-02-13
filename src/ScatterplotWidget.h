@@ -1,13 +1,13 @@
 #pragma once
 
-//#include "NavigationAction.h"
+#include "Actions/NavigationAction.h"
 
 #include <renderers/DensityRenderer.h>
 #include <renderers/PointRenderer.h>
 
 #include <util/PixelSelectionTool.h>
 
-//#include <actions/DecimalRectangleAction.h>
+#include <actions/DecimalRectangleAction.h>
 
 #include <graphics/Bounds.h>
 #include <graphics/Vector2f.h>
@@ -15,23 +15,20 @@
 
 #include <QOpenGLFunctions_3_3_Core>
 #include <QOpenGLWidget>
-//#include <QPoint>
+#include <QPoint>
 
-#include <QMenu>
-#include <QMouseEvent>
+class ScatterplotPlugin;
 
-
-using namespace mv;
 using namespace mv::gui;
 using namespace mv::util;
 
-//struct widgetSizeInfo {
-//    float width;
-//    float height;
-//    float minWH;
-//    float ratioWidth;
-//    float ratioHeight;
-//};
+struct widgetSizeInfo {
+    float width;
+    float height;
+    float minWH;
+    float ratioWidth;
+    float ratioHeight;
+};
 
 class ScatterplotWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core
 {
@@ -53,6 +50,7 @@ public:
 
 public:
     ScatterplotWidget();
+
     ~ScatterplotWidget();
 
     /** Returns true when the widget was initialized and is ready to be used. */
@@ -113,14 +111,13 @@ public:
     void showHighlights(bool show);
 
     /**
-     * Set sigma value for kernel density esitimation.
+     * Set sigma value for kernel density estimation.
      * @param sigma kernel width as a fraction of the output square width. Typical values are [0.01 .. 0.5]
      */
     void setSigma(const float sigma);
 
     mv::Bounds getBounds() const {
-        //return _dataRectangleAction.getBounds();
-        return _dataBounds;
+        return _dataRectangleAction.getBounds();
     }
 
     /*
@@ -136,17 +133,17 @@ public:
     }
     */
 
-    //NavigationAction& getNavigationAction() { return _navigationAction; }
+    NavigationAction& getNavigationAction() { return _navigationAction; }
 
-    /*bool isNavigating() const {
+    bool isNavigating() const {
         return _isNavigating;
-    }*/
+    }
 
     mv::Vector3f getColorMapRange() const;
     void setColorMapRange(const float& min, const float& max);
 
-    //void setWeightDensity(bool useWeights);
-    //float getWeightDensity() const { return _weightDensity; }
+    void setWeightDensity(bool useWeights);
+    float getWeightDensity() const { return _weightDensity; }
 
     /**
      * Create screenshot
@@ -247,6 +244,7 @@ protected:
     void resizeGL(int w, int h) Q_DECL_OVERRIDE;
     void paintGL()              Q_DECL_OVERRIDE;
     void paintPixelSelectionToolNative(PixelSelectionTool& pixelSelectionTool, QImage& image, QPainter& painter) const;
+
     void cleanup();
     
     void showEvent(QShowEvent* event) Q_DECL_OVERRIDE
@@ -255,11 +253,11 @@ protected:
         QWidget::showEvent(event);
     }
 
-    //bool event(QEvent* event) override;
+    bool event(QEvent* event) override;
 
-    /*void zoomAround(const QPointF& at, float factor);
+    void zoomAround(const QPointF& at, float factor);
     void panBy(const QPointF& to);
-    void resetView();*/
+    void resetView();
 
 public: // Const access to renderers
 
@@ -308,24 +306,22 @@ private slots:
     void updatePixelRatio();
 
 private:
-    PointRenderer           _pointRenderer;             /** For rendering point data as points */
-    DensityRenderer         _densityRenderer;           /** For rendering point data as a density plot */
-    bool                    _isInitialized;             /** Boolean determining whether the widget it properly initialized or not */
-    RenderMode              _renderMode;                /** Current render mode */
-    QColor                  _backgroundColor;           /** Background color */
-    ColoringMode            _coloringMode; 
-    Bounds                  _dataBounds;        
-    QSize                   _windowSize;
-    //widgetSizeInfo          _widgetSizeInfo;            /** Info about size of the scatterplot widget */
-    //DecimalRectangleAction  _dataRectangleAction;       /** Rectangle action for the bounds of the loaded data */
-    //NavigationAction        _navigationAction;          /** All navigation-related actions are grouped in this action */
-    QImage                  _colorMapImage;             /** 1D/2D color map image */
-    PixelSelectionTool      _pixelSelectionTool;        /** 2D pixel selection tool */
-    PixelSelectionTool      _samplerPixelSelectionTool; /** 2D pixel selection tool for sampling */
-    float                   _pixelRatio;                /** Current pixel ratio */
-    //QVector<QPoint>         _mousePositions;            /** Recorded mouse positions */
-    //bool                    _isNavigating;              /** Boolean determining whether view navigation is currently taking place or not */
-    //bool                    _weightDensity;             /** Use point scalar sizes to weight density */
+    PointRenderer               _pointRenderer;                 /** For rendering point data as points */
+    DensityRenderer             _densityRenderer;               /** For rendering point data as a density plot */
+    bool                        _isInitialized;                 /** Boolean determining whether the widget it properly initialized or not */
+    RenderMode                  _renderMode;                    /** Current render mode */
+    QColor                      _backgroundColor;               /** Background color */
+    ColoringMode                _coloringMode;                  /** Type of point/density coloring */
+    widgetSizeInfo              _widgetSizeInfo;                /** Info about size of the scatterplot widget */
+    DecimalRectangleAction      _dataRectangleAction;           /** Rectangle action for the bounds of the loaded data */
+    NavigationAction            _navigationAction;              /** All navigation-related actions are grouped in this action */
+    QImage                      _colorMapImage;                 /** 1D/2D color map image */
+    PixelSelectionTool          _pixelSelectionTool;            /** 2D pixel selection tool */
+    PixelSelectionTool          _samplerPixelSelectionTool;     /** 2D pixel selection tool */
+    float                       _pixelRatio;                    /** Current pixel ratio */
+    QVector<QPoint>             _mousePositions;                /** Recorded mouse positions */
+    bool                        _isNavigating;                  /** Boolean determining whether view navigation is currently taking place or not */
+    bool                        _weightDensity;                 /** Use point scalar sizes to weight density */
 
-    //friend class NavigationAction;
+    friend class NavigationAction;
 };

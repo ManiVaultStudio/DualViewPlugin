@@ -497,6 +497,7 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
 
     getSamplerAction().getEnabledAction().setChecked(false);
     getSamplerAction().setSamplingMode(ViewPluginSamplerAction::SamplingMode::Selection);
+
 }
 
 void DualViewPlugin::init()
@@ -2269,6 +2270,9 @@ void DualViewPlugin::fromVariantMap(const QVariantMap& variantMap)
         qDebug() << "DualViewPlugin: fromVariantMap _metaDatasetB is not valid";
 
 
+    _embeddingWidgetA->getNavigationAction().fromVariantMap(variantMap["NavigationA"].toMap());
+    _embeddingWidgetB->getNavigationAction().fromVariantMap(variantMap["NavigationB"].toMap());
+
     _loadingFromProject = false;
 
 }
@@ -2294,6 +2298,13 @@ QVariantMap DualViewPlugin::toVariantMap() const
     {
         variantMap.insert("meanExpressionScalars", _meanExpressionScalars.getDatasetId());
     }
+
+    insertIntoVariantMap(_embeddingWidgetA->getNavigationAction(), variantMap, "NavigationA");
+
+    insertIntoVariantMap(_embeddingWidgetB->getNavigationAction(), variantMap, "NavigationB"); //FIXME: is this correct?
+
+
+
 
 	return variantMap;
 }
