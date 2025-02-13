@@ -1747,10 +1747,13 @@ void DualViewPlugin::selectPoints(ScatterplotWidget* widget, mv::Dataset<Points>
     // Get global indices from the position dataset
     embeddingDataset->getGlobalIndices(localGlobalIndices);
 
-    const auto dataBounds = widget->getBounds();
+    auto& zoomRectangleAction = widget->getNavigationAction().getZoomRectangleAction();
     const auto width = selectionAreaImage.width();
     const auto height = selectionAreaImage.height();
     const auto size = width < height ? width : height;
+    const auto uvOffset = QPoint((selectionAreaImage.width() - size) / 2.0f, (selectionAreaImage.height() - size) / 2.0f);
+    QPointF uvNormalized = {};
+    QPoint uv = {};
 
     //qDebug() << "Selection area size:" << width << height << size;
     //qDebug() << "Data bounds top" << dataBounds.getTop() << "bottom" << dataBounds.getBottom() << "left" << dataBounds.getLeft() << "right" << dataBounds.getRight();
@@ -1759,9 +1762,11 @@ void DualViewPlugin::selectPoints(ScatterplotWidget* widget, mv::Dataset<Points>
 
     // Loop over all points and establish whether they are selected or not
     for (std::uint32_t i = 0; i < embeddingPositions.size(); i++) {
-        const auto uvNormalized = QPointF((embeddingPositions[i].x - dataBounds.getLeft()) / dataBounds.getWidth(), (dataBounds.getTop() - embeddingPositions[i].y) / dataBounds.getHeight());
-        const auto uvOffset = QPoint((selectionAreaImage.width() - size) / 2.0f, (selectionAreaImage.height() - size) / 2.0f);
-        const auto uv = uvOffset + QPoint(uvNormalized.x() * size, uvNormalized.y() * size);
+        uvNormalized = QPointF((embeddingPositions[i].x - zoomRectangleAction.getLeft()) / zoomRectangleAction.getWidth(), (zoomRectangleAction.getTop() - embeddingPositions[i].y) / zoomRectangleAction.getHeight());
+        uv = uvOffset + QPoint(uvNormalized.x() * size, uvNormalized.y() * size);
+        if (uv.x() >= selectionAreaImage.width() || uv.x() < 0 ||
+            uv.y() >= selectionAreaImage.height() || uv.y() < 0)
+            continue;
 
         // Add point if the corresponding pixel selection is on
         if (selectionAreaImage.pixelColor(uv).alpha() > 0)
