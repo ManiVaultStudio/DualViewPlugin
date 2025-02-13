@@ -45,6 +45,8 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _settingsAction(this, "SettingsAction"),
     _embeddingAToolbarAction(this, "Toolbar A"),
     _embeddingBToolbarAction(this, "Toolbar B"),
+    _embeddingASecondaryToolbarAction(this, "Secondary Toolbar A"),
+    _embeddingBSecondaryToolbarAction(this, "Secondary Toolbar B"),
     _linesToolbarAction(this, "Lines Toolbar")
 {
     _embeddingAToolbarAction.addAction(&_settingsAction.getEmbeddingAPointPlotAction());
@@ -53,8 +55,13 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingAToolbarAction.addAction(&getSamplerAction());
     _embeddingAToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction());
 
+    _embeddingASecondaryToolbarAction.addAction(&_embeddingWidgetA->getNavigationAction());
+    
+
     _embeddingBToolbarAction.addAction(&_settingsAction.getEmbeddingBPointPlotAction());
     _embeddingBToolbarAction.addAction(&_settingsAction.getReversePointSizeBAction());
+
+    _embeddingBSecondaryToolbarAction.addAction(&_embeddingWidgetB->getNavigationAction());
 
     _linesToolbarAction.addAction(&_settingsAction.getThresholdLinesAction());
 
@@ -511,6 +518,7 @@ void DualViewPlugin::init()
     auto embeddinglayoutA = new QVBoxLayout();
     embeddinglayoutA->addWidget(_embeddingAToolbarAction.createWidget(&getWidget()), 1);   
     embeddinglayoutA->addWidget(_embeddingWidgetA, 100);
+    embeddinglayoutA->addWidget(_embeddingASecondaryToolbarAction.createWidget(&getWidget()), 1);
     layout->addLayout(embeddinglayoutA, 1);
 
     // TODO: remove if not using d3 vis
@@ -527,6 +535,7 @@ void DualViewPlugin::init()
     auto embeddinglayoutB = new QVBoxLayout();
     embeddinglayoutB->addWidget(_embeddingBToolbarAction.createWidget(&getWidget()), 1);   
     embeddinglayoutB->addWidget(_embeddingWidgetB, 100);
+    embeddinglayoutB->addWidget(_embeddingBSecondaryToolbarAction.createWidget(&getWidget()), 1);
 	layout->addLayout(embeddinglayoutB, 1);
 
     getWidget().setLayout(layout);
