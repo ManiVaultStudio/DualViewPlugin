@@ -49,6 +49,9 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingBSecondaryToolbarAction(this, "Secondary Toolbar B"),
     _linesToolbarAction(this, "Lines Toolbar")
 {
+    _embeddingWidgetA->getNavigationAction().setParent(this);
+    _embeddingWidgetB->getNavigationAction().setParent(this);
+
     _embeddingAToolbarAction.addAction(&_settingsAction.getEmbeddingAPointPlotAction());
     //_embeddingAToolbarAction.addAction(&_settingsAction.getPointPlotAction());
 
