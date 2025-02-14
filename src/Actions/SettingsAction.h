@@ -71,8 +71,6 @@ public: // Serialization
 public: // Action getters
     
     EmbeddingAPointPlotAction& getEmbeddingAPointPlotAction() { return _embeddingAPointPlotAction; }
-    //PointPlotAction& getPointPlotAction() { return _pointPlotAction; }
-
     EmbeddingBPointPlotAction& getEmbeddingBPointPlotAction() { return _embeddingBPointPlotAction; }
     DecimalAction& getThresholdLinesAction() { return _thresholdLinesAction; }
     ColoringActionB& getColoringActionB() { return _coloringActionB; }
@@ -88,8 +86,6 @@ protected:
 
     LoadedDatasetsAction			  _currentDatasetsAction;    /** Action for managing loaded datasets */
     EmbeddingAPointPlotAction         _embeddingAPointPlotAction;           /** Action for configuring point plots */
-    //PointPlotAction 				  _pointPlotAction;           /** Action for configuring point plots */
-
     EmbeddingBPointPlotAction         _embeddingBPointPlotAction;           /** Action for configuring point plots */
     DecimalAction                     _thresholdLinesAction;      
     ColoringActionB                   _coloringActionB;            /** Action for configuring point coloring - for embedding B*/

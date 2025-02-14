@@ -67,9 +67,6 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     connect(&_settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getFocusSelection(), &ToggleAction::toggled, this, [this, focusSelectionActionA](bool toggled) -> void {
         focusSelectionActionA->setChecked(toggled);
         });
-    const auto updateReadOnlyA = [this, focusSelectionActionA]() {
-        focusSelectionActionA->setEnabled(_embeddingWidgetA->getRenderMode() == ScatterplotWidget::SCATTERPLOT && _embeddingDatasetA.isValid());
-        };
 
     _embeddingASecondaryToolbarAction.addAction(focusSelectionActionA);
 
@@ -87,9 +84,6 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     connect(&_settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getFocusSelection(), &ToggleAction::toggled, this, [this, focusSelectionActionB](bool toggled) -> void {
         focusSelectionActionB->setChecked(toggled);
         });
-    const auto updateReadOnlyB = [this, focusSelectionActionB]() {
-        focusSelectionActionB->setEnabled(_embeddingWidgetB->getRenderMode() == ScatterplotWidget::SCATTERPLOT && _embeddingDatasetB.isValid());
-        };
 
     _embeddingBSecondaryToolbarAction.addAction(focusSelectionActionB);
 
