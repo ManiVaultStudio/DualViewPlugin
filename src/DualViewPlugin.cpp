@@ -52,20 +52,48 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingWidgetA->getNavigationAction().setParent(this);
     _embeddingWidgetB->getNavigationAction().setParent(this);
 
+    // toolbars A
     _embeddingAToolbarAction.addAction(&_settingsAction.getEmbeddingAPointPlotAction());
-    //_embeddingAToolbarAction.addAction(&_settingsAction.getPointPlotAction());
-
     _embeddingAToolbarAction.addAction(&getSamplerAction());
     _embeddingAToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction());
 
     _embeddingASecondaryToolbarAction.addAction(&_embeddingWidgetA->getNavigationAction());
-    
 
+    auto focusSelectionActionA = new ToggleAction(this, "Focus selection A");
+    focusSelectionActionA->setIcon(Application::getIconFont("FontAwesome").getIcon("mouse-pointer"));
+    connect(focusSelectionActionA, &ToggleAction::toggled, this, [this](bool toggled) -> void {
+        _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getFocusSelection().setChecked(toggled);
+        });
+    connect(&_settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getFocusSelection(), &ToggleAction::toggled, this, [this, focusSelectionActionA](bool toggled) -> void {
+        focusSelectionActionA->setChecked(toggled);
+        });
+    const auto updateReadOnlyA = [this, focusSelectionActionA]() {
+        focusSelectionActionA->setEnabled(_embeddingWidgetA->getRenderMode() == ScatterplotWidget::SCATTERPLOT && _embeddingDatasetA.isValid());
+        };
+
+    _embeddingASecondaryToolbarAction.addAction(focusSelectionActionA);
+
+    // toolbars B
     _embeddingBToolbarAction.addAction(&_settingsAction.getEmbeddingBPointPlotAction());
     _embeddingBToolbarAction.addAction(&_settingsAction.getReversePointSizeBAction());
 
     _embeddingBSecondaryToolbarAction.addAction(&_embeddingWidgetB->getNavigationAction());
 
+    auto focusSelectionActionB = new ToggleAction(this, "Focus selection B");
+    focusSelectionActionB->setIcon(Application::getIconFont("FontAwesome").getIcon("mouse-pointer"));
+    connect(focusSelectionActionB, &ToggleAction::toggled, this, [this](bool toggled) -> void {
+        _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getFocusSelection().setChecked(toggled);
+        });
+    connect(&_settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getFocusSelection(), &ToggleAction::toggled, this, [this, focusSelectionActionB](bool toggled) -> void {
+        focusSelectionActionB->setChecked(toggled);
+        });
+    const auto updateReadOnlyB = [this, focusSelectionActionB]() {
+        focusSelectionActionB->setEnabled(_embeddingWidgetB->getRenderMode() == ScatterplotWidget::SCATTERPLOT && _embeddingDatasetB.isValid());
+        };
+
+    _embeddingBSecondaryToolbarAction.addAction(focusSelectionActionB);
+
+    // toolbar line widget
     _linesToolbarAction.addAction(&_settingsAction.getThresholdLinesAction());
 
     // context menu
