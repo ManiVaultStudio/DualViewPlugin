@@ -49,6 +49,8 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingBSecondaryToolbarAction(this, "Secondary Toolbar B"),
     _linesToolbarAction(this, "Lines Toolbar")
 {
+   
+
     _embeddingAToolbarAction.addAction(&_settingsAction.getEmbeddingAPointPlotAction());
     //_embeddingAToolbarAction.addAction(&_settingsAction.getPointPlotAction());
 
@@ -64,6 +66,8 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingBSecondaryToolbarAction.addAction(&_embeddingWidgetB->getNavigationAction());
 
     _linesToolbarAction.addAction(&_settingsAction.getThresholdLinesAction());
+
+    _linesToolbarAction.addAction(&_settingsAction.getThresholdLinesActionVariance());
 
     // context menu
     connect(_embeddingWidgetA, &ScatterplotWidget::customContextMenuRequested, this, [this](const QPoint& point) {
@@ -867,22 +871,51 @@ void DualViewPlugin::updateLineConnections()
     _lines.clear();
 
     // Iterate over each row and column in the subset to generate lines
-   auto start2 = std::chrono::high_resolution_clock::now();
+   //auto start2 = std::chrono::high_resolution_clock::now();
+   // for (int cellLocalIndex = 0; cellLocalIndex < numPointsLocal; cellLocalIndex++) {
+   //     for (int dimIdx = 0; dimIdx < numDimensions; dimIdx++) {
+
+   //         int cellGlobalIdx = static_cast<int>(localGlobalIndicesB[cellLocalIndex]);
+   //         float expression = _embeddingSourceDatasetB->getValueAt(cellGlobalIdx * numDimensionsFull + dimIdx);
+
+   //         //if (expression != columnMins[dimLocalIdx]) { // only draw lines for cells whose expression are not at the minimum
+   //         if (expression > (_columnMins[dimIdx] + _thresholdLines * _columnRanges[dimIdx])) // draw lines for cells whose expression are above the thresholdvalue
+   //         { 
+   //             _lines.emplace_back(dimIdx, cellLocalIndex);
+   //         }
+   //     }
+   // }
+   // auto end2 = std::chrono::high_resolution_clock::now();
+   // auto duration2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
+   // qDebug() << "Iterate over each row and column in the subset to generate lines took " << duration2.count() << "ms";
+
+    // TEST filter lines based on _geneVariances
+
+    // first, get the mean of _geneVariances
+    /*float meanVariance = 0.0f;
+    for (int dimIdx = 0; dimIdx < numDimensions; dimIdx++) {
+		meanVariance += _geneVariances[dimIdx];
+	}
+    meanVariance /= numDimensions;
+    qDebug() << "<<<<<mean gene variance: " << meanVariance;*/
+
+    float varianceThreshold = _settingsAction.getThresholdLinesActionVariance().getValue();
+
     for (int cellLocalIndex = 0; cellLocalIndex < numPointsLocal; cellLocalIndex++) {
         for (int dimIdx = 0; dimIdx < numDimensions; dimIdx++) {
 
             int cellGlobalIdx = static_cast<int>(localGlobalIndicesB[cellLocalIndex]);
             float expression = _embeddingSourceDatasetB->getValueAt(cellGlobalIdx * numDimensionsFull + dimIdx);
+            float variance = _geneVariances[dimIdx];
 
             //if (expression != columnMins[dimLocalIdx]) { // only draw lines for cells whose expression are not at the minimum
-            if (expression > (_columnMins[dimIdx] + _thresholdLines * _columnRanges[dimIdx])) { // draw lines for cells whose expression are above the thresholdvalue
+            if (expression > (_columnMins[dimIdx] + _thresholdLines * _columnRanges[dimIdx]) && variance > varianceThreshold) // draw lines for cells whose expression are above the thresholdvalue
+            {
                 _lines.emplace_back(dimIdx, cellLocalIndex);
             }
         }
     }
-    auto end2 = std::chrono::high_resolution_clock::now();
-    auto duration2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
-    qDebug() << "Iterate over each row and column in the subset to generate lines took " << duration2.count() << "ms";
+    
 
     //qDebug() << "DualViewPlugin::updateLineConnections() _lines size" << _lines.size();
 
@@ -998,6 +1031,12 @@ void DualViewPlugin::embeddingDatasetBChanged()
 
     // precompute the data range
     computeDataRange();
+
+    // precompute gene variance
+    QString sourceDatasetName = _embeddingDatasetB->getSourceDataset<Points>()->getFullDataset<Points>()->getGuiName();
+    if (sourceDatasetName != _previousSourceDatasetName)
+        computeGeneVariances();
+    _previousSourceDatasetName = sourceDatasetName;
    
     // update 1D embedding
     bool oneDEmbeddingExists = false;
@@ -1070,6 +1109,40 @@ void DualViewPlugin::computeDataRange()
     }
 
     qDebug() << "DualViewPlugin:: data range computed";
+
+}
+
+void DualViewPlugin::computeGeneVariances()
+{
+
+    // experiment: compute variance of genes
+    auto sourceDatasetB = _embeddingDatasetB->getSourceDataset<Points>()->getFullDataset<Points>();
+    qDebug() << "sourceDatasetB: " << sourceDatasetB->getGuiName();
+
+    int numPoints = sourceDatasetB->getNumPoints();
+    int numDimensions = sourceDatasetB->getNumDimensions();
+
+    _geneVariances.clear();
+    _geneVariances.resize(numDimensions);
+
+#pragma omp parallel for
+    for (int dimIdx = 0; dimIdx < numDimensions; dimIdx++)
+    {
+        std::vector<float> expression;
+        sourceDatasetB->extractDataForDimension(expression, dimIdx);
+
+        float sum = std::accumulate(expression.begin(), expression.end(), 0.0);
+        float mean = sum / expression.size();
+        std::vector<float> diff(expression.size());
+        std::transform(expression.begin(), expression.end(), diff.begin(), [mean](float x) { return x - mean; });
+        float sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+
+        _geneVariances[dimIdx] = sq_sum / expression.size();
+    }
+
+
+    qDebug() << "geneVariances size" << _geneVariances.size();
+    qDebug() << "Max gene variance" << *std::max_element(_geneVariances.begin(), _geneVariances.end()) << "Min gene variance" << *std::min_element(_geneVariances.begin(), _geneVariances.end());
 
 }
 
@@ -1643,7 +1716,6 @@ void DualViewPlugin::updateEmbeddingAColor()
 
 void DualViewPlugin::samplePoints() 
 {
-    
     // for now only for embedding A
     auto& samplerPixelSelectionTool = _embeddingWidgetA->getSamplerPixelSelectionTool();
 
@@ -1734,6 +1806,8 @@ void DualViewPlugin::samplePoints()
 
 void DualViewPlugin::selectPoints(ScatterplotWidget* widget, mv::Dataset<Points> embeddingDataset, const std::vector<mv::Vector2f>& embeddingPositions)
 {
+    qDebug() << "DualViewPlugin: selectPoints() - isNavigating() " << widget->isNavigating() << "getPixelSelectionTool is Active " << widget->getPixelSelectionTool().isActive();
+
     // Only proceed with a valid points position dataset and when the pixel selection tool is active
     if (!embeddingDataset.isValid() || !widget->getPixelSelectionTool().isActive() || widget->isNavigating())
         return;
@@ -2285,8 +2359,10 @@ void DualViewPlugin::fromVariantMap(const QVariantMap& variantMap)
     else
         qDebug() << "DualViewPlugin: fromVariantMap _metaDatasetB is not valid";
 
-
-    _embeddingWidgetA->getNavigationAction().fromVariantMap(variantMap["NavigationA"].toMap());
+    if (variantMap.contains("NavigationA"))
+        _embeddingWidgetA->getNavigationAction().fromVariantMap(variantMap["NavigationA"].toMap());
+    
+    if (variantMap.contains("NavigationB"))
     _embeddingWidgetB->getNavigationAction().fromVariantMap(variantMap["NavigationB"].toMap());
 
     _loadingFromProject = false;

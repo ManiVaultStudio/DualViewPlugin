@@ -21,7 +21,8 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     _coloringActionA(this, "Coloring A"),
     _selectionAction(this, "Selection"),
     _reversePointSizeBAction(this, "Reverse Point Size B"),
-    _dimensionSelectionAction(this, "Gene search")
+    _dimensionSelectionAction(this, "Gene search"),
+    _thresholdLinesActionVariance(this, "Threshold Lines Variance", 0.f, 20.f, 0.f)
 
 {
     setConnectionPermissionsToForceNone();
@@ -39,6 +40,10 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     connect(&_reversePointSizeBAction, &ToggleAction::toggled, [this](bool val) {
 		_dualViewPlugin->reversePointSizeB(val);
 	});
+
+    connect(&_thresholdLinesActionVariance, &DecimalAction::valueChanged, [this](float val) {
+        _dualViewPlugin->updateThresholdLines();
+        });
 
 }
 

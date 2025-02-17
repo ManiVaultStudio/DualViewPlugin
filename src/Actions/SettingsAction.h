@@ -82,6 +82,8 @@ public: // Action getters
     // experimental actions
     ToggleAction& getReversePointSizeBAction() { return _reversePointSizeBAction; }
     DimensionSelectionAction& getDimensionSelectionAction() { return _dimensionSelectionAction; }
+    DecimalAction& getThresholdLinesActionVariance() { return _thresholdLinesActionVariance; }
+    
 
 protected:
     DualViewPlugin*                   _dualViewPlugin;         /** Pointer to dual view plugin */
@@ -99,4 +101,5 @@ protected:
     // experimental actions
     ToggleAction                      _reversePointSizeBAction;
     DimensionSelectionAction          _dimensionSelectionAction;
+    DecimalAction					  _thresholdLinesActionVariance; // experimental, filter by variance
 };

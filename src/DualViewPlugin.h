@@ -91,13 +91,18 @@ private:
     void computeDataRange(); // precompute the range of each column every time the dataset changes, for computing line connections
 
 
-    
     // for embedding A
     void computeSelectedGeneMeanExpression();
 
     void sendDataToSampleScope();
 
     void computeTopCellForEachGene();
+
+
+    // experiments
+
+    void computeGeneVariances();
+
 
 protected:
 
@@ -157,6 +162,9 @@ private:
 
     std::vector<float>         _columnMins; // cached for updateLineConnections when threshold changes
     std::vector<float>         _columnRanges; // cached for updateLineConnections when threshold changes
+
+    std::vector<float>         _geneVariances; // variance of each gene
+    QString                    _previousSourceDatasetName; // for checking if the source dataset has changed in embeddingDatasetBChanged()
 
 
     bool                       _isEmbeddingASelected = false; // if the latest selection is on embedding A
