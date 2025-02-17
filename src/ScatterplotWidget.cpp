@@ -156,15 +156,27 @@ bool ScatterplotWidget::event(QEvent* event)
     if (event->type() == QEvent::KeyRelease)
     {
         if (const auto* keyEvent = static_cast<QKeyEvent*>(event))
+        {
             if (keyEvent->key() == Qt::Key_Alt)
+            {
                 _isNavigating = false;
+                _pixelSelectionTool.setEnabled(true);
+                _samplerPixelSelectionTool.setEnabled(true);
+            }
+        }
 
     }
     else if (event->type() == QEvent::KeyPress)
     {
         if (const auto* keyEvent = static_cast<QKeyEvent*>(event))
+        {
             if (keyEvent->key() == Qt::Key_Alt)
+            {
                 _isNavigating = true;
+                _pixelSelectionTool.setEnabled(false);
+                _samplerPixelSelectionTool.setEnabled(false);
+            }
+        }
 
     }
 
@@ -192,7 +204,6 @@ bool ScatterplotWidget::event(QEvent* event)
                     // Navigation
                     if (mouseEvent->buttons() == Qt::LeftButton)
                     {
-                        _pixelSelectionTool.setEnabled(false);
                         setCursor(Qt::ClosedHandCursor);
                         _mousePositions << mouseEvent->pos();
                         update();
@@ -204,7 +215,6 @@ bool ScatterplotWidget::event(QEvent* event)
 
             case QEvent::MouseButtonRelease:
             {
-                _pixelSelectionTool.setEnabled(true);
                 setCursor(Qt::ArrowCursor);
                 _mousePositions.clear();
                 update();
@@ -836,6 +846,8 @@ void ScatterplotWidget::paintPixelSelectionToolNative(PixelSelectionTool& pixelS
 
     pixelSelectionToolImagePainter.drawPixmap(rect(), pixelSelectionTool.getShapePixmap());
     pixelSelectionToolImagePainter.drawPixmap(rect(), pixelSelectionTool.getAreaPixmap());
+
+    qDebug() << "Drawing pixel selection tool";
 }
 
 void ScatterplotWidget::cleanup()
