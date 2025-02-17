@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Actions/NavigationAction.h"
+#include "src/Actions/NavigationAction.h"
 
 #include <renderers/DensityRenderer.h>
 #include <renderers/PointRenderer.h>
@@ -17,10 +17,13 @@
 #include <QOpenGLWidget>
 #include <QPoint>
 
-class ScatterplotPlugin;
-
 using namespace mv::gui;
 using namespace mv::util;
+
+namespace mv::plugin
+{
+    class ViewPlugin;
+}
 
 struct widgetSizeInfo {
     float width;
@@ -49,7 +52,7 @@ public:
     };
 
 public:
-    ScatterplotWidget();
+    ScatterplotWidget(mv::plugin::ViewPlugin* parentPlugin = nullptr);
 
     ~ScatterplotWidget();
 
@@ -322,6 +325,8 @@ private:
     QVector<QPoint>             _mousePositions;                /** Recorded mouse positions */
     bool                        _isNavigating;                  /** Boolean determining whether view navigation is currently taking place or not */
     bool                        _weightDensity;                 /** Use point scalar sizes to weight density */
+
+    mv::plugin::ViewPlugin*     _parentPlugin = nullptr;
 
     friend class NavigationAction;
 };

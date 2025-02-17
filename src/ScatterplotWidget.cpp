@@ -18,7 +18,7 @@
 
 #include <math.h>
 
-#include "DualViewPlugin.h"
+#include <ViewPlugin.h>
 
 using namespace mv;
 
@@ -48,7 +48,7 @@ namespace
     }
 }
 
-ScatterplotWidget::ScatterplotWidget() :
+ScatterplotWidget::ScatterplotWidget(mv::plugin::ViewPlugin* parentPlugin) :
     QOpenGLWidget(),
     _pointRenderer(),
     _densityRenderer(DensityRenderer::RenderMode::DENSITY),
@@ -65,7 +65,8 @@ ScatterplotWidget::ScatterplotWidget() :
     _pixelRatio(1.0),
     _mousePositions(),
     _isNavigating(false),
-    _weightDensity(false)
+    _weightDensity(false),
+    _parentPlugin(parentPlugin)
 {
     setContextMenuPolicy(Qt::CustomContextMenu);
     setAcceptDrops(true);
@@ -152,29 +153,31 @@ bool ScatterplotWidget::event(QEvent* event)
     if (!event)
         return QOpenGLWidget::event(event);
 
+    auto setIsNavigating = [this](bool isNavigating) -> void {
+        _isNavigating = isNavigating;
+        _pixelSelectionTool.setEnabled(!isNavigating);
+        if (isNavigating) {
+            _samplerPixelSelectionTool.setEnabled(false);
+        }
+        else if (_parentPlugin) { // reset to UI-setting
+            _samplerPixelSelectionTool.setEnabled(_parentPlugin->getSamplerAction().isEnabled());
+        }
+
+        };
+
     // Set navigation flag on Alt press/release
-    if (event->type() == QEvent::KeyRelease)
-    {
-        if (const auto* keyEvent = static_cast<QKeyEvent*>(event))
-        {
-            if (keyEvent->key() == Qt::Key_Alt)
-            {
-                _isNavigating = false;
-                _pixelSelectionTool.setEnabled(true);
-                _samplerPixelSelectionTool.setEnabled(true);
+    if (event->type() == QEvent::KeyRelease) {
+        if (const auto* keyEvent = static_cast<QKeyEvent*>(event)) {
+            if (keyEvent->key() == Qt::Key_Alt) {
+                setIsNavigating(false);
             }
         }
 
     }
-    else if (event->type() == QEvent::KeyPress)
-    {
-        if (const auto* keyEvent = static_cast<QKeyEvent*>(event))
-        {
-            if (keyEvent->key() == Qt::Key_Alt)
-            {
-                _isNavigating = true;
-                _pixelSelectionTool.setEnabled(false);
-                _samplerPixelSelectionTool.setEnabled(false);
+    else if (event->type() == QEvent::KeyPress) {
+        if (const auto* keyEvent = static_cast<QKeyEvent*>(event)) {
+            if (keyEvent->key() == Qt::Key_Alt) {
+                setIsNavigating(true);
             }
         }
 
@@ -204,6 +207,7 @@ bool ScatterplotWidget::event(QEvent* event)
                     // Navigation
                     if (mouseEvent->buttons() == Qt::LeftButton)
                     {
+                        setIsNavigating(true);
                         setCursor(Qt::ClosedHandCursor);
                         _mousePositions << mouseEvent->pos();
                         update();
@@ -215,6 +219,7 @@ bool ScatterplotWidget::event(QEvent* event)
 
             case QEvent::MouseButtonRelease:
             {
+                setIsNavigating(false);
                 setCursor(Qt::ArrowCursor);
                 _mousePositions.clear();
                 update();
@@ -846,8 +851,6 @@ void ScatterplotWidget::paintPixelSelectionToolNative(PixelSelectionTool& pixelS
 
     pixelSelectionToolImagePainter.drawPixmap(rect(), pixelSelectionTool.getShapePixmap());
     pixelSelectionToolImagePainter.drawPixmap(rect(), pixelSelectionTool.getAreaPixmap());
-
-    qDebug() << "Drawing pixel selection tool";
 }
 
 void ScatterplotWidget::cleanup()

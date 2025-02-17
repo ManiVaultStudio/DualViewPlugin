@@ -38,8 +38,8 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingDropWidgetB(nullptr),
     _embeddingDatasetA(),
     _embeddingDatasetB(),
-    _embeddingWidgetA(new ScatterplotWidget()),
-    _embeddingWidgetB(new ScatterplotWidget()),
+    _embeddingWidgetA(new ScatterplotWidget(this)),
+    _embeddingWidgetB(new ScatterplotWidget(this)),
     _embeddingLinesWidget(new EmbeddingLinesWidget()),
     _colorMapAction(this, "Color map", "RdYlBu"),
     _settingsAction(this, "SettingsAction"),
@@ -1672,12 +1672,10 @@ void DualViewPlugin::samplePoints()
     // for now only for embedding A
     auto& samplerPixelSelectionTool = _embeddingWidgetA->getSamplerPixelSelectionTool();
 
-    if (!_embeddingDatasetA.isValid() || _embeddingWidgetA->isNavigating())
+    if (!_embeddingDatasetA.isValid() || _embeddingWidgetA->isNavigating() || !samplerPixelSelectionTool.isActive() || !samplerPixelSelectionTool.isEnabled())
         return;
 
     auto selectionAreaImage = samplerPixelSelectionTool.getAreaPixmap().toImage();
-
-    auto selectionSet = _embeddingDatasetA->getSelection<Points>();
 
     std::vector<std::uint32_t> targetSelectionIndices;
 
@@ -1760,7 +1758,7 @@ void DualViewPlugin::samplePoints()
 void DualViewPlugin::selectPoints(ScatterplotWidget* widget, mv::Dataset<Points> embeddingDataset, const std::vector<mv::Vector2f>& embeddingPositions)
 {
     // Only proceed with a valid points position dataset and when the pixel selection tool is active
-    if (!embeddingDataset.isValid() || !widget->getPixelSelectionTool().isActive() || widget->isNavigating())
+    if (!embeddingDataset.isValid() || !widget->getPixelSelectionTool().isActive() || widget->isNavigating() || !widget->getPixelSelectionTool().isEnabled())
         return;
 
     //qDebug() << _positionDataset->getGuiName() << "selectPoints";
