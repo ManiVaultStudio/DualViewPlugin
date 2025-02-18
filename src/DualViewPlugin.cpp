@@ -1672,7 +1672,7 @@ void DualViewPlugin::samplePoints()
     // for now only for embedding A
     auto& samplerPixelSelectionTool = _embeddingWidgetA->getSamplerPixelSelectionTool();
 
-    if (!_embeddingDatasetA.isValid() || _embeddingWidgetA->isNavigating() || !samplerPixelSelectionTool.isActive() || !samplerPixelSelectionTool.isEnabled())
+    if (!_embeddingDatasetA.isValid() || _embeddingWidgetA->isNavigating() || !samplerPixelSelectionTool.isEnabled())
         return;
 
     auto selectionAreaImage = samplerPixelSelectionTool.getAreaPixmap().toImage();
