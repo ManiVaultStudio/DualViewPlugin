@@ -2308,9 +2308,10 @@ void DualViewPlugin::fromVariantMap(const QVariantMap& variantMap)
     else
         qDebug() << "DualViewPlugin: fromVariantMap _metaDatasetB is not valid";
 
-
-    _embeddingWidgetA->getNavigationAction().fromVariantMap(variantMap["NavigationA"].toMap());
-    _embeddingWidgetB->getNavigationAction().fromVariantMap(variantMap["NavigationB"].toMap());
+    if (variantMap.contains("NavigationA"))
+        _embeddingWidgetA->getNavigationAction().fromVariantMap(variantMap["NavigationA"].toMap());
+    if (variantMap.contains("NavigationB"))
+        _embeddingWidgetB->getNavigationAction().fromVariantMap(variantMap["NavigationB"].toMap());
 
     _loadingFromProject = false;
 
