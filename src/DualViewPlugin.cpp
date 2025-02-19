@@ -1512,11 +1512,17 @@ void DualViewPlugin::updateEmbeddingBColor()
 
 void DualViewPlugin::reversePointSizeB(bool reversePointSizeB)
 {
-
     _reversePointSizeB = reversePointSizeB;
 
     if (!_embeddingDatasetB.isValid())
 		return;
+
+    if (_selectedGeneMeanExpression.size() == 0)
+    {
+		qDebug() << "reversePointSizeB canceled, because no gene is selected.";
+        _settingsAction.getReversePointSizeBAction().setChecked(false);
+		return;
+	}
 
     // TODO: if this function to be kept
     // this is same code snippet as in updateEmbeddingBColor(), put in one function
@@ -1528,8 +1534,9 @@ void DualViewPlugin::reversePointSizeB(bool reversePointSizeB)
     {
 		range = 1;
 	}
-    //float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointSizeActionB().getValue();
+
     float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getSizeAction().getMagnitudeAction().getValue(); // FIXME: 12/2, mew actions
+
 
     std::vector<float> selectedGeneMeanExpression(_selectedGeneMeanExpression.size());
     // In case the user wants to reverse the point size
@@ -1539,7 +1546,6 @@ void DualViewPlugin::reversePointSizeB(bool reversePointSizeB)
         for (int i = 0; i < _selectedGeneMeanExpression.size(); i++)
         {
             selectedGeneMeanExpression[i] = ((_selectedGeneMeanExpression[i] - min_val) / range) * ptSize; // TODO: hardcoded factor?
-
         }
     }
     else
