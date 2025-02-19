@@ -1484,8 +1484,8 @@ void DualViewPlugin::updateEmbeddingBColor()
     {
 		range = 1;
 	}
-	//float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointSizeActionB().getValue();
-    float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getSizeAction().getMagnitudeAction().getValue();// FIXME: 12/2, mew actions
+
+    float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getSizeAction().getMagnitudeAction().getValue();
 
     std::vector<float> selectedGeneMeanExpression(_selectedGeneMeanExpression.size());
 
@@ -1535,7 +1535,7 @@ void DualViewPlugin::reversePointSizeB(bool reversePointSizeB)
 		range = 1;
 	}
 
-    float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getSizeAction().getMagnitudeAction().getValue(); // FIXME: 12/2, mew actions
+    float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getSizeAction().getMagnitudeAction().getValue();
 
 
     std::vector<float> selectedGeneMeanExpression(_selectedGeneMeanExpression.size());
@@ -1609,11 +1609,7 @@ void DualViewPlugin::updateEmbeddingAColor()
     float max_val = *min_max.second;
     //qDebug() << "min_val" << min_val << "max_val" << max_val;
     
-    //float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointSizeActionA().getValue();
-    //float ptSize = 10.0f; // FIXME, test
-    float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue(); // FIXME: 12/2, mew actions
-
-
+    float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue();
 
 #pragma omp parallel for
     for (int i = 0; i < _connectedCellsPerGene.size(); i++)
