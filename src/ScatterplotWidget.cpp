@@ -160,7 +160,7 @@ bool ScatterplotWidget::event(QEvent* event)
             _samplerPixelSelectionTool.setEnabled(false);
         }
         else if (_parentPlugin) { // reset to UI-setting
-            _samplerPixelSelectionTool.setEnabled(_parentPlugin->getSamplerAction().isEnabled());
+            _samplerPixelSelectionTool.setEnabled(_parentPlugin->getSamplerAction().getEnabledAction().isChecked());
         }
 
         };
