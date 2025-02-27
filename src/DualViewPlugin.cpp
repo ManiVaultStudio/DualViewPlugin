@@ -380,7 +380,10 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
                 "<td><b>Selected Genes: </b></td>"
                 "<td>%1 %2</td>"  // add the expandable section right inside the same <td>
                 "</tr>"
-                "</table>")
+                "</table>"
+                "<p style='font-size:12px; color:#377fe4;'>"
+                "Click the 'Enrich' button in the gene panel for more details.</p>"
+            )
                 .arg(geneSymbols.join(", "))
                 .arg(additionalGenesHtml);  // append the expandable section here
 
@@ -394,7 +397,10 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
                 "<td><b>Connected Genes: </b></td>"
                 "<td>%1 %2</td>"  // add the expandable section right inside the same <td>
                 "</tr>"
-                "</table>")
+                "</table>"
+                "<p style='font-size:12px; color:#377fe4;'>"
+                "Click the 'Enrich' button in the gene panel for more details.</p>"
+            )
                 .arg(geneSymbols.join(", "))
                 .arg(additionalGenesHtml);
 

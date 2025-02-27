@@ -84,6 +84,11 @@ set(Models
     src/Models/ScalarSourceModel.cpp
 )
 
+set(Compute
+    src/Compute/EnrichmentAnalysis.h
+	src/Compute/EnrichmentAnalysis.cpp
+)
+
 set(PLUGIN_MOC_HEADERS
     src/DualViewPlugin.h
 )
@@ -110,6 +115,7 @@ qt6_add_resources(RESOURCE_FILES res/dual_chart.qrc)
 source_group( Plugin FILES ${PLUGIN_SOURCES})
 source_group( Actions FILES ${Actions})
 source_group( Models FILES ${Models})
+source_group( Compute FILES ${Compute})
 source_group( Web FILES ${WEB})
 source_group( Shaders FILES ${SHADERS})
 source_group( Aux FILES ${AUX})
@@ -119,7 +125,7 @@ source_group( Aux FILES ${AUX})
 # CMake Target
 # -----------------------------------------------------------------------------
 # Create dynamic library for the plugin
-add_library(${PROJECT_NAME} SHARED ${PLUGIN_SOURCES} ${Actions} ${Models} ${SHADERS} ${AUX} ${WEB} ${RESOURCE_FILES})
+add_library(${PROJECT_NAME} SHARED ${PLUGIN_SOURCES} ${Actions} ${Models} ${Compute} ${SHADERS} ${AUX} ${WEB} ${RESOURCE_FILES})
 
 # -----------------------------------------------------------------------------
 # Target include directories

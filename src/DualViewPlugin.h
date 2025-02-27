@@ -13,6 +13,7 @@
 #include <QWidget>
 
 #include "Actions/SettingsAction.h"
+#include "Compute/EnrichmentAnalysis.h"
 
 /** All plugin related classes are in the ManiVault plugin namespace */
 using namespace mv::plugin;
