@@ -288,10 +288,10 @@ void EnrichmentAnalysis::handleEnrichmentReplyGprofiler() {
                     //qDebug() << "Gene Symbols:" << geneSymbols.join(", ");
 
                     QVariantMap dataMap;
-                    dataMap["Category"] = source;
-                    dataMap["TermID"] = termID;
-                    dataMap["Name"] = name;
-                    dataMap["Padj_bonferroni"] = pValue;
+                    dataMap["Source"] = source;
+                    dataMap["Term ID"] = termID;
+                    dataMap["Term Name"] = name;
+                    dataMap["Padj"] = pValue;
                     dataMap["Symbol"] = geneSymbols.join(",");
                     outputList.append(dataMap);
                 }

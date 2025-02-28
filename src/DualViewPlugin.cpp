@@ -2366,20 +2366,8 @@ void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) {
 
 	_enrichmentResult = data;
 
-	//for (const QVariant& item : data) {
-	//	QVariantMap dataMap = item.toMap();
-	//	for (auto key : dataMap.keys()) {
-	//		qDebug() << key << ":" << dataMap[key].toString();
-	//	}
-	//}
-
-
-	// Extract headers from the first item
-	QStringList headers;
-	QList<QString> keys = data.first().toMap().keys();
-	for (const QString& key : keys) {
-		headers.append(key);
-	}
+	// Manually define headers
+    QStringList headers = { "Source", "Term ID", "Term Name", "Padj", "Symbol"};
 
 	// Limit data to max 10 rows
 	int maxRows = qMin(10, data.size());
@@ -2404,8 +2392,8 @@ void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) {
         for (const QString& key : headers) {
             QString value = dataMap[key].toString();
 
-            // format Padj_bonferroni column to 3 decimal places
-            if (key == "Padj_bonferroni") {
+            // format Padj 3 decimal places
+            if (key == "Padj") {
                 bool ok;
                 double pValue = value.toDouble(&ok);
                 if (ok) {
