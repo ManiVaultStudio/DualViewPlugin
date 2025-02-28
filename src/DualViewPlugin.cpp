@@ -2413,6 +2413,7 @@ void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) {
                 }
             }
 
+
             tableHtml += "<td style='padding: 5px; text-align: left; width: auto;'>" + value + "</td>";
         }
 

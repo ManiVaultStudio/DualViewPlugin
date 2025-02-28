@@ -273,6 +273,7 @@ void EnrichmentAnalysis::handleEnrichmentReplyGprofiler() {
                     QString name = resultObj["name"].toString();
                     double pValue = resultObj["p_value"].toDouble();
                     QString source = resultObj["source"].toString();
+                    QString termID = resultObj["native"].toString();
 
                     validResultsFound = true;
 
@@ -288,6 +289,7 @@ void EnrichmentAnalysis::handleEnrichmentReplyGprofiler() {
 
                     QVariantMap dataMap;
                     dataMap["Category"] = source;
+                    dataMap["TermID"] = termID;
                     dataMap["Name"] = name;
                     dataMap["Padj_bonferroni"] = pValue;
                     dataMap["Symbol"] = geneSymbols.join(",");
