@@ -53,6 +53,8 @@ public:
 
     void highlightInputGenes(const QStringList& dimensionNames);
 
+    void getEnrichmentAnalysis();
+
 
 private:
     QString getCurrentEmebeddingDataSetID(mv::Dataset<Points> dataset) const;
@@ -99,6 +101,11 @@ private:
     void sendDataToSampleScope();
 
     void computeTopCellForEachGene();
+
+    // experiment enrichment
+    void updateEnrichmentTable(const QVariantList& data);
+
+    void noDataEnrichmentTable();
 
 protected:
 
@@ -165,6 +172,21 @@ private:
     bool                       _loadingFromProject = false;
 
     bool                       _reversePointSizeB = false;
+
+    // cached sample scope data, for later enrichment analysis
+    QStringList _labels;
+    QStringList _data;
+    QStringList _backgroundColors;
+    QVariantList _globalPointIndices;
+     
+    
+    // gene symbols, selected genes/ connected genes
+    QVariantList               _currentGeneSymbols;
+
+    // Enrichment Analysis
+    EnrichmentAnalysis*                _client;                  // Enrichment analysis client 
+    QVariantList                       _enrichmentResult;        // Cached enrichment analysis result, in case the user clicks on one cell
+    QString                            _currentEnrichmentSpecies = "mmusculus"; // current enrichment species
 
 protected:
 

@@ -4,6 +4,7 @@
 #include <actions/DecimalAction.h>
 #include <actions/ToggleAction.h>
 
+
 #include "EmbeddingAPointPlotAction.h"
 
 //#include "PointPlotAction.h"
@@ -16,15 +17,7 @@
 #include "LoadedDatasetsAction.h"
 
 #include "DimensionSelectionAction.h"
-
-//#include "ClusteringAction.h"
-
-//#include "ExportAction.h"
-//#include "MiscellaneousAction.h"
-//#include "PositionAction.h"
-//#include "RenderModeAction.h"
-//#include "SelectionAction.h"
-//#include "SubsetAction.h"
+#include "EnrichmentAction.h"
 
 using namespace mv::gui;
 
@@ -81,6 +74,9 @@ public: // Action getters
     ToggleAction& getReversePointSizeBAction() { return _reversePointSizeBAction; }
     DimensionSelectionAction& getDimensionSelectionAction() { return _dimensionSelectionAction; }
 
+    EnrichmentAction& getEnrichmentAction() { return _enrichmentAction; }
+   
+
 protected:
     DualViewPlugin*                   _dualViewPlugin;         /** Pointer to dual view plugin */
 
@@ -95,4 +91,8 @@ protected:
     // experimental actions
     ToggleAction                      _reversePointSizeBAction;
     DimensionSelectionAction          _dimensionSelectionAction;
+
+    EnrichmentAction                  _enrichmentAction;          /** Action for triggering enrichment analysis */
+
+   
 };

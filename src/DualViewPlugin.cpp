@@ -53,9 +53,11 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingWidgetB->getNavigationAction().setParent(this);
 
     // toolbars A
+    _embeddingAToolbarAction.addAction(&_settingsAction.getEnrichmentAction());
     _embeddingAToolbarAction.addAction(&_settingsAction.getEmbeddingAPointPlotAction());
     _embeddingAToolbarAction.addAction(&getSamplerAction());
     _embeddingAToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction());
+    
 
     _embeddingASecondaryToolbarAction.addAction(&_embeddingWidgetA->getNavigationAction());
 
@@ -527,6 +529,20 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
 
         }
 
+        // test table
+        if (toolTipContext.contains("EnrichmentTable"))
+        {
+            html += "<p style='font-size:14px;'>Test Here...</p>";
+
+            QString tableHtml = toolTipContext["EnrichmentTable"].toString();
+
+            if (!tableHtml.isEmpty()) {
+                html += "<p style='font-size:14px; font-weight:bold;'>Top 10 Enrichment Results:</p>";
+                html += tableHtml;
+            }
+        }
+
+
         html += "</body></html>";
         
         return html;
@@ -731,6 +747,11 @@ void DualViewPlugin::init()
         });
 
     connect(&getSamplerAction(), &ViewPluginSamplerAction::sampleContextRequested, this, &DualViewPlugin::samplePoints);  
+
+    // Enrichment analysis
+    _client = new EnrichmentAnalysis(this);
+    connect(_client, &EnrichmentAnalysis::enrichmentDataReady, this, &DualViewPlugin::updateEnrichmentTable);
+    connect(_client, &EnrichmentAnalysis::enrichmentDataNotExists, this, &DualViewPlugin::noDataEnrichmentTable);
 }
 
 void DualViewPlugin::update1DEmbeddingPositions(bool isA)
@@ -1212,6 +1233,8 @@ void DualViewPlugin::sendDataToSampleScope() {
 	if (getSamplerAction().getEnabledAction().isChecked() == false)
 		return;
 
+    QVariantList globalPointIndices;
+
     if (_isEmbeddingASelected)
     {
         // A selected, send gene id and major cell type to samplerAction
@@ -1229,7 +1252,7 @@ void DualViewPlugin::sendDataToSampleScope() {
 
         std::int32_t numberOfPoints = 0;
 
-        QVariantList globalPointIndices;
+        //QVariantList globalPointIndices;
 
         const auto numberOfSelectedPoints = selection->indices.size();
 
@@ -1366,7 +1389,7 @@ void DualViewPlugin::sendDataToSampleScope() {
         // B selected, send cell types to samplerAction
         
         // send genes that are connected to selected cells (use _connectedCellsPerGene)
-        QVariantList globalPointIndices;
+        //QVariantList globalPointIndices;
         for (int i = 0; i < _connectedCellsPerGene.size(); i++)
         {
             if (_connectedCellsPerGene[i] > 0)
@@ -1454,6 +1477,31 @@ void DualViewPlugin::sendDataToSampleScope() {
         qDebug() << "sendDataTosampleScope 4 took " << duration4.count() << "ms";
 
     }
+
+    // TODO: use gene symbols directly, to avoid repeated conversion from indices to symbols
+
+    _currentGeneSymbols.clear();
+    // assign gene symbols corresponding to globalPointIndices
+    for (int i = 0; i < globalPointIndices.size(); i++)
+    {
+		int globalIndex = globalPointIndices[i].toInt();
+		QString geneSymbol = _embeddingSourceDatasetB->getDimensionNames()[globalIndex];
+		_currentGeneSymbols.append(geneSymbol);
+	}
+
+    qDebug() << "sendDataToSampleScope() _currentGeneSymbols size" << _currentGeneSymbols.size();
+
+    // TODO: rewrite this function
+    _labels.clear();
+    _data.clear();
+    _backgroundColors.clear();
+    _globalPointIndices.clear();
+
+    _labels = getSamplerAction().getSampleContext()["labels"].toStringList();
+    _data = getSamplerAction().getSampleContext()["data"].toStringList();
+    _backgroundColors = getSamplerAction().getSampleContext()["backgroundColors"].toStringList();
+    _globalPointIndices = getSamplerAction().getSampleContext()["GlobalPointIndices"].toList();
+
 	
    
 }
@@ -2266,6 +2314,136 @@ void DualViewPlugin::computeTopCellForEachGene()
     qDebug() << "DualViewPlugin: computeTopCellForEachGene() done";
 
 }
+
+void DualViewPlugin::getEnrichmentAnalysis()
+{
+    qDebug() << "DualViewPlugin: getEnrichmentAnalysis()";
+
+   //TODO: some genes end with _dup+number, should deal with this
+
+    //// output _simplifiedToIndexGeneMapping if not empty
+    //if (!_simplifiedToIndexGeneMapping.empty()) {
+    //    for (auto it = _simplifiedToIndexGeneMapping.constBegin(); it != _simplifiedToIndexGeneMapping.constEnd(); ++it) {
+    //        qDebug() << it.key() << ":";
+    //        for (const QString& value : it.value()) {
+    //            qDebug() << value;
+    //        }
+    //    }
+    //}
+
+    if (!_currentGeneSymbols.isEmpty()) {
+
+            // gProfiler
+            QStringList backgroundGeneNames;
+
+            QStringList geneSymbols;
+
+            // Convert using Qt's `QVariant::toString()`
+            for (const QVariant& var : _currentGeneSymbols) {
+                geneSymbols.append(var.toString());
+            }
+
+            //qDebug() << "getFuntionalEnrichment(): backgroundGeneNames size: " << backgroundGeneNames.size();
+            _client->postGeneGprofiler(geneSymbols, backgroundGeneNames, _currentEnrichmentSpecies);
+        
+
+        //EnrichmentAnalysis* tempClient = new EnrichmentAnalysis(this);
+    }
+
+    // output the gene names
+    for (int i = 0; i < _currentGeneSymbols.size(); i++) {
+        QString item = _currentGeneSymbols[i].toString();
+        if (i == 0)
+            std::cout << "Genes symbols: " << item.toUtf8().constData() << " ";
+        else
+            std::cout << item.toUtf8().constData() << " ";
+    }
+    std::cout << std::endl;
+}
+
+void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) {
+	//qDebug() << "GeneSurferPlugin::updateEnrichmentTable(): start";
+
+	_enrichmentResult = data;
+
+	//for (const QVariant& item : data) {
+	//	QVariantMap dataMap = item.toMap();
+	//	for (auto key : dataMap.keys()) {
+	//		qDebug() << key << ":" << dataMap[key].toString();
+	//	}
+	//}
+
+
+	// Extract headers from the first item
+	QStringList headers;
+	QList<QString> keys = data.first().toMap().keys();
+	for (const QString& key : keys) {
+		headers.append(key);
+	}
+
+	// Limit data to max 10 rows
+	int maxRows = qMin(10, data.size());
+	QVariantList limitedData;
+	for (int i = 0; i < maxRows; ++i) {
+		limitedData.append(data[i]);
+	}
+
+    QString tableHtml = "<table style='font-size:14px; border-collapse: collapse; width:100%; font-family: Arial;' border='1'>"
+                        "<tr>";
+
+    // Add headers with fixed width for better alignment
+    for (const QString& header : headers) {
+        tableHtml += "<th style='padding: 5px; width: auto;'>" + header + "</th>";
+    }
+    tableHtml += "</tr>";
+
+    for (const QVariant& item : limitedData) {
+        QVariantMap dataMap = item.toMap();
+        tableHtml += "<tr>";
+
+        for (const QString& key : headers) {
+            QString value = dataMap[key].toString();
+
+            // format Padj_bonferroni column to 3 decimal places
+            if (key == "Padj_bonferroni") {
+                bool ok;
+                double pValue = value.toDouble(&ok);
+                if (ok) {
+                    value = QString::number(pValue, 'e', 3);
+                }
+            }
+
+            tableHtml += "<td style='padding: 5px; text-align: left; width: auto;'>" + value + "</td>";
+        }
+
+        tableHtml += "</tr>";
+    }
+
+    tableHtml += "</table>";
+
+	// Send table HTML as part of Sample Scope Context
+	getSamplerAction().setSampleContext({
+		{ "ASelected", _isEmbeddingASelected },
+		{ "ColorDatasetID", _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId() },
+		{ "GlobalPointIndices", _globalPointIndices }, // Connected genes
+		{ "labels", _labels }, // For proportion chart
+		{ "data", _data }, // For proportion chart
+		{ "backgroundColors", _backgroundColors }, // For proportion chart
+		{ "EnrichmentTable", tableHtml } // Send the table as HTML
+		});
+
+	qDebug() << "updateEnrichmentTable(): Table sent to Sample Scope (max 10 rows).";
+
+
+
+
+}
+
+void DualViewPlugin::noDataEnrichmentTable() 
+{
+    qDebug() << "DualViewPlugin::noDataEnrichmentTable()";
+}
+
 
 
 // =============================================================================

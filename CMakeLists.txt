@@ -77,6 +77,8 @@ set(Actions
     src/Actions/PointPlotActionB.cpp
 	src/Actions/NavigationAction.h
     src/Actions/NavigationAction.cpp
+	src/Actions/EnrichmentAction.h
+    src/Actions/EnrichmentAction.cpp
 )
 
 set(Models
