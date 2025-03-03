@@ -22,6 +22,8 @@
 
 #include <chrono>
 
+#include <QWebEnginePage>
+
 // for pie chart in tooltip
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -752,6 +754,8 @@ void DualViewPlugin::init()
     _client = new EnrichmentAnalysis(this);
     connect(_client, &EnrichmentAnalysis::enrichmentDataReady, this, &DualViewPlugin::updateEnrichmentTable);
     connect(_client, &EnrichmentAnalysis::enrichmentDataNotExists, this, &DualViewPlugin::noDataEnrichmentTable);
+
+    connect(_client, &EnrichmentAnalysis::genesFromGOtermDataReady, this, &DualViewPlugin::highlightGOTermGenesInEmbedding);
 }
 
 void DualViewPlugin::update1DEmbeddingPositions(bool isA)
@@ -2387,7 +2391,12 @@ void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) {
 
     for (const QVariant& item : limitedData) {
         QVariantMap dataMap = item.toMap();
-        tableHtml += "<tr>";
+        QString termID = dataMap["Term ID"].toString();
+
+        //tableHtml += "<tr>";
+        
+        // enable click on row
+        tableHtml += QString("<tr onclick='rowClicked(\"%1\")' style='cursor:pointer;'>").arg(termID);
 
         for (const QString& key : headers) {
             QString value = dataMap[key].toString();
@@ -2401,7 +2410,6 @@ void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) {
                 }
             }
 
-
             tableHtml += "<td style='padding: 5px; text-align: left; width: auto;'>" + value + "</td>";
         }
 
@@ -2410,7 +2418,19 @@ void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) {
 
     tableHtml += "</table>";
 
-	// Send table HTML as part of Sample Scope Context
+    // TEST js function to send term ID to qt
+    QString jsScript =
+        "<script>"
+        "function rowClicked(termID) {"
+        "   if (typeof qt !== 'undefined') {"
+        "       qt.onTermIDClicked(termID);"
+        "   } else {"
+        "       console.log('Term ID clicked:', termID);"
+        "   }"
+        "}"
+        "</script>";
+
+
 	getSamplerAction().setSampleContext({
 		{ "ASelected", _isEmbeddingASelected },
 		{ "ColorDatasetID", _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId() },
@@ -2418,19 +2438,38 @@ void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) {
 		{ "labels", _labels }, // For proportion chart
 		{ "data", _data }, // For proportion chart
 		{ "backgroundColors", _backgroundColors }, // For proportion chart
-		{ "EnrichmentTable", tableHtml } // Send the table as HTML
+		{ "EnrichmentTable", tableHtml } // TODO: directly send html or send data and generate html there?
 		});
 
 	qDebug() << "updateEnrichmentTable(): Table sent to Sample Scope (max 10 rows).";
 
-
-
-
+    retrieveGOtermGenes("GO:0007507");
 }
 
 void DualViewPlugin::noDataEnrichmentTable() 
 {
     qDebug() << "DualViewPlugin::noDataEnrichmentTable()";
+}
+
+void DualViewPlugin::retrieveGOtermGenes(const QString& GOTermId)
+{
+	qDebug() << "DualViewPlugin::retrieveGOtermGeneSet()";
+
+    _client->postGOtermGprofiler(GOTermId, _currentEnrichmentSpecies);
+
+}
+
+void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& data)
+{
+	qDebug() << "DualViewPlugin::updateGOtermGenes()";
+
+    qDebug() << "data.size() = " << data.size();
+
+    // check which genes exist in the dataset
+
+
+    // highlight the genes in the embedding
+	
 }
 
 

@@ -316,3 +316,76 @@ void EnrichmentAnalysis::handleEnrichmentReplyGprofiler() {
     reply->deleteLater();
 }
 
+
+void EnrichmentAnalysis::postGOtermGprofiler(const QString& GOTermId, const QString& species) {
+	//qDebug() << "gprofiler begin...";
+
+	QUrl url("https://biit.cs.ut.ee/gprofiler/api/convert/convert/");
+
+	QJsonObject json;
+	json["organism"] = species; // TO DO: hard-coded for mouse dataset
+	json["target"] = QJsonArray({ "ENSG" }); // FIXME: hard-coded 
+	json["query"] = QJsonArray({ GOTermId });
+
+	QJsonDocument document(json);
+	QByteArray jsonData = document.toJson();
+
+	QNetworkRequest request(url);
+	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+	QNetworkReply* reply = networkManager->post(request, jsonData);
+	connect(reply, &QNetworkReply::finished, this, &EnrichmentAnalysis::handleGOtermReplyGprofiler);
+}
+
+void EnrichmentAnalysis::handleGOtermReplyGprofiler()
+{
+    QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender());
+
+    //qDebug() << "start to handle gprofiler reply...";
+
+    if (reply && reply->error() == QNetworkReply::NoError) {
+        QByteArray responseData = reply->readAll();
+
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
+        // qDebug() << jsonDoc.toJson(QJsonDocument::Indented); // output the entire response
+
+        QJsonObject jsonObject = jsonDoc.object();
+
+        QVariantList geneNames;
+
+        if (jsonObject.contains("result") && jsonObject["result"].isArray()) 
+        {
+            QJsonArray resultsArray = jsonObject["result"].toArray();
+
+            for (const QJsonValue& value : resultsArray) 
+            {
+                QJsonObject resultObj = value.toObject();
+
+                if (resultObj.contains("name")) {
+                    QString geneName = resultObj["name"].toString();
+                    geneNames.append(geneName);
+                }
+            }
+
+            qDebug() << "Extracted Gene Names:" << geneNames;
+
+            emit genesFromGOtermDataReady(geneNames);
+
+          /*  if (validResultsFound) {
+                emit enrichmentDataReady(outputList);
+            }
+            else {
+                qDebug() << "Gprofiler reply warning: no result found";
+                emit enrichmentDataNotExists();
+            }*/
+        }
+        else {
+            qDebug() << "Gprofiler GO term convert reply warning: no result key found";
+        }
+    }
+    else {
+        qDebug() << "Gprofiler GO term convert reply error:" << reply->errorString();
+    }
+    reply->deleteLater();
+}
+

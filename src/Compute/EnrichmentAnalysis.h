@@ -22,10 +22,15 @@ public:
     // gProfiler
     void postGeneGprofiler(const QStringList& query, const QStringList& background, const QString& species); // const QStringList& query, const QStringList& background gprofiler
 
+    // gProfiler post GO term ID and get gene list
+    void postGOtermGprofiler(const QString& GOTermId, const QString& species);
+
 signals:
     void enrichmentDataReady(const QVariantList& outputList);
 
     void enrichmentDataNotExists();
+
+    void genesFromGOtermDataReady(const QVariantList& outputList);
 
 private slots:
     // ToppGene
@@ -34,6 +39,8 @@ private slots:
 
     // gProfiler
     void handleEnrichmentReplyGprofiler();
+
+    void handleGOtermReplyGprofiler();
 
 private:
     QNetworkAccessManager* networkManager;  

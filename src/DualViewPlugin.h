@@ -107,6 +107,10 @@ private:
 
     void noDataEnrichmentTable();
 
+    void retrieveGOtermGenes(const QString& GOTermId);
+
+    void highlightGOTermGenesInEmbedding(const QVariantList& data);
+
 protected:
 
     void embeddingDatasetAChanged(); // if use generic function, many input needed
