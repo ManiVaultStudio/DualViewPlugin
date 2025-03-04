@@ -2443,7 +2443,10 @@ void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) {
 
 	qDebug() << "updateEnrichmentTable(): Table sent to Sample Scope (max 10 rows).";
 
-    retrieveGOtermGenes("GO:0007507");
+    //QString test = "GO:0019864";
+    QString test = limitedData[0].toMap()["Term ID"].toString();
+    qDebug() << "DualViewPlugin::updateEnrichmentTable() test" << test; 
+    retrieveGOtermGenes(test);
 }
 
 void DualViewPlugin::noDataEnrichmentTable() 
@@ -2453,22 +2456,71 @@ void DualViewPlugin::noDataEnrichmentTable()
 
 void DualViewPlugin::retrieveGOtermGenes(const QString& GOTermId)
 {
-	qDebug() << "DualViewPlugin::retrieveGOtermGeneSet()";
+    qDebug() << "DualViewPlugin::retrieveGOtermGeneSet()" << GOTermId << "species" << _currentEnrichmentSpecies;
 
     _client->postGOtermGprofiler(GOTermId, _currentEnrichmentSpecies);
 
 }
 
-void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& data)
+void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSymbols)
 {
 	qDebug() << "DualViewPlugin::updateGOtermGenes()";
 
-    qDebug() << "data.size() = " << data.size();
+    qDebug() << "geneSymbols.size() = " << geneSymbols.size();
 
     // check which genes exist in the dataset
+    // find the gene index in the current embedding B source dataset dimensions
+    const std::vector<QString> allDimensionNames = _embeddingSourceDatasetB->getDimensionNames();
+
+    QList<int> indices;
 
 
-    // highlight the genes in the embedding
+    int numNotFoundGenes = 0;
+    for (int i = 0; i < geneSymbols.size(); i++)//geneSymbols.size()
+    {
+        QString gene = geneSymbols[i].toString();
+        bool found = false;
+        for (int j = 0; j < allDimensionNames.size(); j++)
+        {
+            if (allDimensionNames[j] == gene)
+            {
+                indices.append(j);
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            //qDebug() << "highlightInputGenes: Gene not found: " << gene;
+            numNotFoundGenes++;
+        }
+    }
+
+    QStringList geneStringList;
+    for (int i = 0; i < geneSymbols.size(); i++) {
+        geneStringList << geneSymbols[i].toString();
+    }
+
+    qDebug() << "Gene symbols:" << geneStringList.join(", ");
+
+
+
+    qDebug() << "highlightGOTermGenesInEmbedding: " << geneSymbols.size() << " genes, " << numNotFoundGenes << " not found";
+
+
+    if (indices.isEmpty())
+        return;
+
+    //qDebug() << "highlightInputGenes() indices size" << indices.size();
+
+    // set the selected indices to 1 in highlights
+    std::vector<char> highlights(_embeddingPositionsA.size(), 0);
+    for (int i = 0; i < indices.size(); i++)
+    {
+        highlights[indices[i]] = 1;
+    }
+
+    _embeddingWidgetA->setHighlights(highlights, 1);
 	
 }
 

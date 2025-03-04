@@ -318,13 +318,14 @@ void EnrichmentAnalysis::handleEnrichmentReplyGprofiler() {
 
 
 void EnrichmentAnalysis::postGOtermGprofiler(const QString& GOTermId, const QString& species) {
-	//qDebug() << "gprofiler begin...";
+	qDebug() << "gprofiler begin...";
 
 	QUrl url("https://biit.cs.ut.ee/gprofiler/api/convert/convert/");
 
 	QJsonObject json;
 	json["organism"] = species; // TO DO: hard-coded for mouse dataset
-	json["target"] = QJsonArray({ "ENSG" }); // FIXME: hard-coded 
+    //json["organism"] = "hsapiens"; // TO DO: hard-coded for human dataset
+	json["target"] = "ENSG"; // FIXME: hard-coded 
 	json["query"] = QJsonArray({ GOTermId });
 
 	QJsonDocument document(json);
@@ -332,6 +333,9 @@ void EnrichmentAnalysis::postGOtermGprofiler(const QString& GOTermId, const QStr
 
 	QNetworkRequest request(url);
 	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    qDebug() << "GO term request:" << GOTermId;
+    qDebug() << jsonData;
 
 	QNetworkReply* reply = networkManager->post(request, jsonData);
 	connect(reply, &QNetworkReply::finished, this, &EnrichmentAnalysis::handleGOtermReplyGprofiler);
@@ -341,7 +345,7 @@ void EnrichmentAnalysis::handleGOtermReplyGprofiler()
 {
     QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender());
 
-    //qDebug() << "start to handle gprofiler reply...";
+    qDebug() << "start to handle gprofiler reply...";
 
     if (reply && reply->error() == QNetworkReply::NoError) {
         QByteArray responseData = reply->readAll();

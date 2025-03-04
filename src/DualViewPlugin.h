@@ -109,7 +109,7 @@ private:
 
     void retrieveGOtermGenes(const QString& GOTermId);
 
-    void highlightGOTermGenesInEmbedding(const QVariantList& data);
+    void highlightGOTermGenesInEmbedding(const QVariantList& geneSymbols);
 
 protected:
 
