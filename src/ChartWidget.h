@@ -28,10 +28,13 @@ signals:
     // Used to inform the plugin about new selection: the plugin class then updates ManiVault's core
     void passSelectionToCore(const std::vector<unsigned int>& selectionIDs);
 
+    void goTermClicked(const QString& goTermID);
+
 public slots:
     // Invoked from JS side 
     // Used to receive selection IDs from the D3 plot, will emit passSelectionToCore
-    void js_qt_passSelectionToQt(const QVariantList& data);
+    //void js_qt_passSelectionToQt(const QVariantList& data);
+    void js_qt_passSelectionToQt(const QString& goTermID);
 
 private:
     std::vector<unsigned int> _selectedIDsFromJS;   // Used for converting incoming selection IDs from the js side
@@ -54,6 +57,9 @@ private slots:
     /** Is invoked when the js side calls js_available of the mv::gui::WebCommunicationObject (ChartCommObject) 
         js_available emits notifyJsBridgeIsAvailable, which is conencted to this slot in WebWidget.cpp*/
     void initWebPage() override;
+
+private:
+    void handleGOTermSelection(const QString& goTermID);
 
 private:
     DualViewPlugin*  _viewJSPlugin;    // Pointer to the main plugin class

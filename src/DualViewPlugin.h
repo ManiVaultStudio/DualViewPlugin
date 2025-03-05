@@ -55,6 +55,8 @@ public:
 
     void getEnrichmentAnalysis();
 
+    void retrieveGOtermGenes(const QString& GOTermId);
+
 
 private:
     QString getCurrentEmebeddingDataSetID(mv::Dataset<Points> dataset) const;
@@ -107,7 +109,7 @@ private:
 
     void noDataEnrichmentTable();
 
-    void retrieveGOtermGenes(const QString& GOTermId);
+   
 
     void highlightGOTermGenesInEmbedding(const QVariantList& geneSymbols);
 

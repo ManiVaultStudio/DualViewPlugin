@@ -23,6 +23,8 @@
 #include <chrono>
 
 #include <QWebEnginePage>
+#include <QWebEngineView>
+#include <QWebChannel>
 
 // for pie chart in tooltip
 #ifndef M_PI
@@ -325,231 +327,494 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
 
     getSamplerAction().initialize(this, &selectionAction.getPixelSelectionAction(), &selectionAction.getSamplerPixelSelectionAction());
 
-    getSamplerAction().setViewGeneratorFunction([this](const ViewPluginSamplerAction::SampleContext& toolTipContext) -> QString {
-        if (!toolTipContext.contains("ASelected"))
-            return {};
+    //getSamplerAction().setViewGeneratorFunction([this](const ViewPluginSamplerAction::SampleContext& toolTipContext) -> QString {
+    //    if (!toolTipContext.contains("ASelected"))
+    //        return {};
 
-        auto ASelected = toolTipContext["ASelected"].toBool();  
+    //    auto ASelected = toolTipContext["ASelected"].toBool();  
    
-        // Build the HTML string
-        QString html = "<html><head><style>"
-            "body { font-family: Arial; }"
-            ".legend { list-style: none; padding: 0; }"
-            ".legend li { display: flex; align-items: center; margin-bottom: 5px; }"
-            ".legend-color { width: 16px; height: 16px; display: inline-block; margin-right: 5px; }"
-            "</style></head><body>";
-      
-        // return the gene symbols 
-        assert(_embeddingDatasetA->getNumPoints() == _embeddingSourceDatasetB->getNumDimensions());
+    //    // Build the HTML string
+    //    QString html = "<html><head><style>"
+    //        "body { font-family: Arial; }"
+    //        ".legend { list-style: none; padding: 0; }"
+    //        ".legend li { display: flex; align-items: center; margin-bottom: 5px; }"
+    //        ".legend-color { width: 16px; height: 16px; display: inline-block; margin-right: 5px; }"
+    //        "</style></head><body>";
+    //  
+    //    // return the gene symbols 
+    //    assert(_embeddingDatasetA->getNumPoints() == _embeddingSourceDatasetB->getNumDimensions());
 
-        std::vector<QString> dimensionNames = _embeddingSourceDatasetB->getDimensionNames(); // TODO: hardcode, assume embedding A is gene map and embedding B stores all the genes in A
+    //    std::vector<QString> dimensionNames = _embeddingSourceDatasetB->getDimensionNames(); // TODO: hardcode, assume embedding A is gene map and embedding B stores all the genes in A
 
-        // show first 80 genes and the rest in expandable box
-        QStringList geneSymbols;
-        QStringList additionalSymbols;
-        bool hasMoreThan80 = false;
+    //    // show first 80 genes and the rest in expandable box
+    //    QStringList geneSymbols;
+    //    QStringList additionalSymbols;
+    //    bool hasMoreThan80 = false;
 
-        for (const auto& globalPointIndex : toolTipContext["GlobalPointIndices"].toList())
-        {
-            QString geneSymbol = dimensionNames[globalPointIndex.toInt()];
-            if (geneSymbols.size() < 80) 
-            {
-                geneSymbols << geneSymbol;
-            }
-            else 
-            {
-                hasMoreThan80 = true;
-                additionalSymbols << geneSymbol;
-            }
-        }
+    //    for (const auto& globalPointIndex : toolTipContext["GlobalPointIndices"].toList())
+    //    {
+    //        QString geneSymbol = dimensionNames[globalPointIndex.toInt()];
+    //        if (geneSymbols.size() < 80) 
+    //        {
+    //            geneSymbols << geneSymbol;
+    //        }
+    //        else 
+    //        {
+    //            hasMoreThan80 = true;
+    //            additionalSymbols << geneSymbol;
+    //        }
+    //    }
 
-        QString outputText;
-        QString chartTitle;
-        QString additionalGenesHtml;
+    //    QString outputText;
+    //    QString chartTitle;
+    //    QString additionalGenesHtml;
 
-        if (hasMoreThan80) 
-        {
-            additionalGenesHtml = QString(            
-                "<details><summary style='font-size:14px; cursor:pointer;'>and more... </summary>"
-                "<p style='font-size:14px;'>%1</p>"
-                "</details>")
-                .arg(additionalSymbols.join(", "));
-        }
+    //    if (hasMoreThan80) 
+    //    {
+    //        additionalGenesHtml = QString(            
+    //            "<details><summary style='font-size:14px; cursor:pointer;'>and more... </summary>"
+    //            "<p style='font-size:14px;'>%1</p>"
+    //            "</details>")
+    //            .arg(additionalSymbols.join(", "));
+    //    }
 
-        if (ASelected) {
-            outputText = QString(
-                "<p style='font-size:14px;'>Gene embedding is selected.</p>"
-                "<table style='font-size:14px;'>"
-                "<tr>"
-                "<td><b>Selected Genes: </b></td>"
-                "<td>%1 %2</td>"  // add the expandable section right inside the same <td>
-                "</tr>"
-                "</table>"
-                "<p style='font-size:12px; color:#377fe4;'>"
-                "Click the 'Enrich' button in the gene panel for more details.</p>"
-            )
-                .arg(geneSymbols.join(", "))
-                .arg(additionalGenesHtml);  // append the expandable section here
+    //    if (ASelected) {
+    //        outputText = QString(
+    //            "<p style='font-size:14px;'>Gene embedding is selected.</p>"
+    //            "<table style='font-size:14px;'>"
+    //            "<tr>"
+    //            "<td><b>Selected Genes: </b></td>"
+    //            "<td>%1 %2</td>"  // add the expandable section right inside the same <td>
+    //            "</tr>"
+    //            "</table>"
+    //            "<p style='font-size:12px; color:#377fe4;'>"
+    //            "Click the 'Enrich' button in the gene panel for more details.</p>"
+    //        )
+    //            .arg(geneSymbols.join(", "))
+    //            .arg(additionalGenesHtml);  // append the expandable section here
 
-            chartTitle = "<b>Connected cell proportion (10% highest expression of avg. selected genes)</b>";
-        }
-        else {
-            outputText = QString(
-                "<p style='font-size:14px;'>Cell embedding is selected.</p>"
-                "<table style='font-size:14px;'>"
-                "<tr>"
-                "<td><b>Connected Genes: </b></td>"
-                "<td>%1 %2</td>"  // add the expandable section right inside the same <td>
-                "</tr>"
-                "</table>"
-                "<p style='font-size:12px; color:#377fe4;'>"
-                "Click the 'Enrich' button in the gene panel for more details.</p>"
-            )
-                .arg(geneSymbols.join(", "))
-                .arg(additionalGenesHtml);
+    //        chartTitle = "<b>Connected cell proportion (10% highest expression of avg. selected genes)</b>";
+    //    }
+    //    else {
+    //        outputText = QString(
+    //            "<p style='font-size:14px;'>Cell embedding is selected.</p>"
+    //            "<table style='font-size:14px;'>"
+    //            "<tr>"
+    //            "<td><b>Connected Genes: </b></td>"
+    //            "<td>%1 %2</td>"  // add the expandable section right inside the same <td>
+    //            "</tr>"
+    //            "</table>"
+    //            "<p style='font-size:12px; color:#377fe4;'>"
+    //            "Click the 'Enrich' button in the gene panel for more details.</p>"
+    //        )
+    //            .arg(geneSymbols.join(", "))
+    //            .arg(additionalGenesHtml);
 
-            chartTitle = "<b>Cell proportion</b>";
-        }
+    //        chartTitle = "<b>Cell proportion</b>";
+    //    }
 
-        // get current color dataset B name
-        QString colorDatasetID = toolTipContext["ColorDatasetID"].toString();
-        QString colorDatasetName;
-        QString colorDatasetIntro;
+    //    // get current color dataset B name
+    //    QString colorDatasetID = toolTipContext["ColorDatasetID"].toString();
+    //    QString colorDatasetName;
+    //    QString colorDatasetIntro;
 
-        if (colorDatasetID.isEmpty())
-        {           
-            html += "<p>" + outputText + "</p>";
-        }
-        else
-        {
-            colorDatasetName = mv::data().getDataset(colorDatasetID)->getGuiName();
-            colorDatasetIntro = QString("Cell embedding coloring by %1").arg(colorDatasetName);
+    //    if (colorDatasetID.isEmpty())
+    //    {           
+    //        html += "<p>" + outputText + "</p>";
+    //    }
+    //    else
+    //    {
+    //        colorDatasetName = mv::data().getDataset(colorDatasetID)->getGuiName();
+    //        colorDatasetIntro = QString("Cell embedding coloring by %1").arg(colorDatasetName);
 
-            QVariantList labelsVarList = toolTipContext["labels"].toList();
-            QVariantList dataVarList = toolTipContext["data"].toList();
-            QVariantList backgroundColorsVarList = toolTipContext["backgroundColors"].toList();
+    //        QVariantList labelsVarList = toolTipContext["labels"].toList();
+    //        QVariantList dataVarList = toolTipContext["data"].toList();
+    //        QVariantList backgroundColorsVarList = toolTipContext["backgroundColors"].toList();
 
-            QStringList labels;
-            QVector<double> counts;
-            QStringList backgroundColors;
+    //        QStringList labels;
+    //        QVector<double> counts;
+    //        QStringList backgroundColors;
 
-            // Convert labels
-            for (const QVariant& labelVar : labelsVarList) {
-                labels << labelVar.toString();
-            }
+    //        // Convert labels
+    //        for (const QVariant& labelVar : labelsVarList) {
+    //            labels << labelVar.toString();
+    //        }
 
-            // Convert data to numbers and calculate total sum
-            double totalCount = 0.0;
-            for (const QVariant& dataVar : dataVarList) {
-                double value = dataVar.toDouble();
-                counts.append(value);
-                totalCount += value;
-            }
+    //        // Convert data to numbers and calculate total sum
+    //        double totalCount = 0.0;
+    //        for (const QVariant& dataVar : dataVarList) {
+    //            double value = dataVar.toDouble();
+    //            counts.append(value);
+    //            totalCount += value;
+    //        }
 
-            // Convert background colors
-            for (const QVariant& colorVar : backgroundColorsVarList) {
-                QString colorStr = colorVar.toString();
-                // Remove any extra quotes around the color codes
-                if (colorStr.startsWith("'") && colorStr.endsWith("'")) {
-                    colorStr = colorStr.mid(1, colorStr.length() - 2);
-                }
-                backgroundColors << colorStr;
-            }
+    //        // Convert background colors
+    //        for (const QVariant& colorVar : backgroundColorsVarList) {
+    //            QString colorStr = colorVar.toString();
+    //            // Remove any extra quotes around the color codes
+    //            if (colorStr.startsWith("'") && colorStr.endsWith("'")) {
+    //                colorStr = colorStr.mid(1, colorStr.length() - 2);
+    //            }
+    //            backgroundColors << colorStr;
+    //        }
 
-            html += outputText; // font size al set in the table style
-            html += QString("<p style='font-size:14px;'>%1</p>").arg(colorDatasetIntro);
-            html += QString("<p style='font-size:14px;'>%1</p>").arg(chartTitle);
+    //        html += outputText; // font size al set in the table style
+    //        html += QString("<p style='font-size:14px;'>%1</p>").arg(colorDatasetIntro);
+    //        html += QString("<p style='font-size:14px;'>%1</p>").arg(chartTitle);
 
-            // dimensions for the stacked bar
-            int barWidth = 50;   
-            int barHeight = 200; 
+    //        // dimensions for the stacked bar
+    //        int barWidth = 50;   
+    //        int barHeight = 200; 
 
-            int svgWidth = barWidth + 300;
+    //        int svgWidth = barWidth + 300;
 
-            html += QString("<svg width='%1' height='%2' style='border:none;'>")
-                .arg(svgWidth)
-                .arg(barHeight);
+    //        html += QString("<svg width='%1' height='%2' style='border:none;'>")
+    //            .arg(svgWidth)
+    //            .arg(barHeight);
 
-            if (counts.size() == 1) {
-                // if there's only one category, fill the entire bar
-                html += QString("<rect x='0' y='0' width='%1' height='%2' fill='%3' stroke='none'></rect>")
-                    .arg(barWidth)
-                    .arg(barHeight)
-                    .arg(backgroundColors[0]);
+    //        if (counts.size() == 1) {
+    //            // if there's only one category, fill the entire bar
+    //            html += QString("<rect x='0' y='0' width='%1' height='%2' fill='%3' stroke='none'></rect>")
+    //                .arg(barWidth)
+    //                .arg(barHeight)
+    //                .arg(backgroundColors[0]);
 
-                double labelX = barWidth + 5;
-                double labelY = barHeight / 2.0;
+    //            double labelX = barWidth + 5;
+    //            double labelY = barHeight / 2.0;
 
-                html += QString(
-                    "<text x='%1' y='%2' font-family='Arial' font-size='12' "
-                    "fill='black' text-anchor='start' alignment-baseline='middle'>"
-                    "%3</text>")
-                    .arg(labelX)
-                    .arg(labelY)
-                    .arg(labels[0]);
-            }
-            else {
-                // if multiple categories, stack them vertically
-                double yOffset = 0.0; 
+    //            html += QString(
+    //                "<text x='%1' y='%2' font-family='Arial' font-size='12' "
+    //                "fill='black' text-anchor='start' alignment-baseline='middle'>"
+    //                "%3</text>")
+    //                .arg(labelX)
+    //                .arg(labelY)
+    //                .arg(labels[0]);
+    //        }
+    //        else {
+    //            // if multiple categories, stack them vertically
+    //            double yOffset = 0.0; 
 
-                for (int i = 0; i < counts.size(); ++i) {
-                    double proportion = counts[i] / totalCount;
-                    double sliceHeight = proportion * barHeight;
+    //            for (int i = 0; i < counts.size(); ++i) {
+    //                double proportion = counts[i] / totalCount;
+    //                double sliceHeight = proportion * barHeight;
 
-                    html += QString("<rect x='0' y='%1' width='%2' height='%3' " "fill='%4' stroke='white' stroke-width='1'></rect>")
-                        .arg(yOffset)
-                        .arg(barWidth)
-                        .arg(sliceHeight)
-                        .arg(backgroundColors[i]);
+    //                html += QString("<rect x='0' y='%1' width='%2' height='%3' " "fill='%4' stroke='white' stroke-width='1'></rect>")
+    //                    .arg(yOffset)
+    //                    .arg(barWidth)
+    //                    .arg(sliceHeight)
+    //                    .arg(backgroundColors[i]);
 
-                    // whether to show labels
-                    double minPixelsForLabel = 10.0;
-                    if (sliceHeight >= minPixelsForLabel)
-                    {
-                        double labelX = barWidth + 5;
-                        double labelY = yOffset + (sliceHeight / 2.0);
+    //                // whether to show labels
+    //                double minPixelsForLabel = 10.0;
+    //                if (sliceHeight >= minPixelsForLabel)
+    //                {
+    //                    double labelX = barWidth + 5;
+    //                    double labelY = yOffset + (sliceHeight / 2.0);
 
-                        double percentage = (counts[i] / totalCount) * 100.0;
+    //                    double percentage = (counts[i] / totalCount) * 100.0;
 
-                        QString labelText = QString("%1 (%2%)").arg(labels[i])
-                            .arg(QString::number(percentage, 'f', 1));
+    //                    QString labelText = QString("%1 (%2%)").arg(labels[i])
+    //                        .arg(QString::number(percentage, 'f', 1));
 
-                        html += QString(
-                            "<text x='%1' y='%2' font-family='Arial' font-size='12' "
-                            "fill='black' text-anchor='start' alignment-baseline='middle'>"
-                            "%3</text>")
-                            .arg(labelX)
-                            .arg(labelY)
-                            .arg(labelText);
-                    }
+    //                    html += QString(
+    //                        "<text x='%1' y='%2' font-family='Arial' font-size='12' "
+    //                        "fill='black' text-anchor='start' alignment-baseline='middle'>"
+    //                        "%3</text>")
+    //                        .arg(labelX)
+    //                        .arg(labelY)
+    //                        .arg(labelText);
+    //                }
 
-                    yOffset += sliceHeight;
-                }
-            }
+    //                yOffset += sliceHeight;
+    //            }
+    //        }
 
-            html += "</svg>";
+    //        html += "</svg>";
 
-        }
+    //    }
 
-        // test table
-        if (toolTipContext.contains("EnrichmentTable"))
-        {
-            html += "<p style='font-size:14px;'>Test Here...</p>";
+    //    // test table
+    //    if (toolTipContext.contains("EnrichmentTable"))
+    //    {
+    //        html += "<p style='font-size:14px;'>Test Here...</p>";
 
-            QString tableHtml = toolTipContext["EnrichmentTable"].toString();
+    //        QString tableHtml = toolTipContext["EnrichmentTable"].toString();
 
-            if (!tableHtml.isEmpty()) {
-                html += "<p style='font-size:14px; font-weight:bold;'>Top 10 Enrichment Results:</p>";
-                html += tableHtml;
-            }
-        }
+    //        if (!tableHtml.isEmpty()) {
+    //            html += "<p style='font-size:14px; font-weight:bold;'>Top 10 Enrichment Results:</p>";
+    //            html += tableHtml;
+    //        }
+    //    }
 
 
-        html += "</body></html>";
+    //    html += "</body></html>";
+    //    
+    //    return html;
+
+    //});
+
+
+    auto widget = new QWebEngineView();
+    auto channel = new QWebChannel(widget->page());
+    auto bridge = new ChartCommObject();
+    channel->registerObject("qtBridge", bridge);
+    widget->page()->setWebChannel(channel);
+
+    qDebug() << "Loading chart widget";
+
+    //widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    connect(bridge, &ChartCommObject::goTermClicked, this, [this](const QString& goTermID) {
+        qDebug() << "Ding-dong";
+        retrieveGOtermGenes(goTermID);
+		});
+
+    
+    getSamplerAction().setWidgetViewGeneratorFunction([this, widget](const ViewPluginSamplerAction::SampleContext& toolTipContext) -> QWidget* {
         
-        return html;
 
-    });
+            if (!toolTipContext.contains("ASelected"))
+           return {};
+
+       auto ASelected = toolTipContext["ASelected"].toBool();  
+
+       // Build the HTML string
+       QString html = "<html><head><style>"
+           "body { font-family: Arial; }"
+           ".legend { list-style: none; padding: 0; }"
+           ".legend li { display: flex; align-items: center; margin-bottom: 5px; }"
+           ".legend-color { width: 16px; height: 16px; display: inline-block; margin-right: 5px; }"
+           "</style></head><body>";
+     
+       // return the gene symbols 
+       assert(_embeddingDatasetA->getNumPoints() == _embeddingSourceDatasetB->getNumDimensions());
+
+       std::vector<QString> dimensionNames = _embeddingSourceDatasetB->getDimensionNames(); // TODO: hardcode, assume embedding A is gene map and embedding B stores all the genes in A
+
+       // show first 80 genes and the rest in expandable box
+       QStringList geneSymbols;
+       QStringList additionalSymbols;
+       bool hasMoreThan80 = false;
+
+       for (const auto& globalPointIndex : toolTipContext["GlobalPointIndices"].toList())
+       {
+           QString geneSymbol = dimensionNames[globalPointIndex.toInt()];
+           if (geneSymbols.size() < 80) 
+           {
+               geneSymbols << geneSymbol;
+           }
+           else 
+           {
+               hasMoreThan80 = true;
+               additionalSymbols << geneSymbol;
+           }
+       }
+
+       QString outputText;
+       QString chartTitle;
+       QString additionalGenesHtml;
+
+       if (hasMoreThan80) 
+       {
+           additionalGenesHtml = QString(            
+               "<details><summary style='font-size:14px; cursor:pointer;'>and more... </summary>"
+               "<p style='font-size:14px;'>%1</p>"
+               "</details>")
+               .arg(additionalSymbols.join(", "));
+       }
+
+       if (ASelected) {
+           outputText = QString(
+               "<p style='font-size:14px;'>Gene embedding is selected.</p>"
+               "<table style='font-size:14px;'>"
+               "<tr>"
+               "<td><b>Selected Genes: </b></td>"
+               "<td>%1 %2</td>"  // add the expandable section right inside the same <td>
+               "</tr>"
+               "</table>"
+               "<p style='font-size:12px; color:#377fe4;'>"
+               "Click the 'Enrich' button in the gene panel for more details.</p>"
+           )
+               .arg(geneSymbols.join(", "))
+               .arg(additionalGenesHtml);  // append the expandable section here
+
+           chartTitle = "<b>Connected cell proportion (10% highest expression of avg. selected genes)</b>";
+       }
+       else {
+           outputText = QString(
+               "<p style='font-size:14px;'>Cell embedding is selected.</p>"
+               "<table style='font-size:14px;'>"
+               "<tr>"
+               "<td><b>Connected Genes: </b></td>"
+               "<td>%1 %2</td>"  // add the expandable section right inside the same <td>
+               "</tr>"
+               "</table>"
+               "<p style='font-size:12px; color:#377fe4;'>"
+               "Click the 'Enrich' button in the gene panel for more details.</p>"
+           )
+               .arg(geneSymbols.join(", "))
+               .arg(additionalGenesHtml);
+
+           chartTitle = "<b>Cell proportion</b>";
+       }
+
+       // get current color dataset B name
+       QString colorDatasetID = toolTipContext["ColorDatasetID"].toString();
+       QString colorDatasetName;
+       QString colorDatasetIntro;
+
+       if (colorDatasetID.isEmpty())
+       {           
+           html += "<p>" + outputText + "</p>";
+       }
+       else
+       {
+           colorDatasetName = mv::data().getDataset(colorDatasetID)->getGuiName();
+           colorDatasetIntro = QString("Cell embedding coloring by %1").arg(colorDatasetName);
+
+           QVariantList labelsVarList = toolTipContext["labels"].toList();
+           QVariantList dataVarList = toolTipContext["data"].toList();
+           QVariantList backgroundColorsVarList = toolTipContext["backgroundColors"].toList();
+
+           QStringList labels;
+           QVector<double> counts;
+           QStringList backgroundColors;
+
+           // Convert labels
+           for (const QVariant& labelVar : labelsVarList) {
+               labels << labelVar.toString();
+           }
+
+           // Convert data to numbers and calculate total sum
+           double totalCount = 0.0;
+           for (const QVariant& dataVar : dataVarList) {
+               double value = dataVar.toDouble();
+               counts.append(value);
+               totalCount += value;
+           }
+
+           // Convert background colors
+           for (const QVariant& colorVar : backgroundColorsVarList) {
+               QString colorStr = colorVar.toString();
+               // Remove any extra quotes around the color codes
+               if (colorStr.startsWith("'") && colorStr.endsWith("'")) {
+                   colorStr = colorStr.mid(1, colorStr.length() - 2);
+               }
+               backgroundColors << colorStr;
+           }
+
+           html += outputText; // font size al set in the table style
+           html += QString("<p style='font-size:14px;'>%1</p>").arg(colorDatasetIntro);
+           html += QString("<p style='font-size:14px;'>%1</p>").arg(chartTitle);
+
+           // dimensions for the stacked bar
+           int barWidth = 50;   
+           int barHeight = 200; 
+
+           int svgWidth = barWidth + 300;
+
+           html += QString("<svg width='%1' height='%2' style='border:none;'>")
+               .arg(svgWidth)
+               .arg(barHeight);
+
+           if (counts.size() == 1) {
+               // if there's only one category, fill the entire bar
+               html += QString("<rect x='0' y='0' width='%1' height='%2' fill='%3' stroke='none'></rect>")
+                   .arg(barWidth)
+                   .arg(barHeight)
+                   .arg(backgroundColors[0]);
+
+               double labelX = barWidth + 5;
+               double labelY = barHeight / 2.0;
+
+               html += QString(
+                   "<text x='%1' y='%2' font-family='Arial' font-size='12' "
+                   "fill='black' text-anchor='start' alignment-baseline='middle'>"
+                   "%3</text>")
+                   .arg(labelX)
+                   .arg(labelY)
+                   .arg(labels[0]);
+           }
+           else {
+               // if multiple categories, stack them vertically
+               double yOffset = 0.0; 
+
+               for (int i = 0; i < counts.size(); ++i) {
+                   double proportion = counts[i] / totalCount;
+                   double sliceHeight = proportion * barHeight;
+
+                   html += QString("<rect x='0' y='%1' width='%2' height='%3' " "fill='%4' stroke='white' stroke-width='1'></rect>")
+                       .arg(yOffset)
+                       .arg(barWidth)
+                       .arg(sliceHeight)
+                       .arg(backgroundColors[i]);
+
+                   // whether to show labels
+                   double minPixelsForLabel = 10.0;
+                   if (sliceHeight >= minPixelsForLabel)
+                   {
+                       double labelX = barWidth + 5;
+                       double labelY = yOffset + (sliceHeight / 2.0);
+
+                       double percentage = (counts[i] / totalCount) * 100.0;
+
+                       QString labelText = QString("%1 (%2%)").arg(labels[i])
+                           .arg(QString::number(percentage, 'f', 1));
+
+                       html += QString(
+                           "<text x='%1' y='%2' font-family='Arial' font-size='12' "
+                           "fill='black' text-anchor='start' alignment-baseline='middle'>"
+                           "%3</text>")
+                           .arg(labelX)
+                           .arg(labelY)
+                           .arg(labelText);
+                   }
+
+                   yOffset += sliceHeight;
+               }
+           }
+
+           html += "</svg>";
+
+       }
+
+       // test table
+       if (toolTipContext.contains("EnrichmentTable"))
+       {
+           html += "<p style='font-size:14px;'>Test Here...</p>";
+
+           QString tableHtml = toolTipContext["EnrichmentTable"].toString();
+
+           if (!tableHtml.isEmpty()) {
+               html += "<p style='font-size:14px; font-weight:bold;'>Top 10 Enrichment Results:</p>";
+               html += tableHtml;
+           }
+       }
+
+
+       // JavaScript for QWebChannel Integration
+       html += "<script src='qrc:///qtwebchannel/qwebchannel.js'></script>"
+           "<script>"
+           "var qtBridge;"
+           "new QWebChannel(qt.webChannelTransport, function(channel) {"
+           "   qtBridge = channel.objects.qtBridge;"
+           "});"
+           "function rowClicked(goTermID) {"
+           "   console.log('Clicked GO Term:', goTermID);"
+           "   if (qtBridge) {"
+           "       qtBridge.js_qt_passSelectionToQt(goTermID);"
+           "   }"
+           "}"
+           "</script>";
+
+       html += "</body></html>";
+
+
+        widget->setHtml(html);
+        return widget;
+        });
+
+     
 
     getSamplerAction().getEnabledAction().setChecked(false);
     getSamplerAction().setSamplingMode(ViewPluginSamplerAction::SamplingMode::Selection);
@@ -2374,7 +2639,7 @@ void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) {
     QStringList headers = { "Source", "Term ID", "Term Name", "Padj", "Symbol"};
 
 	// Limit data to max 10 rows
-	int maxRows = qMin(10, data.size());
+	int maxRows = qMin(30, data.size());
 	QVariantList limitedData;
 	for (int i = 0; i < maxRows; ++i) {
 		limitedData.append(data[i]);
@@ -2419,7 +2684,7 @@ void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) {
     tableHtml += "</table>";
 
     // TEST js function to send term ID to qt
-    QString jsScript =
+   /* QString jsScript =
         "<script>"
         "function rowClicked(termID) {"
         "   if (typeof qt !== 'undefined') {"
@@ -2428,7 +2693,7 @@ void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) {
         "       console.log('Term ID clicked:', termID);"
         "   }"
         "}"
-        "</script>";
+        "</script>";*/
 
 
 	getSamplerAction().setSampleContext({
@@ -2444,14 +2709,32 @@ void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) {
 	qDebug() << "updateEnrichmentTable(): Table sent to Sample Scope (max 10 rows).";
 
     //QString test = "GO:0019864";
-    QString test = limitedData[0].toMap()["Term ID"].toString();
-    qDebug() << "DualViewPlugin::updateEnrichmentTable() test" << test; 
-    retrieveGOtermGenes(test);
+    //QString test = limitedData[0].toMap()["Term ID"].toString();
+    //qDebug() << "DualViewPlugin::updateEnrichmentTable() test" << test; 
+    //retrieveGOtermGenes(test);
 }
 
 void DualViewPlugin::noDataEnrichmentTable() 
 {
     qDebug() << "DualViewPlugin::noDataEnrichmentTable()";
+
+    // show no data message
+    QString tableHtml = "<table style='font-size:14px; border-collapse: collapse; width:100%; font-family: Arial;' border='1'>"
+		"<tr>"
+		"<th style='padding: 5px; width: auto;'>No GO term available</th>"
+		"</tr>"
+		"</table>";
+
+    getSamplerAction().setSampleContext({
+        { "ASelected", _isEmbeddingASelected },
+        { "ColorDatasetID", _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId() },
+        { "GlobalPointIndices", _globalPointIndices }, // Connected genes
+        { "labels", _labels }, // For proportion chart
+        { "data", _data }, // For proportion chart
+        { "backgroundColors", _backgroundColors }, // For proportion chart
+        { "EnrichmentTable", tableHtml } // TODO: directly send html or send data and generate html there?
+        });
+
 }
 
 void DualViewPlugin::retrieveGOtermGenes(const QString& GOTermId)
