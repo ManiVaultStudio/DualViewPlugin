@@ -565,7 +565,6 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     //widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     connect(bridge, &ChartCommObject::goTermClicked, this, [this](const QString& goTermID) {
-        qDebug() << "Ding-dong";
         retrieveGOtermGenes(goTermID);
 		});
 
@@ -579,12 +578,12 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
        auto ASelected = toolTipContext["ASelected"].toBool();  
 
        // Build the HTML string
-       QString html = "<html><head><style>"
-           "body { font-family: Arial; }"
-           ".legend { list-style: none; padding: 0; }"
-           ".legend li { display: flex; align-items: center; margin-bottom: 5px; }"
-           ".legend-color { width: 16px; height: 16px; display: inline-block; margin-right: 5px; }"
-           "</style></head><body>";
+	   QString html = "<html><head><style>"
+		   "body { font-family: Arial; }"
+		   ".legend { list-style: none; padding: 0; }"
+		   ".legend li { display: flex; align-items: center; margin-bottom: 5px; }"
+		   ".legend-color { width: 16px; height: 16px; display: inline-block; margin-right: 5px; }"
+		   "</style></head><body>";
      
        // return the gene symbols 
        assert(_embeddingDatasetA->getNumPoints() == _embeddingSourceDatasetB->getNumDimensions());
@@ -781,12 +780,12 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
        // test table
        if (toolTipContext.contains("EnrichmentTable"))
        {
-           html += "<p style='font-size:14px;'>Test Here...</p>";
+           html += "<p style='font-size:14px;'>Enrichment Analysis Results</p>";
 
            QString tableHtml = toolTipContext["EnrichmentTable"].toString();
 
            if (!tableHtml.isEmpty()) {
-               html += "<p style='font-size:14px; font-weight:bold;'>Top 10 Enrichment Results:</p>";
+               //html += "<p style='font-size:14px; font-weight:bold;'>Top 10 Enrichment Results:</p>";
                html += tableHtml;
            }
        }
@@ -815,7 +814,6 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
         });
 
      
-
     getSamplerAction().getEnabledAction().setChecked(false);
     getSamplerAction().setSamplingMode(ViewPluginSamplerAction::SamplingMode::Selection);
 
@@ -2804,7 +2802,53 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
     }
 
     _embeddingWidgetA->setHighlights(highlights, 1);
-	
+
+    // FIXME: test to create a dataset containing the gene points - for plotting in a seperate scatter plot
+
+    // test 1. using subset, first remove the previous subset, then create new subset - Problem: this requires to set the highlighting as selection
+    /*std::vector<std::seed_seq::result_type> stdIndices;
+    for (int i = 0; i < indices.size(); i++)
+    {
+		stdIndices.push_back(indices[i]);
+	}
+
+    if (_associatedGenes.isValid())
+    {
+        mv::data().removeDataset(_associatedGenes);
+    }
+    _embeddingDatasetA->setSelectionIndices(stdIndices);
+    events().notifyDatasetDataSelectionChanged(_embeddingDatasetA->getSourceDataset<Points>());
+    _associatedGenes = _embeddingDatasetA->createSubsetFromSelection("AssociatedGenes");
+    events().notifyDatasetAdded(_associatedGenes);*/
+
+    // test 2. using derived dataset - Problem: this is not correctly mapped to the original embedding
+    //_embeddingDatasetA->setGroupIndex(1);
+    //if (!_associatedGenes.isValid())
+    //{
+    //    _associatedGenes = mv::data().createDerivedDataset("AssociatedGenes", _embeddingDatasetA);
+    //    events().notifyDatasetAdded(_associatedGenes);
+    //    _associatedGenes->setGroupIndex(1);
+    //}
+
+    // test 3. using a seperate dataset - Problem: this is not linked to the original embedding
+    if (!_associatedGenes.isValid())
+    {
+        _associatedGenes = mv::data().createDataset("Points", "AssociatedGenes");
+    }
+
+    auto numPt = indices.size();
+
+    QVector<float> testData(2 * numPt);
+
+    for (int i = 0; i < numPt; i++)
+    {   int geneIndice = indices[i];
+		testData[2 * i] = _embeddingPositionsA[geneIndice].x;
+		testData[2 * i + 1] = _embeddingPositionsA[geneIndice].y;
+	}
+    
+    _associatedGenes->setData(testData.data(), numPt, 2);
+
+    events().notifyDatasetDataChanged(_associatedGenes);
 }
 
 
