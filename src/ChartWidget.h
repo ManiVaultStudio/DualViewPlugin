@@ -58,8 +58,6 @@ private slots:
         js_available emits notifyJsBridgeIsAvailable, which is conencted to this slot in WebWidget.cpp*/
     void initWebPage() override;
 
-private:
-    void handleGOTermSelection(const QString& goTermID);
 
 private:
     DualViewPlugin*  _viewJSPlugin;    // Pointer to the main plugin class

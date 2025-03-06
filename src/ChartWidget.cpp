@@ -42,9 +42,6 @@ void ChartCommObject::js_qt_passSelectionToQt(const QString& goTermID) {
     // Emit signal to notify Qt (if needed)
     //emit passSelectionToCore({ goTermID.toUInt() });
 
-    // test
-    //QMessageBox::information(nullptr, "GO Term Clicked", "Selected GO Term: " + goTermID);
-
     emit goTermClicked(goTermID);
 }
 
@@ -80,13 +77,4 @@ void ChartWidget::initWebPage()
     //_viewJSPlugin->convertDataAndUpdateChart();
 }
 
-
-//void ChartWidget::handleGOTermSelection(const QString& goTermID) 
-//{
-//    qDebug() << "ChartWidget::handleGOTermSelection - Received GO Term: " << goTermID;
-//
-//    if (_viewJSPlugin) {  // ✅ Ensure plugin is available
-//        _viewJSPlugin->retrieveGOtermGenes(goTermID);
-//    }
-//}
 
