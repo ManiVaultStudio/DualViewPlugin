@@ -1380,11 +1380,12 @@ void DualViewPlugin::sendDataToSampleScope() {
         // count the number of cells in each meta data category for the top 10% cells in rankedCells
         int top10 = numPointsB / 10;
 
-        // count the number of cells that have expression more than 0
+        // count the number of cells that have expression more than the lowest value
         int count0 = 0;
+        float minExpression = *std::min_element(_columnMins.begin(), _columnMins.end());
         for (int i = 0; i < numPointsB; i++)
         {
-            if (_selectedGeneMeanExpression[i] > 0)
+            if (_selectedGeneMeanExpression[i] > minExpression)
                 count0++;
         }
 
