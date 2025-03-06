@@ -2426,14 +2426,14 @@ void DualViewPlugin::getEnrichmentAnalysis()
     }
 
     // output the gene names
-    for (int i = 0; i < _currentGeneSymbols.size(); i++) {
+    /*for (int i = 0; i < _currentGeneSymbols.size(); i++) {
         QString item = _currentGeneSymbols[i].toString();
         if (i == 0)
             std::cout << "Genes symbols: " << item.toUtf8().constData() << " ";
         else
             std::cout << item.toUtf8().constData() << " ";
     }
-    std::cout << std::endl;
+    std::cout << std::endl;*/
 }
 
 void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) {
@@ -2555,14 +2555,10 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
 {
 	qDebug() << "DualViewPlugin::updateGOtermGenes()";
 
-    qDebug() << "geneSymbols.size() = " << geneSymbols.size();
-
     // check which genes exist in the dataset
     // find the gene index in the current embedding B source dataset dimensions
     const std::vector<QString> allDimensionNames = _embeddingSourceDatasetB->getDimensionNames();
-
     QList<int> indices;
-
 
     int numNotFoundGenes = 0;
     for (int i = 0; i < geneSymbols.size(); i++)//geneSymbols.size()
@@ -2590,9 +2586,7 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
         geneStringList << geneSymbols[i].toString();
     }
 
-    qDebug() << "Gene symbols:" << geneStringList.join(", ");
-
-
+    //qDebug() << "Gene symbols:" << geneStringList.join(", ");
 
     qDebug() << "highlightGOTermGenesInEmbedding: " << geneSymbols.size() << " genes, " << numNotFoundGenes << " not found";
 
@@ -2614,7 +2608,7 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
     // FIXME: test to create a dataset containing the gene points - for plotting in a seperate scatter plot
 
     // test 1. using subset, first remove the previous subset, then create new subset - Problem: this requires to set the highlighting as selection
-    /*std::vector<std::seed_seq::result_type> stdIndices;
+   /* std::vector<std::seed_seq::result_type> stdIndices;
     for (int i = 0; i < indices.size(); i++)
     {
 		stdIndices.push_back(indices[i]);
@@ -2627,7 +2621,7 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
     _embeddingDatasetA->setSelectionIndices(stdIndices);
     events().notifyDatasetDataSelectionChanged(_embeddingDatasetA->getSourceDataset<Points>());
     _associatedGenes = _embeddingDatasetA->createSubsetFromSelection("AssociatedGenes");
-    events().notifyDatasetAdded(_associatedGenes);*/
+    events().notifyDatasetAdded(_associatedGenes);*/  
 
     // test 2. using derived dataset - Problem: this is not correctly mapped to the original embedding
     //_embeddingDatasetA->setGroupIndex(1);
@@ -2639,7 +2633,7 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
     //}
 
     // test 3. using a seperate dataset - Problem: this is not linked to the original embedding
-    if (!_associatedGenes.isValid())
+   /* if (!_associatedGenes.isValid())
     {
         _associatedGenes = mv::data().createDataset("Points", "AssociatedGenes");
     }
@@ -2656,7 +2650,7 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
     
     _associatedGenes->setData(testData.data(), numPt, 2);
 
-    events().notifyDatasetDataChanged(_associatedGenes);
+    events().notifyDatasetDataChanged(_associatedGenes);*/
 }
 
 
