@@ -1391,6 +1391,7 @@ void DualViewPlugin::sendDataToSampleScope() {
 
         // if the number of cells with expression more than 0 is less than 10%, use that number
         int numCellsCounted = (count0 > top10) ? top10 : count0;
+        //qDebug() << "numCellsCounted " << numCellsCounted;
 
         // TODO: WORKINPROGRESS here....
         // TEMP: count the number of cells in each meta data category for the top 10% cells in rankedCells
@@ -1403,7 +1404,7 @@ void DualViewPlugin::sendDataToSampleScope() {
                 cellToClusterMap[cellIndex] = clusterIndex;
             }
         }
-        //qDebug() << "cellToClusterMap size " << cellToClusterMap.size(); // global indices
+
         auto end2 = std::chrono::high_resolution_clock::now();
         auto duration2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
         qDebug() << "sendDataTosampleScope 2 took " << duration2.count() << "ms";
@@ -1441,10 +1442,6 @@ void DualViewPlugin::sendDataToSampleScope() {
             backgroundColors << color;
         }
 
-
-        //qDebug() << "Prepared for setSampleContext " << labels << data << backgroundColors;
-
-        auto start4 = std::chrono::high_resolution_clock::now();
         getSamplerAction().setSampleContext({
             { "ASelected", _isEmbeddingASelected},
             { "ColorDatasetID", _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId() },
@@ -1454,9 +1451,6 @@ void DualViewPlugin::sendDataToSampleScope() {
             { "backgroundColors", backgroundColors}// for pie chart
             });
 
-        auto end4 = std::chrono::high_resolution_clock::now();
-        auto duration4 = std::chrono::duration_cast<std::chrono::milliseconds>(end4 - start4);
-        qDebug() << "sendDataTosampleScope 4 took " << duration4.count() << "ms";
 
     }
     else
@@ -2633,24 +2627,44 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
     //}
 
     // test 3. using a seperate dataset - Problem: this is not linked to the original embedding
-   /* if (!_associatedGenes.isValid())
+    if (!_associatedGenes.isValid())
     {
         _associatedGenes = mv::data().createDataset("Points", "AssociatedGenes");
     }
 
-    auto numPt = indices.size();
+    auto numAssociatedGenes = indices.size();
 
-    QVector<float> testData(2 * numPt);
+	QVector<float> associatedGeneCoor(2 * numAssociatedGenes);
 
-    for (int i = 0; i < numPt; i++)
-    {   int geneIndice = indices[i];
-		testData[2 * i] = _embeddingPositionsA[geneIndice].x;
-		testData[2 * i + 1] = _embeddingPositionsA[geneIndice].y;
+	for (int i = 0; i < numAssociatedGenes; i++)
+	{
+		int geneIndice = indices[i];
+		associatedGeneCoor[2 * i] = _embeddingPositionsA[geneIndice].x;
+		associatedGeneCoor[2 * i + 1] = _embeddingPositionsA[geneIndice].y;
 	}
-    
-    _associatedGenes->setData(testData.data(), numPt, 2);
 
-    events().notifyDatasetDataChanged(_associatedGenes);*/
+	_associatedGenes->setData(associatedGeneCoor.data(), numAssociatedGenes, 2);
+
+	events().notifyDatasetDataChanged(_associatedGenes);
+
+    // test to link the associated genes to the original embedding
+    mv::SelectionMap mapping;
+    auto& selectionMap = mapping.getMap();
+
+    std::vector<unsigned int> globalIndices;
+    _embeddingDatasetA->getGlobalIndices(globalIndices);
+    qDebug() << "globalIndices.size() = " << globalIndices.size();
+
+    for (size_t i = 0; i < indices.size(); i++) {
+        int localIndex = indices[i]; // Local index in _embeddingDatasetA
+        std::vector<unsigned int> test = { static_cast<uint32_t>(localIndex) };
+        selectionMap[i] = test;  
+
+        //qDebug() << "selectionMap[" << i << "] = " << localIndex;
+    }
+
+    _associatedGenes->addLinkedData(_embeddingDatasetA, mapping);
+
 }
 
 
