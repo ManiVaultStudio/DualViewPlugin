@@ -79,6 +79,8 @@ set(Actions
     src/Actions/NavigationAction.cpp
 	src/Actions/EnrichmentAction.h
     src/Actions/EnrichmentAction.cpp
+	src/Actions/EnrichmentSettingsAction.h
+    src/Actions/EnrichmentSettingsAction.cpp
 )
 
 set(Models

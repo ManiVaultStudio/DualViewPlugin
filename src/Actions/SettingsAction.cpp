@@ -20,7 +20,8 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     _selectionAction(this, "Selection"),
     _reversePointSizeBAction(this, "Reverse Point Size B"),
     _dimensionSelectionAction(this, "Gene search"),
-    _enrichmentAction(this, "Enrich")
+    _enrichmentAction(this, "Enrich"),
+    _enrichmentSettingsAction(this, "Enrichment settings")
 {
     setConnectionPermissionsToForceNone();
 
@@ -64,6 +65,7 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     _coloringActionB.fromParentVariantMap(variantMap);
     _coloringActionA.fromParentVariantMap(variantMap);
     _selectionAction.fromParentVariantMap(variantMap);
+    _enrichmentSettingsAction.fromParentVariantMap(variantMap);
 }
 
 QVariantMap SettingsAction::toVariantMap() const
@@ -77,6 +79,7 @@ QVariantMap SettingsAction::toVariantMap() const
     _coloringActionB.insertIntoVariantMap(variantMap);
     _coloringActionA.insertIntoVariantMap(variantMap);
     _selectionAction.insertIntoVariantMap(variantMap);
+    _enrichmentSettingsAction.insertIntoVariantMap(variantMap);
 
     return variantMap;
 }

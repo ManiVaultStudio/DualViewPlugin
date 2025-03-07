@@ -18,6 +18,7 @@
 
 #include "DimensionSelectionAction.h"
 #include "EnrichmentAction.h"
+#include "EnrichmentSettingsAction.h"
 
 using namespace mv::gui;
 
@@ -75,6 +76,7 @@ public: // Action getters
     DimensionSelectionAction& getDimensionSelectionAction() { return _dimensionSelectionAction; }
 
     EnrichmentAction& getEnrichmentAction() { return _enrichmentAction; }
+    EnrichmentSettingsAction& getEnrichmentSettingsAction() { return _enrichmentSettingsAction; }
    
 
 protected:
@@ -93,6 +95,5 @@ protected:
     DimensionSelectionAction          _dimensionSelectionAction;
 
     EnrichmentAction                  _enrichmentAction;          /** Action for triggering enrichment analysis */
-
-   
+    EnrichmentSettingsAction		  _enrichmentSettingsAction;  /** Action for configuring enrichment settings */
 };

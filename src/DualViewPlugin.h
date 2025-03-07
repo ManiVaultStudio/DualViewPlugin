@@ -57,6 +57,8 @@ public:
 
     void retrieveGOtermGenes(const QString& GOTermId);
 
+    void updateEnrichmentOrganism();
+
 
 private:
     QString getCurrentEmebeddingDataSetID(mv::Dataset<Points> dataset) const;

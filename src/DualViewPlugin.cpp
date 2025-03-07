@@ -78,6 +78,7 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingWidgetB->getNavigationAction().setParent(this);
 
     // toolbars A
+    _embeddingAToolbarAction.addAction(&_settingsAction.getEnrichmentSettingsAction());
     _embeddingAToolbarAction.addAction(&_settingsAction.getEnrichmentAction());
     _embeddingAToolbarAction.addAction(&_settingsAction.getEmbeddingAPointPlotAction());
     _embeddingAToolbarAction.addAction(&getSamplerAction());
@@ -2688,6 +2689,24 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
 
     _associatedGenes->addLinkedData(_embeddingDatasetA, mapping);
 
+}
+
+void DualViewPlugin::updateEnrichmentOrganism()
+{
+    QString selectedSpecies = _settingsAction.getEnrichmentSettingsAction().getOrganismPickerAction().getCurrentText();
+
+    if (selectedSpecies == "Mus musculus")
+    {
+        _currentEnrichmentSpecies = "mmusculus";
+        qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
+        getEnrichmentAnalysis();
+    }
+    else if (selectedSpecies == "Homo sapiens")
+    {
+        _currentEnrichmentSpecies = "hsapiens";
+        qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
+        getEnrichmentAnalysis();
+    }
 }
 
 
