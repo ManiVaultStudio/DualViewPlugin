@@ -1125,6 +1125,26 @@ void DualViewPlugin::embeddingDatasetBChanged()
 
     // precompute the data range
     computeDataRange();
+
+    // set the background gene names for the enrichment analysis
+	if (_embeddingSourceDatasetB->getDimensionNames().size() < 19000) // FIXME: hard code the threshold for the number of genes
+	{
+		if (_backgroundGeneNames.size() == _embeddingSourceDatasetB->getDimensionNames().size())
+		{
+			qDebug() << "Background gene names already set";
+		}
+		else
+		{
+			_backgroundGeneNames.clear();
+			auto dimNames = _embeddingSourceDatasetB->getDimensionNames();
+			for (const auto& name : dimNames) {
+				_backgroundGeneNames.append(name);
+			}
+			qDebug() << _backgroundGeneNames.size() << " background gene names set";
+		}
+	}
+    else 
+        qDebug() << "Background gene names not set: genes more than 19000";
    
     // update 1D embedding
     bool oneDEmbeddingExists = false;
@@ -2401,10 +2421,12 @@ void DualViewPlugin::getEnrichmentAnalysis()
     //    }
     //}
 
+    
+
     if (!_currentGeneSymbols.isEmpty()) {
 
             // gProfiler
-            QStringList backgroundGeneNames;
+            //QStringList backgroundGeneNames;
 
             QStringList geneSymbols;
 
@@ -2414,7 +2436,7 @@ void DualViewPlugin::getEnrichmentAnalysis()
             }
 
             //qDebug() << "getFuntionalEnrichment(): backgroundGeneNames size: " << backgroundGeneNames.size();
-            _client->postGeneGprofiler(geneSymbols, backgroundGeneNames, _currentEnrichmentSpecies);
+            _client->postGeneGprofiler(geneSymbols, _backgroundGeneNames, _currentEnrichmentSpecies);
         
 
         //EnrichmentAnalysis* tempClient = new EnrichmentAnalysis(this);

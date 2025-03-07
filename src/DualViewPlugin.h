@@ -193,6 +193,7 @@ private:
     EnrichmentAnalysis*                _client;                  // Enrichment analysis client 
     QVariantList                       _enrichmentResult;        // Cached enrichment analysis result, in case the user clicks on one cell
     QString                            _currentEnrichmentSpecies = "mmusculus"; // current enrichment species
+    QStringList                        _backgroundGeneNames; // background for enrichment analysis
 
     // experimental about GOterm associated genes
     mv::Dataset<Points>                _associatedGenes; // pt coordinates of associated genes for a GO term

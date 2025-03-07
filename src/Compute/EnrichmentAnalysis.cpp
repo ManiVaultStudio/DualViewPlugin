@@ -323,8 +323,8 @@ void EnrichmentAnalysis::postGOtermGprofiler(const QString& GOTermId, const QStr
 	QUrl url("https://biit.cs.ut.ee/gprofiler/api/convert/convert/");
 
 	QJsonObject json;
-	//json["organism"] = species; // TO DO: hard-coded for mouse dataset
-    json["organism"] = "hsapiens"; // TO DO: hard-coded for human dataset
+	json["organism"] = species; // TO DO: hard-coded for mouse dataset
+    //json["organism"] = "hsapiens"; // TO DO: hard-coded for human dataset
 	json["target"] = "ENSG"; // FIXME: hard-coded 
 	json["query"] = QJsonArray({ GOTermId });
 
