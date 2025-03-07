@@ -21,7 +21,7 @@ ColoringActionB::ColoringActionB(QObject* parent, const QString& title) :
     //_colorMap1DAction(this, "1D Color map"),
     //_colorMap2DAction(this, "2D Color map")
 {
-    setIcon(mv::Application::getIconFont("FontAwesome").getIcon("palette"));
+    setIconByName("palette");
     setLabelSizingType(LabelSizingType::Auto);
     //setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
     //setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceExpandedInGroup);

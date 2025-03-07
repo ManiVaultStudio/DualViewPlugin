@@ -7,7 +7,7 @@ EmbeddingBPointPlotAction::EmbeddingBPointPlotAction(QObject* parent, const QStr
     VerticalGroupAction(parent, title),
     _pointPlotActionB(this, "Point Plot B")
 {
-    setIcon(mv::Application::getIconFont("FontAwesome").getIcon("paint-brush"));
+    setIconByName("paint-brush");
     setToolTip("Point plot settings");
     setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
     setLabelSizingType(LabelSizingType::Auto);

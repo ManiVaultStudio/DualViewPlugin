@@ -135,7 +135,7 @@ GenePickerAction::Widget::Widget(QWidget* parent, GenePickerAction* genePickerAc
     auto lineEditWidget = genePickerAction->getCurrentDimensionAction().createWidget(this, MyOptionAction::LineEdit);
 
     // Gets search icon to decorate the line edit
-    const auto searchIcon = Application::getIconFont("FontAwesome").getIcon("search");
+    const auto searchIcon = StyledIcon("search");
 
     auto lineEdit = lineEditWidget->findChild<QLineEdit*>("LineEdit");
     lineEdit->setPlaceholderText("Enter genes (comma-separated)");

@@ -7,7 +7,7 @@ EnrichmentAction::EnrichmentAction(QObject* parent, const QString& title) :
     GroupAction(parent, title),
     _enrichmentAction(this, "Enrich")
 {
-    setIcon(mv::Application::getIconFont("FontAwesome").getIcon("dna"));
+    setIconByName("dna");
     setLabelSizingType(LabelSizingType::Auto);
 
     addAction(&_enrichmentAction);

@@ -16,17 +16,16 @@ NavigationAction::NavigationAction(QObject* parent, const QString& title) :
     _zoomDataExtentsAction(this, "Zoom to data extents"),
     _freezeZoomAction(this, "Freeze zoom")
 {
-    setIcon(mv::Application::getIconFont("FontAwesome").getIcon("image"));
+    setIconByName("image");
     setShowLabels(false);
 
     addAction(&_zoomRectangleAction);
     addAction(&_zoomDataExtentsAction);
     addAction(&_freezeZoomAction);
 
-    auto& fontAwesome = Application::getIconFont("FontAwesome");
 
     _zoomRectangleAction.setToolTip("Extents of the current view");
-    _zoomRectangleAction.setIcon(combineIcons(fontAwesome.getIcon("expand"), fontAwesome.getIcon("ellipsis-h")));
+    _zoomRectangleAction.setIcon(combineIcons(StyledIcon("expand"), StyledIcon("ellipsis-h")));
     _zoomRectangleAction.setIconByName("vector-square");
     _zoomRectangleAction.setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
 

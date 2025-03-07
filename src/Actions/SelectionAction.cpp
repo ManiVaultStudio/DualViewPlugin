@@ -19,7 +19,7 @@ SelectionAction::SelectionAction(QObject* parent, const QString& title) :
     //_outlineOpacityAction(this, "Opacity", 0.0f, 100.0f, 100.0f, 1),
     //_outlineHaloEnabledAction(this, "Halo")
 {
-    setIcon(mv::Application::getIconFont("FontAwesome").getIcon("mouse-pointer"));
+    setIconByName("mouse-pointer");
     
     setConfigurationFlag(WidgetAction::ConfigurationFlag::HiddenInActionContextMenu);
     setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);

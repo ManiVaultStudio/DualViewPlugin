@@ -87,7 +87,7 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingASecondaryToolbarAction.addAction(&_embeddingWidgetA->getNavigationAction());
 
     auto focusSelectionActionA = new ToggleAction(this, "Focus selection A");
-    focusSelectionActionA->setIcon(Application::getIconFont("FontAwesome").getIcon("mouse-pointer"));
+    focusSelectionActionA->setIconByName("mouse-pointer");
     connect(focusSelectionActionA, &ToggleAction::toggled, this, [this](bool toggled) -> void {
         _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getFocusSelection().setChecked(toggled);
         });
@@ -104,7 +104,7 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingBSecondaryToolbarAction.addAction(&_embeddingWidgetB->getNavigationAction());
 
     auto focusSelectionActionB = new ToggleAction(this, "Focus selection B");
-    focusSelectionActionB->setIcon(Application::getIconFont("FontAwesome").getIcon("mouse-pointer"));
+    focusSelectionActionA->setIconByName("mouse-pointer");
     connect(focusSelectionActionB, &ToggleAction::toggled, this, [this](bool toggled) -> void {
         _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getFocusSelection().setChecked(toggled);
         });
@@ -2786,10 +2786,7 @@ QVariantMap DualViewPlugin::toVariantMap() const
 // Plugin Factory 
 // =============================================================================
 
-QIcon DualViewPluginFactory::getIcon(const QColor& color /*= Qt::black*/) const
-{
-    return mv::Application::getIconFont("FontAwesome").getIcon("bullseye", color);
-}
+
 
 ViewPlugin* DualViewPluginFactory::produce()
 {
@@ -2809,13 +2806,13 @@ mv::gui::PluginTriggerActions DualViewPluginFactory::getPluginTriggerActions(con
     PluginTriggerActions pluginTriggerActions;
 
     const auto getPluginInstance = [this]() -> DualViewPlugin* {
-        return dynamic_cast<DualViewPlugin*>(plugins().requestViewPlugin(getKind()));
+        return dynamic_cast<DualViewPlugin*>(Application::core()->getPluginManager().requestViewPlugin(getKind()));
     };
 
     const auto numberOfDatasets = datasets.count();
 
     if (numberOfDatasets >= 1 && PluginFactory::areAllDatasetsOfTheSameType(datasets, PointType)) {
-        auto pluginTriggerAction = new PluginTriggerAction(const_cast<DualViewPluginFactory*>(this), this, "Dual View", "Dual view visualization", getIcon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
+        auto pluginTriggerAction = new PluginTriggerAction(const_cast<DualViewPluginFactory*>(this), this, "Dual View", "Dual view visualization", StyledIcon("braille"), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
             for (auto dataset : datasets)
                 getPluginInstance()->loadData(Datasets({ dataset }));
 

@@ -5,10 +5,10 @@
 #include <Set.h>
 
 using namespace mv;
+using namespace mv::util;
 
 ScalarSourceModel::ScalarSourceModel(QObject* parent /*= nullptr*/) :
     QAbstractListModel(parent),
-    _datasets(),
     _showFullPathName(true)
 {
 }
@@ -47,13 +47,13 @@ QVariant ScalarSourceModel::data(const QModelIndex& index, int role) const
         case Qt::DecorationRole:
         {
             if (row == DefaultRow::Constant)
-                return Application::getIconFont("FontAwesome").getIcon("ruler");
+                return StyledIcon("ruler");
 
             if (row == DefaultRow::Selection)
-                return Application::getIconFont("FontAwesome").getIcon("mouse-pointer");
+                return StyledIcon("mouse-pointer");
 
             if (row >= DefaultRow::DatasetStart)
-                return scalarDataset->getIcon();
+                return scalarDataset->icon();
 
             break;
         }
