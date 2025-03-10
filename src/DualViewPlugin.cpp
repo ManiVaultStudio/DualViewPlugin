@@ -378,214 +378,9 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
 
      
     getSamplerAction().setWidgetViewGeneratorFunction([this, widget](const ViewPluginSamplerAction::SampleContext& toolTipContext) -> QWidget* { //, widgetSampleScope
-        
 
-		if (!toolTipContext.contains("ASelected"))
-			return {};
+       QString html = toolTipContext["GeneInfo"].toString();
 
-       auto ASelected = toolTipContext["ASelected"].toBool();  
-
-       // Build the HTML string
-	   QString html = "<html><head><style>"
-		   "body { font-family: Arial; }"
-		   ".legend { list-style: none; padding: 0; }"
-		   ".legend li { display: flex; align-items: center; margin-bottom: 5px; }"
-		   ".legend-color { width: 16px; height: 16px; display: inline-block; margin-right: 5px; }"
-		   "</style></head><body>";
-     
-       // return the gene symbols 
-       assert(_embeddingDatasetA->getNumPoints() == _embeddingSourceDatasetB->getNumDimensions());
-
-       std::vector<QString> dimensionNames = _embeddingSourceDatasetB->getDimensionNames(); // TODO: hardcode, assume embedding A is gene map and embedding B stores all the genes in A
-
-       // show first 80 genes and the rest in expandable box
-       QStringList geneSymbols;
-       QStringList additionalSymbols;
-       bool hasMoreThan80 = false;
-
-       for (const auto& globalPointIndex : toolTipContext["GlobalPointIndices"].toList())
-       {
-           QString geneSymbol = dimensionNames[globalPointIndex.toInt()];
-           if (geneSymbols.size() < 80) 
-           {
-               geneSymbols << geneSymbol;
-           }
-           else 
-           {
-               hasMoreThan80 = true;
-               additionalSymbols << geneSymbol;
-           }
-       }
-
-       QString outputText;
-       QString chartTitle;
-       QString additionalGenesHtml;
-
-       if (hasMoreThan80) 
-       {
-           additionalGenesHtml = QString(            
-               "<details><summary style='font-size:14px; cursor:pointer;'>and more... </summary>"
-               "<p style='font-size:14px;'>%1</p>"
-               "</details>")
-               .arg(additionalSymbols.join(", "));
-       }
-
-       if (ASelected) {
-           outputText = QString(
-               "<p style='font-size:14px;'>Gene embedding is selected.</p>"
-               "<table style='font-size:14px;'>"
-               "<tr>"
-               "<td><b>Selected Genes: </b></td>"
-               "<td>%1 %2</td>"  // add the expandable section right inside the same <td>
-               "</tr>"
-               "</table>"
-               "<p style='font-size:12px; color:#377fe4;'>"
-               "Click the 'Enrich' button in the gene panel for more details.</p>"
-           )
-               .arg(geneSymbols.join(", "))
-               .arg(additionalGenesHtml);  // append the expandable section here
-
-           chartTitle = "<b>Connected cell proportion (10% highest expression of avg. selected genes)</b>";
-       }
-       else {
-           outputText = QString(
-               "<p style='font-size:14px;'>Cell embedding is selected.</p>"
-               "<table style='font-size:14px;'>"
-               "<tr>"
-               "<td><b>Connected Genes: </b></td>"
-               "<td>%1 %2</td>"  // add the expandable section right inside the same <td>
-               "</tr>"
-               "</table>"
-               "<p style='font-size:12px; color:#377fe4;'>"
-               "Click the 'Enrich' button in the gene panel for more details.</p>"
-           )
-               .arg(geneSymbols.join(", "))
-               .arg(additionalGenesHtml);
-
-           chartTitle = "<b>Cell proportion</b>";
-       }
-
-       // get current color dataset B name
-       QString colorDatasetID = toolTipContext["ColorDatasetID"].toString();
-       QString colorDatasetName;
-       QString colorDatasetIntro;
-
-       if (colorDatasetID.isEmpty())
-       {           
-           html += "<p>" + outputText + "</p>";
-       }
-       else
-       {
-           colorDatasetName = mv::data().getDataset(colorDatasetID)->getGuiName();
-           colorDatasetIntro = QString("Cell embedding coloring by %1").arg(colorDatasetName);
-
-           QVariantList labelsVarList = toolTipContext["labels"].toList();
-           QVariantList dataVarList = toolTipContext["data"].toList();
-           QVariantList backgroundColorsVarList = toolTipContext["backgroundColors"].toList();
-
-           QStringList labels;
-           QVector<double> counts;
-           QStringList backgroundColors;
-
-           // Convert labels
-           for (const QVariant& labelVar : labelsVarList) {
-               labels << labelVar.toString();
-           }
-
-           // Convert data to numbers and calculate total sum
-           double totalCount = 0.0;
-           for (const QVariant& dataVar : dataVarList) {
-               double value = dataVar.toDouble();
-               counts.append(value);
-               totalCount += value;
-           }
-
-           // Convert background colors
-           for (const QVariant& colorVar : backgroundColorsVarList) {
-               QString colorStr = colorVar.toString();
-               // Remove any extra quotes around the color codes
-               if (colorStr.startsWith("'") && colorStr.endsWith("'")) {
-                   colorStr = colorStr.mid(1, colorStr.length() - 2);
-               }
-               backgroundColors << colorStr;
-           }
-
-           html += outputText; // font size al set in the table style
-           html += QString("<p style='font-size:14px;'>%1</p>").arg(colorDatasetIntro);
-           html += QString("<p style='font-size:14px;'>%1</p>").arg(chartTitle);
-
-           // dimensions for the stacked bar
-           int barWidth = 50;   
-           int barHeight = 200; 
-
-           int svgWidth = barWidth + 300;
-
-           html += QString("<svg width='%1' height='%2' style='border:none;'>")
-               .arg(svgWidth)
-               .arg(barHeight);
-
-           if (counts.size() == 1) {
-               // if there's only one category, fill the entire bar
-               html += QString("<rect x='0' y='0' width='%1' height='%2' fill='%3' stroke='none'></rect>")
-                   .arg(barWidth)
-                   .arg(barHeight)
-                   .arg(backgroundColors[0]);
-
-               double labelX = barWidth + 5;
-               double labelY = barHeight / 2.0;
-
-               html += QString(
-                   "<text x='%1' y='%2' font-family='Arial' font-size='12' "
-                   "fill='black' text-anchor='start' alignment-baseline='middle'>"
-                   "%3</text>")
-                   .arg(labelX)
-                   .arg(labelY)
-                   .arg(labels[0]);
-           }
-           else {
-               // if multiple categories, stack them vertically
-               double yOffset = 0.0; 
-
-               for (int i = 0; i < counts.size(); ++i) {
-                   double proportion = counts[i] / totalCount;
-                   double sliceHeight = proportion * barHeight;
-
-                   html += QString("<rect x='0' y='%1' width='%2' height='%3' " "fill='%4' stroke='white' stroke-width='1'></rect>")
-                       .arg(yOffset)
-                       .arg(barWidth)
-                       .arg(sliceHeight)
-                       .arg(backgroundColors[i]);
-
-                   // whether to show labels
-                   double minPixelsForLabel = 10.0;
-                   if (sliceHeight >= minPixelsForLabel)
-                   {
-                       double labelX = barWidth + 5;
-                       double labelY = yOffset + (sliceHeight / 2.0);
-
-                       double percentage = (counts[i] / totalCount) * 100.0;
-
-                       QString labelText = QString("%1 (%2%)").arg(labels[i])
-                           .arg(QString::number(percentage, 'f', 1));
-
-                       html += QString(
-                           "<text x='%1' y='%2' font-family='Arial' font-size='12' "
-                           "fill='black' text-anchor='start' alignment-baseline='middle'>"
-                           "%3</text>")
-                           .arg(labelX)
-                           .arg(labelY)
-                           .arg(labelText);
-                   }
-
-                   yOffset += sliceHeight;
-               }
-           }
-
-           html += "</svg>";
-
-       }
-
-       // test table
        if (toolTipContext.contains("EnrichmentTable"))
        {
            html += "<p style='font-size:14px;'>Enrichment Analysis Results</p>";
@@ -593,11 +388,9 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
            QString tableHtml = toolTipContext["EnrichmentTable"].toString();
 
            if (!tableHtml.isEmpty()) {
-               //html += "<p style='font-size:14px; font-weight:bold;'>Top 10 Enrichment Results:</p>";
                html += tableHtml;
            }
        }
-
 
        // JavaScript for QWebChannel Integration
        html += "<script src='qrc:///qtwebchannel/qwebchannel.js'></script>"
@@ -1323,278 +1116,410 @@ void DualViewPlugin::highlightSelectedEmbeddings(ScatterplotWidget*& widget, mv:
     widget->setHighlights(highlights, static_cast<std::int32_t>(selection->indices.size())); // TODO: repeated when threshold changing
 }
 
-void DualViewPlugin::sendDataToSampleScope() {
-    // TODO: temp code to deal with the sampler action - currently hard coded to A - generalize this function for B 
+void DualViewPlugin::sendDataToSampleScope()
+{
+	// TODO: temp code to deal with the sampler action - currently hard coded to A - generalize this function for B 
 
 	if (getSamplerAction().getEnabledAction().isChecked() == false)
 		return;
 
-    QVariantList globalPointIndices;
+	QVariantList globalPointIndices;
+	QStringList labels;
+	QStringList data;
+	QStringList backgroundColors;
 
-    if (_isEmbeddingASelected)
-    {
-        // A selected, send gene id and major cell type to samplerAction
+	// --------- prepare the data for the sampler action -------------------------------
+	if (_isEmbeddingASelected)
+	{
+		// A selected, send gene id and major cell type to samplerAction
 
-        auto selection = _embeddingDatasetA->getSelection<Points>();
+		auto selection = _embeddingDatasetA->getSelection<Points>();
 
-        std::vector<std::uint32_t> localGlobalIndices;
-        _embeddingDatasetA->getGlobalIndices(localGlobalIndices);
+		std::vector<std::uint32_t> localGlobalIndices;
+		_embeddingDatasetA->getGlobalIndices(localGlobalIndices);
 
-        std::vector<std::uint32_t> sampledPoints;
-        sampledPoints.reserve(_embeddingPositionsA.size());
+		std::vector<std::uint32_t> sampledPoints;
+		sampledPoints.reserve(_embeddingPositionsA.size());
 
-        for (auto selectionIndex : selection->indices)
-            sampledPoints.push_back(selectionIndex);
+		for (auto selectionIndex : selection->indices)
+			sampledPoints.push_back(selectionIndex);
 
-        std::int32_t numberOfPoints = 0;
+		std::int32_t numberOfPoints = 0;
 
-        //QVariantList globalPointIndices;
+		const auto numberOfSelectedPoints = selection->indices.size();
 
-        const auto numberOfSelectedPoints = selection->indices.size();
+		globalPointIndices.reserve(static_cast<std::int32_t>(numberOfSelectedPoints));
 
-        globalPointIndices.reserve(static_cast<std::int32_t>(numberOfSelectedPoints));
+		for (const auto& sampledPoint : sampledPoints) {
+			if (getSamplerAction().getRestrictNumberOfElementsAction().isChecked() && numberOfPoints >= getSamplerAction().getMaximumNumberOfElementsAction().getValue())
+				break;
 
-        for (const auto& sampledPoint : sampledPoints) {
-            if (getSamplerAction().getRestrictNumberOfElementsAction().isChecked() && numberOfPoints >= getSamplerAction().getMaximumNumberOfElementsAction().getValue())
-                break;
+			const auto& globalPointIndex = localGlobalIndices[sampledPoint];
+			globalPointIndices << globalPointIndex;
 
-            const auto& globalPointIndex = localGlobalIndices[sampledPoint];
-            globalPointIndices << globalPointIndex;
+			numberOfPoints++;
+		}
 
-            numberOfPoints++;
-        }
+		// if no metadata B avaliable, only send gene ids
+		if (_metaDatasetB.isValid())
+		{
 
-        // if no metadata B avaliable, only send gene ids
-        if (!_metaDatasetB.isValid())
-        {
-            //qDebug() << "metaDatasetB is not valid";
+			auto start2 = std::chrono::high_resolution_clock::now();
+			// load the meta data categories
+			QVector<Cluster> metadata = _metaDatasetB->getClusters();
 
-            getSamplerAction().setSampleContext({
-                { "ASelected", _isEmbeddingASelected},
-                { "ColorDatasetID", _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId() },
-                { "GlobalPointIndices", globalPointIndices },
-                });
-            return;
-        }
+			int numPointsB = _embeddingSourceDatasetB->getNumPoints();
 
-        auto start2 = std::chrono::high_resolution_clock::now();
-        // load the meta data categories
-        QVector<Cluster> metadata = _metaDatasetB->getClusters();
+			//qDebug() << "numPointsB size " << numPointsB;
+			//qDebug() << "_selectedGeneMeanExpression size " << _selectedGeneMeanExpression.size();
 
-        int numPointsB = _embeddingSourceDatasetB->getNumPoints();
+			// first, sort the indices based on the selected gene expression
+			std::vector<std::pair<float, int>> rankedCells;
+			rankedCells.reserve(numPointsB);
 
-        //qDebug() << "numPointsB size " << numPointsB;
-        //qDebug() << "_selectedGeneMeanExpression size " << _selectedGeneMeanExpression.size();
+			for (int i = 0; i < numPointsB; i++)
+			{
+				rankedCells.push_back(std::make_pair(_selectedGeneMeanExpression[i], i));
+			}
 
-        // first, sort the indices based on the selected gene expression
-        std::vector<std::pair<float, int>> rankedCells;
-        rankedCells.reserve(numPointsB);
+			std::sort(rankedCells.begin(), rankedCells.end(), std::greater<std::pair<float, int>>());
+			//qDebug() << "rankedCells size " << rankedCells.size(); // local indices
 
-        for (int i = 0; i < numPointsB; i++)
-        {
-            rankedCells.push_back(std::make_pair(_selectedGeneMeanExpression[i], i));
-        }
+			// count the number of cells in each meta data category for the top 10% cells in rankedCells
+			int top10 = numPointsB / 10;
 
-        std::sort(rankedCells.begin(), rankedCells.end(), std::greater<std::pair<float, int>>());
-        //qDebug() << "rankedCells size " << rankedCells.size(); // local indices
-
-        // count the number of cells in each meta data category for the top 10% cells in rankedCells
-        int top10 = numPointsB / 10;
-
-        // count the number of cells that have expression more than the lowest value
-        int count0 = 0;
-        float minExpression = *std::min_element(_columnMins.begin(), _columnMins.end());
-        for (int i = 0; i < numPointsB; i++)
-        {
-            if (_selectedGeneMeanExpression[i] > minExpression)
-                count0++;
-        }
+			// count the number of cells that have expression more than the lowest value
+			int count0 = 0;
+			float minExpression = *std::min_element(_columnMins.begin(), _columnMins.end());
+			for (int i = 0; i < numPointsB; i++)
+			{
+				if (_selectedGeneMeanExpression[i] > minExpression)
+					count0++;
+			}
 
 
-        // if the number of cells with expression more than 0 is less than 10%, use that number
-        int numCellsCounted = (count0 > top10) ? top10 : count0;
-        //qDebug() << "numCellsCounted " << numCellsCounted;
+			// if the number of cells with expression more than 0 is less than 10%, use that number
+			int numCellsCounted = (count0 > top10) ? top10 : count0;
+			//qDebug() << "numCellsCounted " << numCellsCounted;
 
-        // TODO: WORKINPROGRESS here....
-        // TEMP: count the number of cells in each meta data category for the top 10% cells in rankedCells
-        // FIXME: this does not work for hsne - solved
-
-        std::unordered_map<int, int> cellToClusterMap; // maps global cell index to cluster index
-        for (int clusterIndex = 0; clusterIndex < metadata.size(); ++clusterIndex) {
-            const auto& ptIndices = metadata[clusterIndex].getIndices();
-            for (int cellIndex : ptIndices) {
-                cellToClusterMap[cellIndex] = clusterIndex;
-            }
-        }
-
-        auto end2 = std::chrono::high_resolution_clock::now();
-        auto duration2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
-        qDebug() << "sendDataTosampleScope 2 took " << duration2.count() << "ms";
-
-        // mapping from local to global indices
-        std::vector<std::uint32_t> localGlobalIndicesB;
-        _embeddingSourceDatasetB->getGlobalIndices(localGlobalIndicesB);
-
-        std::unordered_map<int, int> clusterCount; // maps cluster index to count
-        for (int i = 0; i < numCellsCounted; ++i) {
-            int localCellIndex = rankedCells[i].second;
-            int globalCellIndex = localGlobalIndicesB[localCellIndex];
-            //qDebug() << "globalCellIndex " << globalCellIndex << "localCellIndex " << localCellIndex;
-            if (cellToClusterMap.find(globalCellIndex) != cellToClusterMap.end()) {
-                int clusterIndex = cellToClusterMap[globalCellIndex];
-                clusterCount[clusterIndex]++;
-            }
-        }
-
-        std::vector<std::pair<int, int>> sortedClusterCount(clusterCount.begin(), clusterCount.end());
-        std::sort(sortedClusterCount.begin(), sortedClusterCount.end(), [](const auto& a, const auto& b) { return a.second > b.second; });
+			// TODO: WORKINPROGRESS here....
+			// TEMP: count the number of cells in each meta data category for the top 10% cells in rankedCells
 
 
-        // Prepare data arrays for labels, data, and background colors
-        QStringList labels;
-        QStringList data;
-        QStringList backgroundColors;
+			std::unordered_map<int, int> cellToClusterMap; // maps global cell index to cluster index
+			for (int clusterIndex = 0; clusterIndex < metadata.size(); ++clusterIndex) {
+				const auto& ptIndices = metadata[clusterIndex].getIndices();
+				for (int cellIndex : ptIndices) {
+					cellToClusterMap[cellIndex] = clusterIndex;
+				}
+			}
 
-        for (const auto& [clusterIndex, count] : sortedClusterCount) {
-            QString clusterName = metadata[clusterIndex].getName();
-            labels << clusterName;
-            data << QString::number(count);
+			auto end2 = std::chrono::high_resolution_clock::now();
+			auto duration2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
+			qDebug() << "sendDataTosampleScope 2 took " << duration2.count() << "ms";
 
-            QString color = metadata[clusterIndex].getColor().name();
-            backgroundColors << color;
-        }
+			// mapping from local to global indices
+			std::vector<std::uint32_t> localGlobalIndicesB;
+			_embeddingSourceDatasetB->getGlobalIndices(localGlobalIndicesB);
 
-        getSamplerAction().setSampleContext({
-            { "ASelected", _isEmbeddingASelected},
-            { "ColorDatasetID", _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId() },
-            { "GlobalPointIndices", globalPointIndices },// selected genes
-            { "labels", labels},// for pie chart
-            { "data", data},// for pie chart
-            { "backgroundColors", backgroundColors}// for pie chart
-            });
+			std::unordered_map<int, int> clusterCount; // maps cluster index to count
+			for (int i = 0; i < numCellsCounted; ++i) {
+				int localCellIndex = rankedCells[i].second;
+				int globalCellIndex = localGlobalIndicesB[localCellIndex];
+				//qDebug() << "globalCellIndex " << globalCellIndex << "localCellIndex " << localCellIndex;
+				if (cellToClusterMap.find(globalCellIndex) != cellToClusterMap.end()) {
+					int clusterIndex = cellToClusterMap[globalCellIndex];
+					clusterCount[clusterIndex]++;
+				}
+			}
 
+			std::vector<std::pair<int, int>> sortedClusterCount(clusterCount.begin(), clusterCount.end());
+			std::sort(sortedClusterCount.begin(), sortedClusterCount.end(), [](const auto& a, const auto& b) { return a.second > b.second; });
 
-    }
-    else
-    {
-        // B selected, send cell types to samplerAction
-        
-        // send genes that are connected to selected cells (use _connectedCellsPerGene)
-        //QVariantList globalPointIndices;
-        for (int i = 0; i < _connectedCellsPerGene.size(); i++)
-        {
-            if (_connectedCellsPerGene[i] > 0)
-            {
-				globalPointIndices << i;
-			
+			for (const auto& [clusterIndex, count] : sortedClusterCount) {
+				QString clusterName = metadata[clusterIndex].getName();
+				labels << clusterName;
+				data << QString::number(count);
+
+				QString color = metadata[clusterIndex].getColor().name();
+				backgroundColors << color;
 			}
 		}
-        
-        // if no metadata B avaliable
-        if (!_metaDatasetB.isValid())
-        {
-            //qDebug() << "metaDatasetB is not valid";
 
-            getSamplerAction().setSampleContext({
-                { "ASelected", _isEmbeddingASelected},
-                { "ColorDatasetID", _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId() },
-                { "GlobalPointIndices", globalPointIndices },// connected genes
-                });
-            return;
-        }
+	}
+	else
+	{
+		// B selected, send cell types to samplerAction
 
-        QVector<Cluster> metadata = _metaDatasetB->getClusters();
+		// send genes that are connected to selected cells (use _connectedCellsPerGene)
+		for (int i = 0; i < _connectedCellsPerGene.size(); i++)
+		{
+			if (_connectedCellsPerGene[i] > 0)
+			{
+				globalPointIndices << i;
 
-        auto selection = _embeddingDatasetB->getSelection<Points>();
+			}
+		}
 
-        std::vector<std::uint32_t> localGlobalIndices;
-        _embeddingDatasetB->getGlobalIndices(localGlobalIndices);
+		if (_metaDatasetB.isValid())
+		{
 
-        std::vector<std::uint32_t> sampledPoints;
-        sampledPoints.reserve(_embeddingPositionsB.size());
+			QVector<Cluster> metadata = _metaDatasetB->getClusters();
 
-        for (auto selectionIndex : selection->indices)
-            sampledPoints.push_back(selectionIndex);
+			auto selection = _embeddingDatasetB->getSelection<Points>();
 
-        std::unordered_map<int, int> cellToClusterMap; // maps global cell index to cluster index
-        for (int clusterIndex = 0; clusterIndex < metadata.size(); ++clusterIndex) {
-            const auto& ptIndices = metadata[clusterIndex].getIndices();
-            for (int cellIndex : ptIndices) {
-                cellToClusterMap[cellIndex] = clusterIndex;
-            }
-        }
+			std::vector<std::uint32_t> localGlobalIndices;
+			_embeddingDatasetB->getGlobalIndices(localGlobalIndices);
 
-        std::unordered_map<int, int> clusterCount; // maps cluster index to count
-        for (int i = 0; i < sampledPoints.size(); ++i) {
-            int globalCellIndex = sampledPoints[i];
-            if (cellToClusterMap.find(globalCellIndex) != cellToClusterMap.end()) {
-                int clusterIndex = cellToClusterMap[globalCellIndex];
-                clusterCount[clusterIndex]++;
-            }
-        }
+			std::vector<std::uint32_t> sampledPoints;
+			sampledPoints.reserve(_embeddingPositionsB.size());
 
-        std::vector<std::pair<int, int>> sortedClusterCount(clusterCount.begin(), clusterCount.end());
-        std::sort(sortedClusterCount.begin(), sortedClusterCount.end(), [](const auto& a, const auto& b) { return a.second > b.second; });
+			for (auto selectionIndex : selection->indices)
+				sampledPoints.push_back(selectionIndex);
 
-        // Prepare data arrays for labels, data, and background colors
-        QStringList labels;
-        QStringList data;
-        QStringList backgroundColors;
+            std::tie(labels, data, backgroundColors) = computeMetadataCounts(metadata, sampledPoints);
 
-        for (const auto& [clusterIndex, count] : sortedClusterCount) {
-            QString clusterName = metadata[clusterIndex].getName();
-            labels << clusterName;
-            data << QString::number(count);
+		}
+	}
 
-            QString color = metadata[clusterIndex].getColor().name();
-            backgroundColors << color;
-        }
+    // --------- prepare the data for the sampler action ------------------------------- 
+    assert(_embeddingDatasetA->getNumPoints() == _embeddingSourceDatasetB->getNumDimensions());
+    std::vector<QString> dimensionNames = _embeddingSourceDatasetB->getDimensionNames(); // TODO: hardcode, assume embedding A is gene map and embedding B stores all the genes in A
 
-
-        //qDebug() << "Prepared for setSampleContext " << labels << data << backgroundColors;
-
-        auto start4 = std::chrono::high_resolution_clock::now();
-        getSamplerAction().setSampleContext({
-            { "ASelected", _isEmbeddingASelected},
-            { "ColorDatasetID", _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId() },
-            { "GlobalPointIndices", globalPointIndices },// connected genes
-            { "labels", labels},// for proportion chart
-            { "data", data},// for proportion chart
-            { "backgroundColors", backgroundColors}// for proportion chart
-            });
-
-        auto end4 = std::chrono::high_resolution_clock::now();
-        auto duration4 = std::chrono::duration_cast<std::chrono::milliseconds>(end4 - start4);
-        qDebug() << "sendDataTosampleScope 4 took " << duration4.count() << "ms";
-
-    }
-
-    // TODO: use gene symbols directly, to avoid repeated conversion from indices to symbols
-
-    _currentGeneSymbols.clear();
-    // assign gene symbols corresponding to globalPointIndices
-    for (int i = 0; i < globalPointIndices.size(); i++)
-    {
+	_currentGeneSymbols.clear();
+	// assign gene symbols corresponding to globalPointIndices
+	for (int i = 0; i < globalPointIndices.size(); i++)
+	{
 		int globalIndex = globalPointIndices[i].toInt();
-		QString geneSymbol = _embeddingSourceDatasetB->getDimensionNames()[globalIndex];
+		QString geneSymbol = dimensionNames[globalIndex];
 		_currentGeneSymbols.append(geneSymbol);
 	}
 
-    qDebug() << "sendDataToSampleScope() _currentGeneSymbols size" << _currentGeneSymbols.size();
-
-    // TODO: rewrite this function
-    _labels.clear();
-    _data.clear();
-    _backgroundColors.clear();
-    _globalPointIndices.clear();
-
-    _labels = getSamplerAction().getSampleContext()["labels"].toStringList();
-    _data = getSamplerAction().getSampleContext()["data"].toStringList();
-    _backgroundColors = getSamplerAction().getSampleContext()["backgroundColors"].toStringList();
-    _globalPointIndices = getSamplerAction().getSampleContext()["GlobalPointIndices"].toList();
+	qDebug() << "sendDataToSampleScope() _currentGeneSymbols size" << _currentGeneSymbols.size();
 
 	
-   
+	// --------- format the html --------------------- -------------------------------
+	QString html = "<html><head><style>"
+		"body { font-family: Arial; }"
+		".legend { list-style: none; padding: 0; }"
+		".legend li { display: flex; align-items: center; margin-bottom: 5px; }"
+		".legend-color { width: 16px; height: 16px; display: inline-block; margin-right: 5px; }"
+		"</style></head><body>";
+
+
+	// show first 80 genes and the rest in expandable box
+	QStringList geneSymbols;
+	QStringList additionalSymbols;
+	bool hasMoreThan80 = false;
+
+	for (const auto& globalPointIndex : globalPointIndices)
+	{
+		QString geneSymbol = dimensionNames[globalPointIndex.toInt()];
+		if (geneSymbols.size() < 80)
+		{
+			geneSymbols << geneSymbol;
+		}
+		else
+		{
+			hasMoreThan80 = true;
+			additionalSymbols << geneSymbol;
+		}
+	}
+
+	QString outputText;
+	QString chartTitle;
+	QString additionalGenesHtml;
+
+	if (hasMoreThan80)
+	{
+		additionalGenesHtml = QString(
+			"<details><summary style='font-size:14px; cursor:pointer;'>and more... </summary>"
+			"<p style='font-size:14px;'>%1</p>"
+			"</details>")
+			.arg(additionalSymbols.join(", "));
+	}
+
+	if (_isEmbeddingASelected) {
+		outputText = QString(
+			"<p style='font-size:14px;'>Gene embedding is selected.</p>"
+			"<table style='font-size:14px;'>"
+			"<tr>"
+			"<td><b>Selected Genes: </b></td>"
+			"<td>%1 %2</td>"  // add the expandable section right inside the same <td>
+			"</tr>"
+			"</table>"
+			"<p style='font-size:12px; color:#377fe4;'>"
+			"Click the 'Enrich' button in the gene panel for more details.</p>"
+		)
+			.arg(geneSymbols.join(", "))
+			.arg(additionalGenesHtml);  // append the expandable section here
+
+		chartTitle = "<b>Connected cell proportion (10% highest expression of avg. selected genes)</b>";
+	}
+	else {
+		outputText = QString(
+			"<p style='font-size:14px;'>Cell embedding is selected.</p>"
+			"<table style='font-size:14px;'>"
+			"<tr>"
+			"<td><b>Connected Genes: </b></td>"
+			"<td>%1 %2</td>"  // add the expandable section right inside the same <td>
+			"</tr>"
+			"</table>"
+			"<p style='font-size:12px; color:#377fe4;'>"
+			"Click the 'Enrich' button in the gene panel for more details.</p>"
+		)
+			.arg(geneSymbols.join(", "))
+			.arg(additionalGenesHtml);
+
+		chartTitle = "<b>Cell proportion</b>";
+	}
+
+	// get current color dataset B name
+	QString colorDatasetID = _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId();
+	QString colorDatasetName;
+	QString colorDatasetIntro;
+
+	if (colorDatasetID.isEmpty())
+	{
+		html += "<p>" + outputText + "</p>";
+	}
+	else
+	{
+		colorDatasetName = mv::data().getDataset(colorDatasetID)->getGuiName();
+		colorDatasetIntro = QString("Cell embedding coloring by %1").arg(colorDatasetName);
+
+		QVector<double> counts;
+
+		// Convert data to numbers and calculate total sum
+		double totalCount = 0.0;
+		for (const QVariant& dataVar : data) {
+			double value = dataVar.toDouble();
+			counts.append(value);
+			totalCount += value;
+		}
+
+		html += outputText; // font size al set in the table style
+		html += QString("<p style='font-size:14px;'>%1</p>").arg(colorDatasetIntro);
+		html += QString("<p style='font-size:14px;'>%1</p>").arg(chartTitle);
+
+		// dimensions for the stacked bar
+		int barWidth = 50;
+		int barHeight = 200;
+
+		int svgWidth = barWidth + 300;
+
+		html += QString("<svg width='%1' height='%2' style='border:none;'>")
+			.arg(svgWidth)
+			.arg(barHeight);
+
+		if (counts.size() == 1) {
+			// if there's only one category, fill the entire bar
+			html += QString("<rect x='0' y='0' width='%1' height='%2' fill='%3' stroke='none'></rect>")
+				.arg(barWidth)
+				.arg(barHeight)
+				.arg(backgroundColors[0]);
+
+			double labelX = barWidth + 5;
+			double labelY = barHeight / 2.0;
+
+			html += QString(
+				"<text x='%1' y='%2' font-family='Arial' font-size='12' "
+				"fill='black' text-anchor='start' alignment-baseline='middle'>"
+				"%3</text>")
+				.arg(labelX)
+				.arg(labelY)
+				.arg(labels[0]);
+		}
+		else {
+			// if multiple categories, stack them vertically
+			double yOffset = 0.0;
+
+			for (int i = 0; i < counts.size(); ++i) {
+				double proportion = counts[i] / totalCount;
+				double sliceHeight = proportion * barHeight;
+
+				html += QString("<rect x='0' y='%1' width='%2' height='%3' " "fill='%4' stroke='white' stroke-width='1'></rect>")
+					.arg(yOffset)
+					.arg(barWidth)
+					.arg(sliceHeight)
+					.arg(backgroundColors[i]);
+
+				// whether to show labels
+				double minPixelsForLabel = 10.0;
+				if (sliceHeight >= minPixelsForLabel)
+				{
+					double labelX = barWidth + 5;
+					double labelY = yOffset + (sliceHeight / 2.0);
+
+					double percentage = (counts[i] / totalCount) * 100.0;
+
+					QString labelText = QString("%1 (%2%)").arg(labels[i])
+						.arg(QString::number(percentage, 'f', 1));
+
+					html += QString(
+						"<text x='%1' y='%2' font-family='Arial' font-size='12' "
+						"fill='black' text-anchor='start' alignment-baseline='middle'>"
+						"%3</text>")
+						.arg(labelX)
+						.arg(labelY)
+						.arg(labelText);
+				}
+
+				yOffset += sliceHeight;
+			}
+		}
+
+		html += "</svg>";
+
+	}
+
+	getSamplerAction().setSampleContext({
+		{ "GeneInfo", html}
+		});
+
+	// cache
+	_currentHtmlGeneInfo.clear();
+	_currentHtmlGeneInfo = html;
+
+}
+
+std::tuple<QStringList, QStringList, QStringList> DualViewPlugin::computeMetadataCounts(QVector<Cluster>& metadata, std::vector<std::uint32_t>& sampledPoints)
+{
+    QStringList labels;
+    QStringList data;
+    QStringList backgroundColors;
+
+    std::unordered_map<int, int> cellToClusterMap; // maps global cell index to cluster index
+    for (int clusterIndex = 0; clusterIndex < metadata.size(); ++clusterIndex) {
+        const auto& ptIndices = metadata[clusterIndex].getIndices();
+        for (int cellIndex : ptIndices) {
+            cellToClusterMap[cellIndex] = clusterIndex;
+        }
+    }
+
+    std::unordered_map<int, int> clusterCount; // maps cluster index to count
+    for (int i = 0; i < sampledPoints.size(); ++i) {
+        int globalCellIndex = sampledPoints[i];
+        if (cellToClusterMap.find(globalCellIndex) != cellToClusterMap.end()) {
+            int clusterIndex = cellToClusterMap[globalCellIndex];
+            clusterCount[clusterIndex]++;
+        }
+    }
+
+    std::vector<std::pair<int, int>> sortedClusterCount(clusterCount.begin(), clusterCount.end());
+    std::sort(sortedClusterCount.begin(), sortedClusterCount.end(), [](const auto& a, const auto& b) { return a.second > b.second; });
+
+    for (const auto& [clusterIndex, count] : sortedClusterCount) 
+    {
+        QString clusterName = metadata[clusterIndex].getName();
+        labels << clusterName;
+        data << QString::number(count);
+
+        QString color = metadata[clusterIndex].getColor().name();
+        backgroundColors << color;
+    }
+
+    return { labels, data, backgroundColors };
 }
 
 void DualViewPlugin::updateEmbeddingBColor()
@@ -2422,8 +2347,6 @@ void DualViewPlugin::getEnrichmentAnalysis()
     //    }
     //}
 
-    
-
     if (!_currentGeneSymbols.isEmpty()) {
 
             // gProfiler
@@ -2520,17 +2443,25 @@ void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) {
         "</script>";*/
 
 
-	getSamplerAction().setSampleContext({
-		{ "ASelected", _isEmbeddingASelected },
-		{ "ColorDatasetID", _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId() },
-		{ "GlobalPointIndices", _globalPointIndices }, // Connected genes
-		{ "labels", _labels }, // For proportion chart
-		{ "data", _data }, // For proportion chart
-		{ "backgroundColors", _backgroundColors }, // For proportion chart
-		{ "EnrichmentTable", tableHtml } // TODO: directly send html or send data and generate html there?
-		});
+	//getSamplerAction().setSampleContext({
+	//	{ "ASelected", _isEmbeddingASelected },
+	//	{ "ColorDatasetID", _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId() },
+	//	{ "GlobalPointIndices", _globalPointIndices }, // Connected genes
+	//	{ "labels", _labels }, // For proportion chart
+	//	{ "data", _data }, // For proportion chart
+	//	{ "backgroundColors", _backgroundColors }, // For proportion chart
+	//	{ "EnrichmentTable", tableHtml } // TODO: directly send html or send data and generate html there?
+	//	});
 
-	qDebug() << "updateEnrichmentTable(): Table sent to Sample Scope (max 10 rows).";
+
+    getSamplerAction().setSampleContext({
+        { "GeneInfo", _currentHtmlGeneInfo },
+        { "EnrichmentTable", tableHtml } // TODO: directly send html or send data and generate html there?
+        });
+
+
+
+	qDebug() << "updateEnrichmentTable(): Table sent to Sample Scope.";
 
     //QString test = "GO:0019864";
     //QString test = limitedData[0].toMap()["Term ID"].toString();
@@ -2549,15 +2480,20 @@ void DualViewPlugin::noDataEnrichmentTable()
 		"</tr>"
 		"</table>";
 
+    //getSamplerAction().setSampleContext({
+    //    { "ASelected", _isEmbeddingASelected },
+    //    { "ColorDatasetID", _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId() },
+    //    { "GlobalPointIndices", _globalPointIndices }, // Connected genes
+    //    { "labels", _labels }, // For proportion chart
+    //    { "data", _data }, // For proportion chart
+    //    { "backgroundColors", _backgroundColors }, // For proportion chart
+    //    { "EnrichmentTable", tableHtml } // TODO: directly send html or send data and generate html there?
+    //    });
+
     getSamplerAction().setSampleContext({
-        { "ASelected", _isEmbeddingASelected },
-        { "ColorDatasetID", _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId() },
-        { "GlobalPointIndices", _globalPointIndices }, // Connected genes
-        { "labels", _labels }, // For proportion chart
-        { "data", _data }, // For proportion chart
-        { "backgroundColors", _backgroundColors }, // For proportion chart
-        { "EnrichmentTable", tableHtml } // TODO: directly send html or send data and generate html there?
-        });
+		{ "GeneInfo", _currentHtmlGeneInfo },
+		{ "EnrichmentTable", tableHtml } // TODO: directly send html or send data and generate html there?
+		});
 
 }
 

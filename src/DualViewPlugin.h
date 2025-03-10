@@ -104,6 +104,8 @@ private:
 
     void sendDataToSampleScope();
 
+    std::tuple<QStringList, QStringList, QStringList> computeMetadataCounts(QVector<Cluster>& metadata, std::vector<std::uint32_t>& sampledPoints);
+
     void computeTopCellForEachGene();
 
     // experiment enrichment
@@ -182,10 +184,7 @@ private:
     bool                       _reversePointSizeB = false;
 
     // cached sample scope data, for later enrichment analysis
-    QStringList _labels;
-    QStringList _data;
-    QStringList _backgroundColors;
-    QVariantList _globalPointIndices;
+    QString _currentHtmlGeneInfo; // cached gene info for sample scope
      
     
     // gene symbols, selected genes/ connected genes
