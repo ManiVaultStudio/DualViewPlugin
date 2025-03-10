@@ -4,6 +4,7 @@
 EnrichmentAnalysis::EnrichmentAnalysis(QObject* parent)
     : QObject(parent), networkManager(new QNetworkAccessManager(this))
 {
+    qDebug() << "EnrichmentAnalysis constructor called, this=" << this;
 }
 
 void EnrichmentAnalysis::lookupSymbolsToppGene(const QStringList& symbols) {
@@ -368,17 +369,9 @@ void EnrichmentAnalysis::handleGOtermReplyGprofiler()
                 }
             }
 
-            //qDebug() << "Extracted Gene Names:" << geneNames;
+            qDebug() << "Extracted Gene Names size:" << geneNames.size();
 
             emit genesFromGOtermDataReady(geneNames);
-
-          /*  if (validResultsFound) {
-                emit enrichmentDataReady(outputList);
-            }
-            else {
-                qDebug() << "Gprofiler reply warning: no result found";
-                emit enrichmentDataNotExists();
-            }*/
         }
         else {
             qDebug() << "Gprofiler GO term convert reply warning: no result key found";

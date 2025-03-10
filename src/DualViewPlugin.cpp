@@ -2622,6 +2622,7 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
     }
 
     _embeddingWidgetA->setHighlights(highlights, 1);
+    qDebug()<< "hightlights set "<< highlights.size() << "indices.size() = " << indices.size();
 
     // FIXME: test to create a dataset containing the gene points - for plotting in a seperate scatter plot
 
@@ -2656,6 +2657,7 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
     {
         _associatedGenes = mv::data().createDataset("Points", "AssociatedGenes");
         createNewDataset = true;
+        qDebug() << "Create new dataset";
     }
 
     auto numAssociatedGenes = indices.size();
@@ -2668,10 +2670,15 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
 		associatedGeneCoor[2 * i] = _embeddingPositionsA[geneIndice].x;
 		associatedGeneCoor[2 * i + 1] = _embeddingPositionsA[geneIndice].y;
 	}
+    qDebug() << "associatedGeneCoor.size() = " << associatedGeneCoor.size();
+
+    // first cancel the selection on this dataset, to avoid selection indices conflict after data changed
+    _associatedGenes->setSelectionIndices({});
 
 	_associatedGenes->setData(associatedGeneCoor.data(), numAssociatedGenes, 2);
 
 	events().notifyDatasetDataChanged(_associatedGenes);
+    qDebug() << "notifyDatasetDataChanged";
 
     // link the associated genes to the original embedding
     mv::SelectionMap mapping;
@@ -2687,7 +2694,7 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
         selectionMap[i] = indexOriginalVector; // i: index in _associatedGenes, indexOriginal: index in _embeddingDatasetA
     }
 
-    //qDebug() << "selectionMap.size() = " << selectionMap.size();
+    qDebug() << "selectionMap.size() = " << selectionMap.size();
 
 	if (createNewDataset)
 	{
@@ -2697,8 +2704,10 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
 	else
 	{
         qDebug() << "Update linked data";
-        mv::LinkedData linkedData = _associatedGenes->getLinkedData().back();
+        qDebug() << "linkedData size = " << _associatedGenes->getLinkedData().size();
+        mv::LinkedData& linkedData = _associatedGenes->getLinkedData().back();
         linkedData.setMapping(mapping);
+        qDebug() << " finished setMapping";
 	}
 
 }
