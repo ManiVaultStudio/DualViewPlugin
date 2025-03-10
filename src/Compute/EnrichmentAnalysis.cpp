@@ -388,5 +388,7 @@ void EnrichmentAnalysis::handleGOtermReplyGprofiler()
         qDebug() << "Gprofiler GO term convert reply error:" << reply->errorString();
     }
     reply->deleteLater();
+
+    qDebug() << "Finished handle gprofiler reply...";
 }
 

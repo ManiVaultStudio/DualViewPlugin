@@ -2571,7 +2571,7 @@ void DualViewPlugin::retrieveGOtermGenes(const QString& GOTermId)
 
 void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSymbols)
 {
-	qDebug() << "DualViewPlugin::updateGOtermGenes()";
+	qDebug() << "DualViewPlugin::highlightGOTermGenesInEmbedding()";
 
     // check which genes exist in the dataset
     // find the gene index in the current embedding B source dataset dimensions
@@ -2650,10 +2650,12 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
     //    _associatedGenes->setGroupIndex(1);
     //}
 
-    // test 3. using a seperate dataset - Problem: this is not linked to the original embedding
+    // test 3. using a seperate dataset - Attention: linking to the original embedding is 1-directional, from subset to original embedding
+    bool createNewDataset = false;
     if (!_associatedGenes.isValid())
     {
         _associatedGenes = mv::data().createDataset("Points", "AssociatedGenes");
+        createNewDataset = true;
     }
 
     auto numAssociatedGenes = indices.size();
@@ -2671,23 +2673,33 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
 
 	events().notifyDatasetDataChanged(_associatedGenes);
 
-    // test to link the associated genes to the original embedding
+    // link the associated genes to the original embedding
     mv::SelectionMap mapping;
     auto& selectionMap = mapping.getMap();
 
     std::vector<unsigned int> globalIndices;
     _embeddingDatasetA->getGlobalIndices(globalIndices);
-    qDebug() << "globalIndices.size() = " << globalIndices.size();
+    //qDebug() << "globalIndices.size() = " << globalIndices.size();
 
     for (size_t i = 0; i < indices.size(); i++) {
-        int localIndex = indices[i]; // Local index in _embeddingDatasetA
-        std::vector<unsigned int> test = { static_cast<uint32_t>(localIndex) };
-        selectionMap[i] = test;  
-
-        //qDebug() << "selectionMap[" << i << "] = " << localIndex;
+        int indexOriginal = indices[i]; // Local index in _embeddingDatasetA
+        std::vector<unsigned int> indexOriginalVector = { static_cast<uint32_t>(indexOriginal) };
+        selectionMap[i] = indexOriginalVector; // i: index in _associatedGenes, indexOriginal: index in _embeddingDatasetA
     }
 
-    _associatedGenes->addLinkedData(_embeddingDatasetA, mapping);
+    //qDebug() << "selectionMap.size() = " << selectionMap.size();
+
+	if (createNewDataset)
+	{
+        qDebug() << "Add linked data";
+		_associatedGenes->addLinkedData(_embeddingDatasetA, mapping);
+	}
+	else
+	{
+        qDebug() << "Update linked data";
+        mv::LinkedData linkedData = _associatedGenes->getLinkedData().back();
+        linkedData.setMapping(mapping);
+	}
 
 }
 
