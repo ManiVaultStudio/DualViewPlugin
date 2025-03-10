@@ -28,10 +28,6 @@
 #include <QStyledItemDelegate>
 #include <QWebChannel>
 
-// for pie chart in tooltip
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 Q_PLUGIN_METADATA(IID "studio.manivault.DualViewPlugin")
 
@@ -435,12 +431,6 @@ void DualViewPlugin::init()
     embeddinglayoutA->addWidget(_embeddingASecondaryToolbarAction.createWidget(&getWidget()), 1);
     layout->addLayout(embeddinglayoutA, 1);
 
-    // TODO: remove if not using d3 vis
-    // Create chart widget and set html contents of webpage 
-    //_chartWidget = new ChartWidget(this);// TODO remove if not using d3 vis
-    //_chartWidget->setPage(":dual_view/dual_chart/test_bipartite.html", "qrc:/dual_view/dual_chart/");
-    //layout->addWidget(_chartWidget, 1);
-
     auto lineslayout = new QVBoxLayout();
     lineslayout->addWidget(_linesToolbarAction.createWidget(&getWidget()), 1);     
     lineslayout->addWidget(_embeddingLinesWidget, 100);
@@ -453,9 +443,6 @@ void DualViewPlugin::init()
 	layout->addLayout(embeddinglayoutB, 1);
 
     getWidget().setLayout(layout);
-      
-    // Update the selection (coming from JS) in core
-    //connect(&_chartWidget->getCommunicationObject(), &ChartCommObject::passSelectionToCore, this, &DualViewPlugin::publishSelection);
 
     connect(&_embeddingDatasetA, &Dataset<Points>::changed, this, &DualViewPlugin::embeddingDatasetAChanged);
 
@@ -817,7 +804,6 @@ void DualViewPlugin::updateEmbeddingDataA()
 
 	_embeddingDatasetA->extractDataForDimensions(_embeddingPositionsA, 0, 1);
 	_embeddingWidgetA->setData(&_embeddingPositionsA);
-
 }
 
 void DualViewPlugin::updateEmbeddingDataB()
@@ -827,7 +813,6 @@ void DualViewPlugin::updateEmbeddingDataB()
 
     _embeddingDatasetB->extractDataForDimensions(_embeddingPositionsB, 0, 1);
     _embeddingWidgetB->setData(&_embeddingPositionsB);
-
 }
 
 void DualViewPlugin::normalizeYValues(std::vector<Vector2f>& embedding) 
@@ -1035,17 +1020,14 @@ void DualViewPlugin::highlightSelectedLines(mv::Dataset<Points> dataset)
 		}
 	}
 
-
 	if (_isEmbeddingASelected)
 	{
 		_embeddingLinesWidget->setHighlights(localSelectionIndices, true); //true: A, false: B
-
 	}
 	else
 	{
 		_embeddingLinesWidget->setHighlights(localSelectionIndices, false); //true: A, false: B
 	}
-
 }
 
 void DualViewPlugin::highlightInputGenes(const QStringList& dimensionNames)
@@ -1118,7 +1100,6 @@ void DualViewPlugin::highlightSelectedEmbeddings(ScatterplotWidget*& widget, mv:
 
 void DualViewPlugin::sendDataToSampleScope()
 {
-
 	if (getSamplerAction().getEnabledAction().isChecked() == false)
 		return;
 
@@ -1206,11 +1187,8 @@ void DualViewPlugin::sendDataToSampleScope()
 				int globalCellIndex = localGlobalIndicesB[localCellIndex];
                 sampledPoints.push_back(globalCellIndex);
 			}
-
             std::tie(labels, data, backgroundColors) = computeMetadataCounts(metadata, sampledPoints);
-
 		}
-
 	}
 	else
 	{
@@ -1222,13 +1200,11 @@ void DualViewPlugin::sendDataToSampleScope()
 			if (_connectedCellsPerGene[i] > 0)
 			{
 				globalPointIndices << i;
-
 			}
 		}
 
 		if (_metaDatasetB.isValid())
 		{
-
 			QVector<Cluster> metadata = _metaDatasetB->getClusters();
 
 			auto selection = _embeddingDatasetB->getSelection<Points>();
@@ -1243,7 +1219,6 @@ void DualViewPlugin::sendDataToSampleScope()
 				sampledPoints.push_back(selectionIndex);
 
             std::tie(labels, data, backgroundColors) = computeMetadataCounts(metadata, sampledPoints);
-
 		}
 	}
 

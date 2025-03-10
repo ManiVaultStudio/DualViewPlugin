@@ -273,3 +273,4 @@ QString buildHtmlForEnrichmentResults(const QVariantList& data)
 
 	return tableHtml;
 }
+
