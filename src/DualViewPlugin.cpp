@@ -1163,8 +1163,6 @@ void DualViewPlugin::sendDataToSampleScope()
 		// if no metadata B avaliable, only send gene ids
 		if (_metaDatasetB.isValid())
 		{
-
-			auto start2 = std::chrono::high_resolution_clock::now();
 			// load the meta data categories
 			QVector<Cluster> metadata = _metaDatasetB->getClusters();
 
@@ -1197,53 +1195,24 @@ void DualViewPlugin::sendDataToSampleScope()
 					count0++;
 			}
 
-
 			// if the number of cells with expression more than 0 is less than 10%, use that number
 			int numCellsCounted = (count0 > top10) ? top10 : count0;
 			//qDebug() << "numCellsCounted " << numCellsCounted;
 
-			// TODO: WORKINPROGRESS here....
-			// TEMP: count the number of cells in each meta data category for the top 10% cells in rankedCells
+            // mapping from local to global indices
+            std::vector<std::uint32_t> localGlobalIndicesB;
+            _embeddingSourceDatasetB->getGlobalIndices(localGlobalIndicesB);
 
-
-			std::unordered_map<int, int> cellToClusterMap; // maps global cell index to cluster index
-			for (int clusterIndex = 0; clusterIndex < metadata.size(); ++clusterIndex) {
-				const auto& ptIndices = metadata[clusterIndex].getIndices();
-				for (int cellIndex : ptIndices) {
-					cellToClusterMap[cellIndex] = clusterIndex;
-				}
-			}
-
-			auto end2 = std::chrono::high_resolution_clock::now();
-			auto duration2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
-			qDebug() << "sendDataTosampleScope 2 took " << duration2.count() << "ms";
-
-			// mapping from local to global indices
-			std::vector<std::uint32_t> localGlobalIndicesB;
-			_embeddingSourceDatasetB->getGlobalIndices(localGlobalIndicesB);
-
-			std::unordered_map<int, int> clusterCount; // maps cluster index to count
-			for (int i = 0; i < numCellsCounted; ++i) {
+            std::vector<std::uint32_t> sampledPoints; // global indices of the cells in the top 10%
+            for (int i = 0; i < numCellsCounted; ++i)
+            {
 				int localCellIndex = rankedCells[i].second;
 				int globalCellIndex = localGlobalIndicesB[localCellIndex];
-				//qDebug() << "globalCellIndex " << globalCellIndex << "localCellIndex " << localCellIndex;
-				if (cellToClusterMap.find(globalCellIndex) != cellToClusterMap.end()) {
-					int clusterIndex = cellToClusterMap[globalCellIndex];
-					clusterCount[clusterIndex]++;
-				}
+                sampledPoints.push_back(globalCellIndex);
 			}
 
-			std::vector<std::pair<int, int>> sortedClusterCount(clusterCount.begin(), clusterCount.end());
-			std::sort(sortedClusterCount.begin(), sortedClusterCount.end(), [](const auto& a, const auto& b) { return a.second > b.second; });
+            std::tie(labels, data, backgroundColors) = computeMetadataCounts(metadata, sampledPoints);
 
-			for (const auto& [clusterIndex, count] : sortedClusterCount) {
-				QString clusterName = metadata[clusterIndex].getName();
-				labels << clusterName;
-				data << QString::number(count);
-
-				QString color = metadata[clusterIndex].getColor().name();
-				backgroundColors << color;
-			}
 		}
 
 	}
