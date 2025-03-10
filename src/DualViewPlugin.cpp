@@ -2599,11 +2599,11 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
         }
     }
 
-    QStringList geneStringList;
+    // for debug purpose
+    /*QStringList geneStringList;
     for (int i = 0; i < geneSymbols.size(); i++) {
         geneStringList << geneSymbols[i].toString();
-    }
-
+    }*/
     //qDebug() << "Gene symbols:" << geneStringList.join(", ");
 
     qDebug() << "highlightGOTermGenesInEmbedding: " << geneSymbols.size() << " genes, " << numNotFoundGenes << " not found";
