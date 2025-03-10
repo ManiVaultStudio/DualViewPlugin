@@ -187,12 +187,11 @@ private:
      
     
     // gene symbols, selected genes/ connected genes
-    //QVariantList               _currentGeneSymbols;
     QStringList 			     _currentGeneSymbols;
 
     // Enrichment Analysis
     EnrichmentAnalysis*                _client;                  // Enrichment analysis client 
-    QVariantList                       _enrichmentResult;        // Cached enrichment analysis result, in case the user clicks on one cell
+    //QVariantList                       _enrichmentResult;        // Cached enrichment analysis result - TODO: remove if not needed
     QString                            _currentEnrichmentSpecies = "mmusculus"; // current enrichment species
     QStringList                        _backgroundGeneNames; // background for enrichment analysis
 

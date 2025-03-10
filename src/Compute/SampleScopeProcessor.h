@@ -9,3 +9,7 @@ std::tuple<QStringList, QStringList, QStringList> computeMetadataCounts(QVector<
 
 // build html for the selected items
 QString buildHtmlForSelection(const bool isASelected, const QString colorDatasetName, const QStringList& geneSymbols, QStringList& labels, QStringList& data, QStringList& backgroundColors);
+
+// build html for the enrichment results
+QString buildHtmlForEnrichmentResults(const QVariantList& data);
+

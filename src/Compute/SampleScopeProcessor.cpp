@@ -220,3 +220,56 @@ QString buildHtmlForSelection(const bool isASelected, const QString colorDataset
 
 	return html;
 }
+
+QString buildHtmlForEnrichmentResults(const QVariantList& data)
+{
+	// Manually define headers
+	QStringList headers = { "Source", "Term ID", "Term Name", "Padj", "Symbol" };
+
+	// Limit data to max 10 rows
+	int maxRows = qMin(30, data.size());
+	QVariantList limitedData;
+	for (int i = 0; i < maxRows; ++i) {
+		limitedData.append(data[i]);
+	}
+
+	QString tableHtml = "<table style='font-size:14px; border-collapse: collapse; width:100%; font-family: Arial;' border='1'>"
+		"<tr>";
+
+	// Add headers with fixed width for better alignment
+	for (const QString& header : headers) {
+		tableHtml += "<th style='padding: 5px; width: auto;'>" + header + "</th>";
+	}
+	tableHtml += "</tr>";
+
+	for (const QVariant& item : limitedData) {
+		QVariantMap dataMap = item.toMap();
+		QString termID = dataMap["Term ID"].toString();
+
+		//tableHtml += "<tr>";
+
+		// enable click on row
+		tableHtml += QString("<tr onclick='rowClicked(\"%1\")' style='cursor:pointer;'>").arg(termID);
+
+		for (const QString& key : headers) {
+			QString value = dataMap[key].toString();
+
+			// format Padj 3 decimal places
+			if (key == "Padj") {
+				bool ok;
+				double pValue = value.toDouble(&ok);
+				if (ok) {
+					value = QString::number(pValue, 'e', 3);
+				}
+			}
+
+			tableHtml += "<td style='padding: 5px; text-align: left; width: auto;'>" + value + "</td>";
+		}
+
+		tableHtml += "</tr>";
+	}
+
+	tableHtml += "</table>";
+
+	return tableHtml;
+}
