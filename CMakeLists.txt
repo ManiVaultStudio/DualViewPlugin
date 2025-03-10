@@ -91,6 +91,8 @@ set(Models
 set(Compute
     src/Compute/EnrichmentAnalysis.h
 	src/Compute/EnrichmentAnalysis.cpp
+	src/Compute/SampleScopeProcessor.h
+	src/Compute/SampleScopeProcessor.cpp
 )
 
 set(PLUGIN_MOC_HEADERS

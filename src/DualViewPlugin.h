@@ -14,6 +14,7 @@
 
 #include "Actions/SettingsAction.h"
 #include "Compute/EnrichmentAnalysis.h"
+#include "Compute/SampleScopeProcessor.h"
 
 /** All plugin related classes are in the ManiVault plugin namespace */
 using namespace mv::plugin;
@@ -103,8 +104,6 @@ private:
     void computeSelectedGeneMeanExpression();
 
     void sendDataToSampleScope();
-
-    std::tuple<QStringList, QStringList, QStringList> computeMetadataCounts(QVector<Cluster>& metadata, std::vector<std::uint32_t>& sampledPoints);
 
     void computeTopCellForEachGene();
 
