@@ -187,7 +187,8 @@ private:
      
     
     // gene symbols, selected genes/ connected genes
-    QVariantList               _currentGeneSymbols;
+    //QVariantList               _currentGeneSymbols;
+    QStringList 			     _currentGeneSymbols;
 
     // Enrichment Analysis
     EnrichmentAnalysis*                _client;                  // Enrichment analysis client 
