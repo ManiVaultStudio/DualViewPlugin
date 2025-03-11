@@ -625,6 +625,7 @@ void DualViewPlugin::update1DEmbeddingPositions(bool isA)
 		}
 
         normalizeYValues(embedding_src);
+
         projectToVerticalAxis(embedding_src, 0.0f);
         _embedding_src = embedding_src;
 	}
@@ -802,28 +803,6 @@ void DualViewPlugin::updateEmbeddingDataB()
     _embeddingWidgetB->setData(&_embeddingPositionsB);
 }
 
-void DualViewPlugin::normalizeYValues(std::vector<Vector2f>& embedding) 
-{
-    float min_y = std::numeric_limits<float>::max();
-    float max_y = std::numeric_limits<float>::lowest();
-
-    for (const auto& v : embedding) {
-        min_y = std::min(min_y, v.y);
-        max_y = std::max(max_y, v.y);
-    }
-
-    // Normalize y-values to range (0, 1)
-    for (auto& v : embedding) {
-        v.y = (v.y - min_y) / (max_y - min_y);
-    }
-}
-
-void DualViewPlugin::projectToVerticalAxis(std::vector<mv::Vector2f>& embeddings, float x_value) {
-    for (auto& point : embeddings) {
-        point.x = x_value;  // Set x-coordinate to the specified value
-    }
-}
-
 void DualViewPlugin::embeddingDatasetAChanged()
 {
     _embeddingDropWidgetA->setShowDropIndicator(!_embeddingDatasetA.isValid());
@@ -890,7 +869,8 @@ void DualViewPlugin::embeddingDatasetBChanged()
     qDebug() << "embeddingDatasetBChanged(): metaDatasetB removed";
 
     // precompute the data range
-    computeDataRange();
+    computeDataRange(_embeddingSourceDatasetB, _columnMins, _columnRanges);
+    qDebug() << "Data range computed" << _columnMins.size() << _columnRanges.size() << _columnMins[0] << _columnRanges[0];
 
     // set the background gene names for the enrichment analysis
 	if (_embeddingSourceDatasetB->getDimensionNames().size() < 19000) // FIXME: hard code the threshold for the number of genes
@@ -936,54 +916,6 @@ void DualViewPlugin::embeddingDatasetBChanged()
         update1DEmbeddingPositions(false); 
         updateLineConnections();
     }
-}
-
-void DualViewPlugin::computeDataRange()
-{
-    if (!_embeddingSourceDatasetB.isValid())
-    {
-        qDebug() << "Datasets B should be valid to compute data range";
-        return;
-    }
-
-    // Assume gene embedding is t-SNE
-    // FIXME: should check if the number of points in A is the same as the number of dimensions in B
-
-    // define lines - assume embedding A is dimension embedding, embedding B is observation embedding
-    int numDimensions = _embeddingSourceDatasetB->getNumDimensions(); // Assume the number of points in A is the same as the number of dimensions in B
-    int numDimensionsFull = _embeddingSourceDatasetB->getNumDimensions();
-    int numPoints = _embeddingSourceDatasetB->getNumPoints(); // num of points in source dataset B
-    int numPointsLocal = _embeddingDatasetB->getNumPoints(); // num of points in the embedding B
-
-    std::vector<std::uint32_t> localGlobalIndicesB;
-    _embeddingSourceDatasetB->getGlobalIndices(localGlobalIndicesB);
-
-    _columnMins.resize(numDimensions);
-    _columnRanges.resize(numDimensions);
-
-    // Find the minimum value in each column - attention! this is the minimum of the subset (if HSNE)
-#pragma omp parallel for
-    for (int dimIdx = 0; dimIdx < numDimensions; dimIdx++)
-    {
-
-        float minValue = std::numeric_limits<float>::max();
-        float maxValue = std::numeric_limits<float>::lowest();
-
-        for (int i = 0; i < numPoints; i++)
-        {
-            float val = _embeddingSourceDatasetB->getValueAt(i * numDimensionsFull + dimIdx);
-            if (val < minValue)
-                minValue = val;
-            if (val > maxValue)
-                maxValue = val;
-        }
-
-        _columnMins[dimIdx] = minValue;
-        _columnRanges[dimIdx] = maxValue - minValue;
-    }
-
-    qDebug() << "DualViewPlugin:: data range computed";
-
 }
 
 void DualViewPlugin::highlightSelectedLines(mv::Dataset<Points> dataset)
@@ -2142,15 +2074,7 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
         }
     }
 
-    // for debug purpose
-    /*QStringList geneStringList;
-    for (int i = 0; i < geneSymbols.size(); i++) {
-        geneStringList << geneSymbols[i].toString();
-    }*/
-    //qDebug() << "Gene symbols:" << geneStringList.join(", ");
-
     qDebug() << "highlightGOTermGenesInEmbedding: " << geneSymbols.size() << " genes, " << numNotFoundGenes << " not found";
-
 
     if (indices.isEmpty())
         return;
@@ -2274,7 +2198,6 @@ void DualViewPlugin::updateEnrichmentOrganism()
 }
 
 
-
 // =============================================================================
 // Serialization
 // =============================================================================
@@ -2357,9 +2280,6 @@ QVariantMap DualViewPlugin::toVariantMap() const
     insertIntoVariantMap(_embeddingWidgetA->getNavigationAction(), variantMap, "NavigationA");
 
     insertIntoVariantMap(_embeddingWidgetB->getNavigationAction(), variantMap, "NavigationB"); //FIXME: is this correct?
-
-
-
 
 	return variantMap;
 }

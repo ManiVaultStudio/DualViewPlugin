@@ -20,6 +20,7 @@
 #include "Actions/SettingsAction.h"
 #include "Compute/EnrichmentAnalysis.h"
 #include "Compute/SampleScopeProcessor.h"
+#include "Compute/Computation.h"
 
 /** All plugin related classes are in the ManiVault plugin namespace */
 using namespace mv::plugin;
@@ -96,13 +97,6 @@ private:
     void updateLineConnections();
 
     void highlightSelectedLines(mv::Dataset<Points> dataset);
-
-    void projectToVerticalAxis(std::vector<mv::Vector2f>& embeddings, float x_value);
-
-    void normalizeYValues(std::vector<Vector2f>& embedding);
-
-    void computeDataRange(); // precompute the range of each column every time the dataset changes, for computing line connections
-
 
     
     // for embedding A

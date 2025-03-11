@@ -93,6 +93,8 @@ set(Compute
 	src/Compute/EnrichmentAnalysis.cpp
 	src/Compute/SampleScopeProcessor.h
 	src/Compute/SampleScopeProcessor.cpp
+	src/Compute/Computation.h
+	src/Compute/Computation.cpp
 )
 
 set(PLUGIN_MOC_HEADERS
