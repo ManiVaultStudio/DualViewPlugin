@@ -224,7 +224,7 @@ QString buildHtmlForSelection(const bool isASelected, const QString colorDataset
 QString buildHtmlForEnrichmentResults(const QVariantList& data)
 {
 	// Manually define headers
-	QStringList headers = { "Source", "Term ID", "Term Name", "Padj", "Symbol" };
+	QStringList headers = { "Source", "Term ID", "Term Name", "Padj", "Highlighted", "Symbol" };
 
 	// Limit data to max 10 rows
 	int maxRows = qMin(30, data.size());

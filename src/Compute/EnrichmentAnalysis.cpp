@@ -225,6 +225,9 @@ void EnrichmentAnalysis::postGeneGprofiler(const QStringList& query, const QStri
     json["sources"] = QJsonArray({ "GO:BP" }); // Gene Ontology categories
     json["query"] = QJsonArray::fromStringList(query);
     json["significance_threshold_method"] = "bonferroni";
+
+    // test
+    json["highlight"] = "true";
    
     if (!background.isEmpty()) {
         json["domain_scope"] = "custom";
@@ -276,6 +279,11 @@ void EnrichmentAnalysis::handleEnrichmentReplyGprofiler() {
                     QString source = resultObj["source"].toString();
                     QString termID = resultObj["native"].toString();
 
+                    // test
+                    bool highlighted = resultObj.contains("highlighted") ? resultObj["highlighted"].toBool() : false;
+                    //QString highlighted = resultObj["highlighted"].toString();
+                    qDebug() << "highlighted:" << highlighted;
+
                     validResultsFound = true;
 
                     // Process intersections
@@ -293,6 +301,7 @@ void EnrichmentAnalysis::handleEnrichmentReplyGprofiler() {
                     dataMap["Term ID"] = termID;
                     dataMap["Term Name"] = name;
                     dataMap["Padj"] = pValue;
+                    dataMap["Highlighted"] = highlighted;
                     dataMap["Symbol"] = geneSymbols.join(",");
                     outputList.append(dataMap);
                 }

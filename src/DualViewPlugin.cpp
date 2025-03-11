@@ -1196,14 +1196,6 @@ void DualViewPlugin::updateEmbeddingASize()
     int numPointsA = _embeddingDatasetA->getNumPoints();
     auto selection = _embeddingDatasetB->getSelection<Points>();
 
- //   if (selection->indices.size() == 0)
- //   {
- //       std::vector<float> connectedCellsPerGene(numPointsA, 1.0f);
- //       _embeddingWidgetA->setScalars(connectedCellsPerGene);
- //       qDebug() << "<<<<<<<<<<<<<<????";
-	//	return;
-	//}
-
     std::vector<bool> selected; // bool of selected in the current scale
     std::vector<char> highlights;
     _embeddingDatasetB->selectedLocalIndices(selection->indices, selected);
