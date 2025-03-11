@@ -349,10 +349,10 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     getSamplerAction().initialize(this, &selectionAction.getPixelSelectionAction(), &selectionAction.getSamplerPixelSelectionAction());
 
     // Example code for adding a QTable widget in the tooltip
-   /* auto widgetSampleScope = new QWidget();
+    auto widgetSampleScope = new QWidget();
     auto layoutSampleScope = new QVBoxLayout();
 
-    widgetSampleScope->setLayout(layoutSampleScope);*/
+    widgetSampleScope->setLayout(layoutSampleScope);
 
    /* auto widget = new QWebEngineView();
     auto channel = new QWebChannel(widget->page());
@@ -367,21 +367,20 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
 
 
     // Example code for control column width in QTableWidget
-    /*auto tableWidget = new QTableWidget(1, 5);
+    auto tableWidget = new QTableWidget(1, 5);
 
     tableWidget->setItem(0, 0, new QTableWidgetItem("aslkdjaskljdklasjdkljasklgjhklfghjkldfhjklghdfkjhgjkhdfjkghdfjkghkjdsakljaskldjsakljdklajdklsajlhgjkhdsajkhgdjk"));
     tableWidget->setItemDelegateForColumn(0, new ElidedItemDelegate(tableWidget));
 
-    widgetSampleScope->layout()->addWidget(widget);
-    widgetSampleScope->layout()->addWidget(tableWidget);*/
+    widgetSampleScope->layout()->addWidget(_sampleScopeWidget);
+    widgetSampleScope->layout()->addWidget(tableWidget);
 
-    qDebug() << "Loading chart widget";
 
     connect(_sampleScopeCommObject, &ChartCommObject::goTermClicked, this, [this](const QString& goTermID) {
         retrieveGOtermGenes(goTermID);
 		});
 
-	getSamplerAction().setWidgetViewGeneratorFunction([this](const ViewPluginSamplerAction::SampleContext& toolTipContext) -> QWidget* { //, widgetSampleScope
+	getSamplerAction().setWidgetViewGeneratorFunction([this, widgetSampleScope](const ViewPluginSamplerAction::SampleContext& toolTipContext) -> QWidget* { //, widgetSampleScope
 
 		QString html = toolTipContext["GeneInfo"].toString();
 
@@ -396,8 +395,9 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
         qDebug() << "_sampleScopewidget " << _sampleScopeWidget;
 
         _sampleScopeWidget->setHtml(html);
-		return _sampleScopeWidget;
-		//return widgetSampleScope;
+
+		//return _sampleScopeWidget;
+		return widgetSampleScope;
 		});
      
     getSamplerAction().getEnabledAction().setChecked(false);
