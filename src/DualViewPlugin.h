@@ -100,7 +100,7 @@ private:
 
     
     // for embedding A
-    void computeSelectedGeneMeanExpression();
+    void updateSelectedGeneMeanExpression();
 
     void sendDataToSampleScope();
 

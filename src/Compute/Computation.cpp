@@ -70,3 +70,71 @@ void computeDataRange(const mv::Dataset<Points> dataset, std::vector<float>& col
     qDebug() << "Data range computed";
 
 }
+
+void computeSelectedGeneMeanExpression(const mv::Dataset<Points> sourceDataset, const mv::Dataset<Points> selectedDataset, std::vector<float>& meanExpressionFull)
+{   // sourceDataset should be embeddingSourceDatasetB, selectedDataset should be embeddingDatasetA
+    
+    auto geneSelection = selectedDataset->getSelection<Points>();
+
+    if (geneSelection->indices.size() == 0)
+    {
+        qDebug() << "DualViewPlugin: selected 0 genes";
+        return;
+    }
+
+    if (!sourceDataset.isValid())
+    {
+        qDebug() << "DualViewPlugin: cell embedding source dataset is not valid";
+        return;
+    }
+
+    int numPointsB = sourceDataset->getNumPoints();
+    int numDimensionsB = sourceDataset->getNumDimensions();
+    int numSelectedGenes = geneSelection->indices.size();
+
+    // Output a dataset to color the spatial map by the selected gene avg. expression - always the same size as the full dataset
+    mv::Dataset<Points> fullDatasetB;
+    if (sourceDataset->isDerivedData())
+    {
+        fullDatasetB = sourceDataset->getSourceDataset<Points>()->getFullDataset<Points>();
+    }
+    else
+    {
+        fullDatasetB = sourceDataset->getFullDataset<Points>();
+    }
+    int totalNumPoints = fullDatasetB->getNumPoints();
+    //qDebug() << "totalNumPoints" << totalNumPoints << "fullDatasetB" << fullDatasetB->getGuiName();
+
+    meanExpressionFull.resize(totalNumPoints, 0.0f);
+
+#pragma omp parallel for  
+    for (int j = 0; j < totalNumPoints; j++)
+    {
+        float sum = 0.0f;
+        for (int i = 0; i < numSelectedGenes; i++)
+        {
+            int geneIndex = geneSelection->indices[i];
+            sum += fullDatasetB->getValueAt(j * numDimensionsB + geneIndex);
+        }
+        meanExpressionFull[j] = sum / numSelectedGenes;
+    }
+
+}
+
+void extractSelectedGeneMeanExpression(const mv::Dataset<Points> sourceDataset, const std::vector<float>& meanExpressionFull, std::vector<float>& meanExpressionLocal)
+{
+    // sourceDataset should be embeddingSourceDatasetB
+
+    int numPointsB = sourceDataset->getNumPoints();
+
+    meanExpressionLocal.clear();
+    meanExpressionLocal.resize(numPointsB, 0.0f);
+
+    std::vector<std::uint32_t> localGlobalIndicesB;
+    sourceDataset->getGlobalIndices(localGlobalIndicesB);
+
+    for (int i = 0; i < numPointsB; i++)
+    {
+        meanExpressionLocal[i] = meanExpressionFull[localGlobalIndicesB[i]];
+    }
+}

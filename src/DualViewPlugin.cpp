@@ -1176,10 +1176,10 @@ void DualViewPlugin::updateEmbeddingBColor()
         return;
     
     auto start1 = std::chrono::high_resolution_clock::now();
-    computeSelectedGeneMeanExpression();
+    updateSelectedGeneMeanExpression();
     auto end1 = std::chrono::high_resolution_clock::now();
     auto duration1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1 - start1);
-    qDebug() << "computeSelectedGeneMeanExpression() took " << duration1.count() << "ms";
+    qDebug() << "updateSelectedGeneMeanExpression() took " << duration1.count() << "ms";
 
     if (_selectedGeneMeanExpression.size() != _embeddingDatasetB->getNumPoints())
     {
@@ -1652,69 +1652,12 @@ void DualViewPlugin::selectPoints(EmbeddingLinesWidget* widget, const std::vecto
 
 }
 
-void DualViewPlugin::computeSelectedGeneMeanExpression()
+void DualViewPlugin::updateSelectedGeneMeanExpression()
 {
-    //qDebug() << "DualViewPlugin: computeSelectedGeneMeanExpression()";
+    std::vector<float> selectedGeneMeanExpressionFull;
+    computeSelectedGeneMeanExpression(_embeddingSourceDatasetB, _embeddingDatasetA, selectedGeneMeanExpressionFull);
 
-    auto geneSelection = _embeddingDatasetA->getSelection<Points>();
-
-    if (geneSelection->indices.size() == 0)
-    {
-        qDebug() << "DualViewPlugin: selected 0 genes";
-        return;
-    }
-		
-    if (!_embeddingSourceDatasetB.isValid())
-    {
-        qDebug() << "DualViewPlugin: cell embedding source dataset is not valid";
-        return;
-    }		
-
-    int numPointsB = _embeddingSourceDatasetB->getNumPoints();
-    int numDimensionsB = _embeddingSourceDatasetB->getNumDimensions();
-    int numSelectedGenes = geneSelection->indices.size();
-    int numPointsEmbeddingB = _embeddingDatasetB->getNumPoints();
-    qDebug() << "DualViewPlugin: " << numSelectedGenes << " points in A selected";
-
-    // Output a dataset to color the spatial map by the selected gene avg. expression - always the same size as the full dataset
-    mv::Dataset<Points> fullDatasetB;
-    if (_embeddingSourceDatasetB->isDerivedData())
-    {
-        fullDatasetB = _embeddingSourceDatasetB->getSourceDataset<Points>()->getFullDataset<Points>();
-    }     
-    else
-    {   
-        fullDatasetB = _embeddingSourceDatasetB->getFullDataset<Points>();
-    }
-    int totalNumPoints = fullDatasetB->getNumPoints();
-    //qDebug() << "totalNumPoints" << totalNumPoints << "fullDatasetB" << fullDatasetB->getGuiName();
-        
-    std::vector<float> selectedGeneMeanExpressionFull(totalNumPoints, 0.0f);
-    //qDebug() << "avgGeneExpressionScalars size: " << selectedGeneMeanExpressionFull.size();
-
-#pragma omp parallel for  
-    for (int j = 0; j < totalNumPoints; j++)
-    {
-        float sum = 0.0f;
-        for (int i = 0; i < numSelectedGenes; i++)
-        {
-            int geneIndex = geneSelection->indices[i];
-            sum += fullDatasetB->getValueAt(j * numDimensionsB + geneIndex); 
-        }
-        selectedGeneMeanExpressionFull[j] = sum / numSelectedGenes;
-    }
-
-    // extract _selectedGeneMeanExpression from selectedGeneMeanExpressionFull
-    _selectedGeneMeanExpression.clear();
-    _selectedGeneMeanExpression.resize(numPointsB, 0.0f);
-
-    std::vector<std::uint32_t> localGlobalIndicesB;
-    _embeddingSourceDatasetB->getGlobalIndices(localGlobalIndicesB);
-    
-    for (int i = 0; i < numPointsB; i++)
-    {
-		_selectedGeneMeanExpression[i] = selectedGeneMeanExpressionFull[localGlobalIndicesB[i]];
-	}
+    extractSelectedGeneMeanExpression(_embeddingSourceDatasetB, selectedGeneMeanExpressionFull, _selectedGeneMeanExpression);
 
     if (!_meanExpressionScalars.isValid())
     {
@@ -1724,9 +1667,6 @@ void DualViewPlugin::computeSelectedGeneMeanExpression()
 
     _meanExpressionScalars->setData<float>(selectedGeneMeanExpressionFull.data(), selectedGeneMeanExpressionFull.size(), 1);
     events().notifyDatasetDataChanged(_meanExpressionScalars);
-
-    //qDebug() << "_meanExpressionScalars->getNumDimensions" << _meanExpressionScalars->getNumDimensions();
-    //qDebug() << "_meanExpressionScalars->getNumPoints" << _meanExpressionScalars->getNumPoints();
 }
 
 QString DualViewPlugin::getCurrentEmebeddingDataSetID(mv::Dataset<Points> dataset) const

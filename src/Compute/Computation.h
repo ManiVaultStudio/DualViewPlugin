@@ -12,3 +12,9 @@ void projectToVerticalAxis(std::vector<mv::Vector2f>& embeddings, float x_value)
 
 // precompute the range of each column every time the dataset changes, for computing line connections
 void computeDataRange(const mv::Dataset<Points> dataset, std::vector<float>& columnMins, std::vector<float>& columnRanges);
+
+// compute the mean expression of the selected gene across all cells
+void computeSelectedGeneMeanExpression(const mv::Dataset<Points> sourceDataset, const mv::Dataset<Points> selectedDataset, std::vector<float>& meanExpressionFull);
+
+// extract the mean expression of the selected genes for the current embedding
+void extractSelectedGeneMeanExpression(const mv::Dataset<Points> sourceDataset, const std::vector<float>& meanExpressionFull, std::vector<float>& meanExpressionLocal);
