@@ -42,9 +42,11 @@ public: // Serialization
 public: // Action getters
 
     OptionAction& getOrganismPickerAction() { return _organismPickerAction; }
+    OptionAction& getSignificanceThresholdMethodAction() { return _significanceThresholdMethodAction; }
 
 private:
     OptionAction                     _organismPickerAction;          /** Action for choose organism */
+    OptionAction                     _significanceThresholdMethodAction;
 
 };
 

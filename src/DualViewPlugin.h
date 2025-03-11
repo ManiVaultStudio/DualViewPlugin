@@ -66,6 +66,8 @@ public:
 
     void updateEnrichmentOrganism();
 
+    void updateEnrichmentSignificanceThresholdMethod();
+
 
 private:
     QString getCurrentEmebeddingDataSetID(mv::Dataset<Points> dataset) const;
@@ -199,6 +201,7 @@ private:
     //QVariantList                       _enrichmentResult;        // Cached enrichment analysis result - TODO: remove if not needed
     QString                            _currentEnrichmentSpecies = "mmusculus"; // current enrichment species
     QStringList                        _backgroundGeneNames; // background for enrichment analysis
+    QString                            _currentSignificanceThresholdMethod = "bonferroni"; 
 
     // experimental about GOterm associated genes
     mv::Dataset<Points>                _associatedGenes; // pt coordinates of associated genes for a GO term

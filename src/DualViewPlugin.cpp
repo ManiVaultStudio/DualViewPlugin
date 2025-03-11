@@ -1818,7 +1818,7 @@ void DualViewPlugin::getEnrichmentAnalysis()
 
     if (!_currentGeneSymbols.isEmpty()) 
     {      
-            _client->postGeneGprofiler(_currentGeneSymbols, _backgroundGeneNames, _currentEnrichmentSpecies);
+            _client->postGeneGprofiler(_currentGeneSymbols, _backgroundGeneNames, _currentEnrichmentSpecies, _currentSignificanceThresholdMethod);
     }
 }
 
@@ -1946,6 +1946,15 @@ void DualViewPlugin::updateEnrichmentOrganism()
         qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
         getEnrichmentAnalysis();
     }
+}
+
+void DualViewPlugin::updateEnrichmentSignificanceThresholdMethod()
+{
+    QString selectedMethod = _settingsAction.getEnrichmentSettingsAction().getSignificanceThresholdMethodAction().getCurrentText();
+
+    _currentSignificanceThresholdMethod = selectedMethod;
+    qDebug() << "Enrichment method changed to: " << _currentSignificanceThresholdMethod;
+    getEnrichmentAnalysis();
 }
 
 

@@ -214,17 +214,18 @@ void EnrichmentAnalysis::handleEnrichmentReplyToppGene() {
     reply->deleteLater();
 }
 
-void EnrichmentAnalysis::postGeneGprofiler(const QStringList& query, const QStringList& background, const QString& species) { 
+void EnrichmentAnalysis::postGeneGprofiler(const QStringList& query, const QStringList& background, const QString& species, const QString& method) { 
     //qDebug() << "gprofiler begin...";
 
     QUrl url("https://biit.cs.ut.ee/gprofiler/api/gost/profile/");
 
     QJsonObject json;
-    //json["organism"] = species; // TO DO: hard-coded for mouse dataset
-    json["organism"] = "hsapiens"; // TO DO: hard-coded for human dataset
+    json["organism"] = species; // TO DO: hard-coded for mouse dataset
+    //json["organism"] = "hsapiens"; // TO DO: hard-coded for human dataset
     json["sources"] = QJsonArray({ "GO:BP" }); // Gene Ontology categories
     json["query"] = QJsonArray::fromStringList(query);
-    json["significance_threshold_method"] = "bonferroni";
+    //json["significance_threshold_method"] = "bonferroni";
+    json["significance_threshold_method"] = method;
 
     // test
     json["highlight"] = "true";
@@ -281,8 +282,6 @@ void EnrichmentAnalysis::handleEnrichmentReplyGprofiler() {
 
                     // test
                     bool highlighted = resultObj.contains("highlighted") ? resultObj["highlighted"].toBool() : false;
-                    //QString highlighted = resultObj["highlighted"].toString();
-                    qDebug() << "highlighted:" << highlighted;
 
                     validResultsFound = true;
 

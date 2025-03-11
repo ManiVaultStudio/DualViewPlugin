@@ -5,7 +5,8 @@ using namespace mv::gui;
 
 EnrichmentSettingsAction::EnrichmentSettingsAction(QObject* parent, const QString& title) :
     GroupAction(parent, title),
-    _organismPickerAction(this, "Organism")
+    _organismPickerAction(this, "Organism"),
+    _significanceThresholdMethodAction(this, "Significance Threshold Method")
 {
     setIconByName("dna");
     setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
@@ -16,6 +17,8 @@ EnrichmentSettingsAction::EnrichmentSettingsAction(QObject* parent, const QStrin
     _organismPickerAction.initialize(QStringList({ "Mus musculus", "Homo sapiens" }), "Mus musculus");
     addAction(&_organismPickerAction);
 
+    _significanceThresholdMethodAction.initialize(QStringList({ "g_SCS", "bonferroni", "fdr"}), "bonferroni");
+    addAction(&_significanceThresholdMethodAction);
 
     auto plugin = dynamic_cast<DualViewPlugin*>(parent->parent());
     if (plugin == nullptr)
@@ -25,7 +28,10 @@ EnrichmentSettingsAction::EnrichmentSettingsAction(QObject* parent, const QStrin
         plugin->updateEnrichmentOrganism();
         });
 
-  
+    connect(&_significanceThresholdMethodAction, &OptionAction::currentTextChanged, this, [this, plugin] {
+        plugin->updateEnrichmentSignificanceThresholdMethod();
+        });
+
 }
 
 void EnrichmentSettingsAction::fromVariantMap(const QVariantMap& variantMap)
