@@ -1148,33 +1148,30 @@ void DualViewPlugin::sendDataToSampleScope()
 
 			int numPointsB = _embeddingSourceDatasetB->getNumPoints();
 
+            int top10 = numPointsB / 10; // top 10% of the cells
+
+            // count the number of cells that have expression more than the lowest value
+            int countMin = 0;
+            float minExpression = *std::min_element(_columnMins.begin(), _columnMins.end());
+            for (int i = 0; i < numPointsB; i++)
+            {
+                if (_selectedGeneMeanExpression[i] > minExpression)
+                    countMin++;
+            }
+            // if the number of cells with expression more than min is less than 10%, use that number
+            int numCellsCounted = (countMin > top10) ? top10 : countMin;
+
 			// first, sort the indices based on the selected gene expression
 			std::vector<std::pair<float, int>> rankedCells;
 			rankedCells.reserve(numPointsB);
 
 			for (int i = 0; i < numPointsB; i++)
 			{
-				rankedCells.push_back(std::make_pair(_selectedGeneMeanExpression[i], i));
+                rankedCells.emplace_back(_selectedGeneMeanExpression[i], i);
 			}
 
-			std::sort(rankedCells.begin(), rankedCells.end(), std::greater<std::pair<float, int>>());
-			//qDebug() << "rankedCells size " << rankedCells.size(); // local indices
-
-			// count the number of cells in each meta data category for the top 10% cells in rankedCells
-			int top10 = numPointsB / 10;
-
-			// count the number of cells that have expression more than the lowest value
-			int count0 = 0;
-			float minExpression = *std::min_element(_columnMins.begin(), _columnMins.end());
-			for (int i = 0; i < numPointsB; i++)
-			{
-				if (_selectedGeneMeanExpression[i] > minExpression)
-					count0++;
-			}
-
-			// if the number of cells with expression more than 0 is less than 10%, use that number
-			int numCellsCounted = (count0 > top10) ? top10 : count0;
-			//qDebug() << "numCellsCounted " << numCellsCounted;
+            auto nth = rankedCells.begin() + numCellsCounted;
+            std::nth_element(rankedCells.begin(), nth, rankedCells.end(), std::greater<std::pair<float, int>>());
 
             // mapping from local to global indices
             std::vector<std::uint32_t> localGlobalIndicesB;
@@ -1199,7 +1196,7 @@ void DualViewPlugin::sendDataToSampleScope()
 		{
 			if (_connectedCellsPerGene[i] > 0)
 			{
-				globalPointIndices << i;
+				globalPointIndices << i;// gene index
 			}
 		}
 
@@ -1215,8 +1212,11 @@ void DualViewPlugin::sendDataToSampleScope()
 			std::vector<std::uint32_t> sampledPoints;
 			sampledPoints.reserve(_embeddingPositionsB.size());
 
-			for (auto selectionIndex : selection->indices)
-				sampledPoints.push_back(selectionIndex);
+            for (auto selectionIndex : selection->indices)
+            {
+                sampledPoints.push_back(selectionIndex);// global cell index
+                //qDebug() << "selectionIndex" << selectionIndex;
+            }
 
             std::tie(labels, data, backgroundColors) = computeMetadataCounts(metadata, sampledPoints);
 		}
