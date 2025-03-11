@@ -11,6 +11,11 @@
 #include <actions/HorizontalToolbarAction.h>
 
 #include <QWidget>
+#include <QWebEngineView>
+#include <QWebChannel>
+#include <QWebEnginePage>
+#include "ChartWidget.h"
+
 
 #include "Actions/SettingsAction.h"
 #include "Compute/EnrichmentAnalysis.h"
@@ -138,9 +143,14 @@ public: // Serialization
 
 
 private:
-    ChartWidget*               _chartWidget;                    // WebWidget that sets up the HTML page
+    //ChartWidget*               _chartWidget;                    // WebWidget that sets up the HTML page
     DropWidget*                _embeddingDropWidgetA;        // Widget for drag and drop behavior
     DropWidget*                _embeddingDropWidgetB;        // Widget for drag and drop behavior
+
+    // for sample scope
+    QWebEngineView*            _sampleScopeWidget;
+    QWebChannel*               _sampleScopeChannel;
+    ChartCommObject*            _sampleScopeCommObject;
    
     mv::Dataset<Points>        _embeddingDatasetA; // 2D embedding
     mv::Dataset<Points>        _embeddingDatasetB; // 2D embedding
@@ -204,6 +214,8 @@ protected:
     ScatterplotWidget*        _embeddingWidgetB;
     ColorMap1DAction          _colorMapAction;
     EmbeddingLinesWidget*     _embeddingLinesWidget;
+
+
 
     SettingsAction            _settingsAction;
     HorizontalToolbarAction   _embeddingAToolbarAction;   // Horizontal toolbar for embedding A

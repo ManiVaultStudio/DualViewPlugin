@@ -1,6 +1,6 @@
 #include "DualViewPlugin.h"
 
-#include "ChartWidget.h"
+//#include "ChartWidget.h"
 #include "ScatterplotWidget.h"
 #include "EmbeddingLinesWidget.h"
 
@@ -23,10 +23,10 @@
 
 #include <chrono>
 
-#include <QWebEnginePage>
-#include <QWebEngineView>
+//#include <QWebEnginePage>
+//#include <QWebEngineView>
 #include <QStyledItemDelegate>
-#include <QWebChannel>
+//#include <QWebChannel>
 
 
 Q_PLUGIN_METADATA(IID "studio.manivault.DualViewPlugin")
@@ -54,9 +54,12 @@ public:
 
 DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     ViewPlugin(factory),
-    _chartWidget(nullptr),
+    //_chartWidget(nullptr),
     _embeddingDropWidgetA(nullptr),
     _embeddingDropWidgetB(nullptr),
+    _sampleScopeWidget(nullptr),
+    _sampleScopeChannel(nullptr),
+    _sampleScopeCommObject(nullptr),
     _embeddingDatasetA(),
     _embeddingDatasetB(),
     _embeddingWidgetA(new ScatterplotWidget(this)),
@@ -351,11 +354,17 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
 
     widgetSampleScope->setLayout(layoutSampleScope);*/
 
-    auto widget = new QWebEngineView();
+   /* auto widget = new QWebEngineView();
     auto channel = new QWebChannel(widget->page());
     auto chartCommObject = new ChartCommObject();
     channel->registerObject("qtBridge", chartCommObject);
-    widget->page()->setWebChannel(channel);
+    widget->page()->setWebChannel(channel);*/
+    _sampleScopeWidget = new QWebEngineView();
+    _sampleScopeChannel = new QWebChannel(_sampleScopeWidget->page());
+    _sampleScopeCommObject = new ChartCommObject();
+    _sampleScopeChannel->registerObject("qtBridge", _sampleScopeCommObject);
+    _sampleScopeWidget->page()->setWebChannel(_sampleScopeChannel);
+
 
     // Example code for control column width in QTableWidget
     /*auto tableWidget = new QTableWidget(1, 5);
@@ -368,11 +377,11 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
 
     qDebug() << "Loading chart widget";
 
-    connect(chartCommObject, &ChartCommObject::goTermClicked, this, [this](const QString& goTermID) {
+    connect(_sampleScopeCommObject, &ChartCommObject::goTermClicked, this, [this](const QString& goTermID) {
         retrieveGOtermGenes(goTermID);
 		});
 
-	getSamplerAction().setWidgetViewGeneratorFunction([this, widget](const ViewPluginSamplerAction::SampleContext& toolTipContext) -> QWidget* { //, widgetSampleScope
+	getSamplerAction().setWidgetViewGeneratorFunction([this](const ViewPluginSamplerAction::SampleContext& toolTipContext) -> QWidget* { //, widgetSampleScope
 
 		QString html = toolTipContext["GeneInfo"].toString();
 
@@ -384,8 +393,10 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
 
 		html += "</body></html>";
 
-		widget->setHtml(html);
-		return widget;
+        qDebug() << "_sampleScopewidget " << _sampleScopeWidget;
+
+        _sampleScopeWidget->setHtml(html);
+		return _sampleScopeWidget;
 		//return widgetSampleScope;
 		});
      
