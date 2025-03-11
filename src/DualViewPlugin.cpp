@@ -949,39 +949,14 @@ void DualViewPlugin::highlightSelectedLines(mv::Dataset<Points> dataset)
 
 void DualViewPlugin::highlightInputGenes(const QStringList& dimensionNames)
 {
-    if (dimensionNames.isEmpty())
+    if (dimensionNames.isEmpty() || !_embeddingSourceDatasetB.isValid())
 		return;
-   
-    if (!_embeddingSourceDatasetB.isValid()) // temp condition
-		return;
-
-    // find the gene index in the current embedding B source dataset dimensions
-    const std::vector<QString> allDimensionNames = _embeddingSourceDatasetB->getDimensionNames();
 
     QList<int> indices;
-    for (int i = 0; i < dimensionNames.size(); i++)
-    {
-        QString gene = dimensionNames[i];
-        bool found = false;
-        for (int j = 0; j < allDimensionNames.size(); j++)
-        {
-            if (allDimensionNames[j] == gene)
-            {
-                indices.append(j);
-                found = true;
-				break;
-            }
-        }
-        if (!found)
-        {
-			qDebug() << "highlightInputGenes: Gene not found: " << gene;
-		}
-    }
+    identifyGeneSymbolsInDataset(_embeddingSourceDatasetB, dimensionNames, indices);
 
     if (indices.isEmpty())
 		return;
-
-    //qDebug() << "highlightInputGenes() indices size" << indices.size();
 
     // set the selected indices to 1 in highlights
     std::vector<char> highlights(_embeddingPositionsA.size(), 0);
@@ -1955,37 +1930,12 @@ void DualViewPlugin::retrieveGOtermGenes(const QString& GOTermId)
 
 }
 
-void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSymbols)
+void DualViewPlugin::highlightGOTermGenesInEmbedding(const QStringList& geneSymbols)
 {
 	qDebug() << "DualViewPlugin::highlightGOTermGenesInEmbedding()";
 
-    // check which genes exist in the dataset
-    // find the gene index in the current embedding B source dataset dimensions
-    const std::vector<QString> allDimensionNames = _embeddingSourceDatasetB->getDimensionNames();
     QList<int> indices;
-
-    int numNotFoundGenes = 0;
-    for (int i = 0; i < geneSymbols.size(); i++)//geneSymbols.size()
-    {
-        QString gene = geneSymbols[i].toString();
-        bool found = false;
-        for (int j = 0; j < allDimensionNames.size(); j++)
-        {
-            if (allDimensionNames[j] == gene)
-            {
-                indices.append(j);
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-        {
-            //qDebug() << "highlightInputGenes: Gene not found: " << gene;
-            numNotFoundGenes++;
-        }
-    }
-
-    qDebug() << "highlightGOTermGenesInEmbedding: " << geneSymbols.size() << " genes, " << numNotFoundGenes << " not found";
+    identifyGeneSymbolsInDataset(_embeddingSourceDatasetB, geneSymbols, indices);
 
     if (indices.isEmpty())
         return;
@@ -1998,7 +1948,6 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
     }
 
     _embeddingWidgetA->setHighlights(highlights, 1);
-    qDebug()<< "hightlights set "<< highlights.size() << "indices.size() = " << indices.size();
 
     // use a seperate dataset for gene subset - Attention: linking to the original embedding is 1-directional, from subset to original embedding
     bool createNewDataset = false;
@@ -2019,15 +1968,13 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
 		associatedGeneCoor[2 * i] = _embeddingPositionsA[geneIndice].x;
 		associatedGeneCoor[2 * i + 1] = _embeddingPositionsA[geneIndice].y;
 	}
-    qDebug() << "associatedGeneCoor.size() = " << associatedGeneCoor.size();
+    //qDebug() << "associatedGeneCoor.size() = " << associatedGeneCoor.size();
 
     // first cancel the selection on this dataset, to avoid selection indices conflict after data changed
     _associatedGenes->setSelectionIndices({});
 
 	_associatedGenes->setData(associatedGeneCoor.data(), numAssociatedGenes, 2);
-
 	events().notifyDatasetDataChanged(_associatedGenes);
-    qDebug() << "notifyDatasetDataChanged";
 
     // link the associated genes to the original embedding
     mv::SelectionMap mapping;
@@ -2043,7 +1990,7 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
         selectionMap[i] = indexOriginalVector; // i: index in _associatedGenes, indexOriginal: index in _embeddingDatasetA
     }
 
-    qDebug() << "selectionMap.size() = " << selectionMap.size();
+    //qDebug() << "selectionMap.size() = " << selectionMap.size();
 
 	if (createNewDataset)
 	{
@@ -2053,10 +2000,10 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
 	else
 	{
         qDebug() << "Update linked data";
-        qDebug() << "linkedData size = " << _associatedGenes->getLinkedData().size();
+        //qDebug() << "linkedData size = " << _associatedGenes->getLinkedData().size();
         mv::LinkedData& linkedData = _associatedGenes->getLinkedData().back();
         linkedData.setMapping(mapping);
-        qDebug() << " finished setMapping";
+        //qDebug() << " finished setMapping";
 	}
 
 }

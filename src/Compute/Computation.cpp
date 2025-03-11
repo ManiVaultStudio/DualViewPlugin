@@ -138,3 +138,35 @@ void extractSelectedGeneMeanExpression(const mv::Dataset<Points> sourceDataset, 
         meanExpressionLocal[i] = meanExpressionFull[localGlobalIndicesB[i]];
     }
 }
+
+void identifyGeneSymbolsInDataset(const mv::Dataset<Points> sourceDataset, const QStringList& geneSymbols, QList<int>& foundGeneIndices)
+{
+	//check which genes exist in the dataset
+   //find the gene index in the current embedding B source dataset dimensions
+	const std::vector<QString> allDimensionNames = sourceDataset->getDimensionNames();
+
+    foundGeneIndices.clear();
+
+	int numNotFoundGenes = 0;
+	for (int i = 0; i < geneSymbols.size(); i++)
+	{
+		QString gene = geneSymbols[i];
+		bool found = false;
+		for (int j = 0; j < allDimensionNames.size(); j++)
+		{
+			if (allDimensionNames[j] == gene)
+			{
+                foundGeneIndices.append(j);
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+		{
+			//qDebug() << "highlightInputGenes: Gene not found: " << gene;
+			numNotFoundGenes++;
+		}
+	}
+
+	qDebug() << "identifyGeneSymbolsInDataset: " << geneSymbols.size() << " genes, " << numNotFoundGenes << " not found";
+}

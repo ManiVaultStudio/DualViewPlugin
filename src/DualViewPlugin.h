@@ -113,7 +113,8 @@ private:
 
    
 
-    void highlightGOTermGenesInEmbedding(const QVariantList& geneSymbols);
+    //void highlightGOTermGenesInEmbedding(const QVariantList& geneSymbols);
+    void highlightGOTermGenesInEmbedding(const QStringList& geneSymbols);
 
 protected:
 

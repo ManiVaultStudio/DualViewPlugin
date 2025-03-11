@@ -353,7 +353,8 @@ void EnrichmentAnalysis::handleGOtermReplyGprofiler()
 
         QJsonObject jsonObject = jsonDoc.object();
 
-        QVariantList geneNames;
+        //QVariantList geneNames;
+        QStringList geneNames;
 
         if (jsonObject.contains("result") && jsonObject["result"].isArray()) 
         {

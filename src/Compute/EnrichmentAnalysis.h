@@ -30,7 +30,8 @@ signals:
 
     void enrichmentDataNotExists();
 
-    void genesFromGOtermDataReady(const QVariantList& outputList);
+    //void genesFromGOtermDataReady(const QVariantList& outputList);
+    void genesFromGOtermDataReady(const QStringList& outputList);
 
 private slots:
     // ToppGene
