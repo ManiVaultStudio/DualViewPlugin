@@ -375,8 +375,6 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     widgetSampleScope->layout()->addWidget(widget);
     widgetSampleScope->layout()->addWidget(tableWidget);*/
 
-    qDebug() << "Loading chart widget";
-
     connect(_sampleScopeCommObject, &ChartCommObject::goTermClicked, this, [this](const QString& goTermID) {
         retrieveGOtermGenes(goTermID);
 		});
@@ -658,7 +656,7 @@ void DualViewPlugin::update1DEmbeddingPositions(bool isA)
 
     update1DEmbeddingColors(true);
     update1DEmbeddingColors(false);
-  
+ 
 }
 
 void DualViewPlugin::update1DEmbeddingColors(bool isA)
@@ -993,7 +991,6 @@ void DualViewPlugin::highlightInputGenes(const QStringList& dimensionNames)
 	}
 
     _embeddingWidgetA->setHighlights(highlights, 1);
-
 }
 
 void DualViewPlugin::highlightSelectedEmbeddings(ScatterplotWidget*& widget, mv::Dataset<Points> dataset)
@@ -1169,7 +1166,6 @@ void DualViewPlugin::sendDataToSampleScope()
 	// cache
 	_currentHtmlGeneInfo.clear();
 	_currentHtmlGeneInfo = html;
-
 }
 
 void DualViewPlugin::updateEmbeddingBColor()
@@ -1190,10 +1186,6 @@ void DualViewPlugin::updateEmbeddingBColor()
         qDebug() << "Warning! selectedGeneMeanExpression size " << _selectedGeneMeanExpression.size() << "is not equal to the number of points in embedding B" << _embeddingDatasetB->getNumPoints();
         return;
     }
-
-	// set color scalars
-	//_embeddingWidgetB->setScalars(_selectedGeneMeanExpression);
-	//_embeddingWidgetB->setScalarEffect(PointEffect::Color);
     
 	//set size scalars
 	auto min_max = std::minmax_element(_selectedGeneMeanExpression.begin(), _selectedGeneMeanExpression.end());
@@ -1257,7 +1249,6 @@ void DualViewPlugin::reversePointSizeB(bool reversePointSizeB)
 
     float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getSizeAction().getMagnitudeAction().getValue();
 
-
     std::vector<float> selectedGeneMeanExpression(_selectedGeneMeanExpression.size());
     // In case the user wants to reverse the point size
     if (!_reversePointSizeB)
@@ -1317,17 +1308,11 @@ void DualViewPlugin::updateEmbeddingAColor()
             _connectedCellsPerGene[_lines[i].first] += 1.0f;
         }
     }
-    //qDebug() << "connectedCellsPerGene.size() = " << connectedCellsPerGene.size();
-
-        // set color scalars
-    //_embeddingWidgetA->setScalars(connectedCellsPerGene);
-    //_embeddingWidgetA->setScalarEffect(PointEffect::Color);
 
     //set size scalars
     auto min_max = std::minmax_element(_connectedCellsPerGene.begin(), _connectedCellsPerGene.end());
     float min_val = *min_max.first;
     float max_val = *min_max.second;
-    //qDebug() << "min_val" << min_val << "max_val" << max_val;
     
     float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue();
 
@@ -1338,8 +1323,6 @@ void DualViewPlugin::updateEmbeddingAColor()
     }
     //qDebug() << "scalars A computed";
     _embeddingWidgetA->setPointSizeScalars(_connectedCellsPerGene);
-
-
 
     // test2 - use average expression of selected cells in B for the point size in A
 //    std::vector<std::uint32_t> localGlobalIndicesB;
@@ -1602,7 +1585,6 @@ void DualViewPlugin::selectPoints(EmbeddingLinesWidget* widget, const std::vecto
         return;
     }
         
-
     // Get binary selection area image from the pixel selection tool
     auto selectionAreaImage = widget->getPixelSelectionTool().getAreaPixmap().toImage();
 
@@ -1997,21 +1979,10 @@ void DualViewPlugin::getEnrichmentAnalysis()
     //    }
     //}
 
-    if (!_currentGeneSymbols.isEmpty()) {
-       
+    if (!_currentGeneSymbols.isEmpty()) 
+    {      
             _client->postGeneGprofiler(_currentGeneSymbols, _backgroundGeneNames, _currentEnrichmentSpecies);
-
     }
-
-    // output the gene names
-    /*for (int i = 0; i < _currentGeneSymbols.size(); i++) {
-        QString item = _currentGeneSymbols[i].toString();
-        if (i == 0)
-            std::cout << "Genes symbols: " << item.toUtf8().constData() << " ";
-        else
-            std::cout << item.toUtf8().constData() << " ";
-    }
-    std::cout << std::endl;*/
 }
 
 void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) 
@@ -2079,8 +2050,6 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
     if (indices.isEmpty())
         return;
 
-    //qDebug() << "highlightInputGenes() indices size" << indices.size();
-
     // set the selected indices to 1 in highlights
     std::vector<char> highlights(_embeddingPositionsA.size(), 0);
     for (int i = 0; i < indices.size(); i++)
@@ -2091,34 +2060,7 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QVariantList& geneSym
     _embeddingWidgetA->setHighlights(highlights, 1);
     qDebug()<< "hightlights set "<< highlights.size() << "indices.size() = " << indices.size();
 
-    // FIXME: test to create a dataset containing the gene points - for plotting in a seperate scatter plot
-
-    // test 1. using subset, first remove the previous subset, then create new subset - Problem: this requires to set the highlighting as selection
-   /* std::vector<std::seed_seq::result_type> stdIndices;
-    for (int i = 0; i < indices.size(); i++)
-    {
-		stdIndices.push_back(indices[i]);
-	}
-
-    if (_associatedGenes.isValid())
-    {
-        mv::data().removeDataset(_associatedGenes);
-    }
-    _embeddingDatasetA->setSelectionIndices(stdIndices);
-    events().notifyDatasetDataSelectionChanged(_embeddingDatasetA->getSourceDataset<Points>());
-    _associatedGenes = _embeddingDatasetA->createSubsetFromSelection("AssociatedGenes");
-    events().notifyDatasetAdded(_associatedGenes);*/  
-
-    // test 2. using derived dataset - Problem: this is not correctly mapped to the original embedding
-    //_embeddingDatasetA->setGroupIndex(1);
-    //if (!_associatedGenes.isValid())
-    //{
-    //    _associatedGenes = mv::data().createDerivedDataset("AssociatedGenes", _embeddingDatasetA);
-    //    events().notifyDatasetAdded(_associatedGenes);
-    //    _associatedGenes->setGroupIndex(1);
-    //}
-
-    // test 3. using a seperate dataset - Attention: linking to the original embedding is 1-directional, from subset to original embedding
+    // use a seperate dataset for gene subset - Attention: linking to the original embedding is 1-directional, from subset to original embedding
     bool createNewDataset = false;
     if (!_associatedGenes.isValid())
     {
