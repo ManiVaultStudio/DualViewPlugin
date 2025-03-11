@@ -23,6 +23,43 @@ void projectToVerticalAxis(std::vector<mv::Vector2f>& embeddings, float x_value)
     }
 }
 
+void scaleDataRange(const std::vector<float>& input, std::vector<float>& output, bool reverse, float ptSize)
+{
+    if (input.empty())
+        return;
+
+    //set size scalars
+    auto min_max = std::minmax_element(input.begin(), input.end());
+    float min_val = *min_max.first;
+    float max_val = *min_max.second;
+    float range = max_val - min_val;
+    if (range == 0.0f)
+    {
+        range = 1.0f;
+    }
+
+    output.clear();
+    output.resize(input.size());
+
+    // In case the user wants to reverse the point size
+    if (!reverse)
+    {
+#pragma omp parallel for
+        for (int i = 0; i < input.size(); i++)
+        {
+            output[i] = ((input[i] - min_val) / range) * ptSize; // TODO: hardcoded factor?
+        }
+    }
+    else
+    {
+#pragma omp parallel for
+        for (int i = 0; i < input.size(); i++)
+        {
+            output[i] = (1 - (input[i] - min_val) / range) * ptSize;
+        }
+    }
+}
+
 void computeDataRange(const mv::Dataset<Points> dataset, std::vector<float>& columnMins, std::vector<float>& columnRanges)
 {
     if (!dataset.isValid())

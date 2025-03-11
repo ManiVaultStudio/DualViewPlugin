@@ -10,6 +10,9 @@ void normalizeYValues(std::vector<mv::Vector2f>& embedding);
 
 void projectToVerticalAxis(std::vector<mv::Vector2f>& embeddings, float x_value);
 
+// for plotting 
+void scaleDataRange(const std::vector<float>& input, std::vector<float>& output, bool reverse, float ptSize);
+
 // precompute the range of each column every time the dataset changes, for computing line connections
 void computeDataRange(const mv::Dataset<Points> dataset, std::vector<float>& columnMins, std::vector<float>& columnRanges);
 

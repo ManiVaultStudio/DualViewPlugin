@@ -446,7 +446,7 @@ void DualViewPlugin::init()
 
         if (_embeddingDatasetA->getSelection<Points>()->indices.size() != 0)
         {
-            updateEmbeddingBColor();//if selected in embedding A and coloring/sizing embedding B by the mean expression of the selected genes     
+            updateEmbeddingBSize();//if selected in embedding A and coloring/sizing embedding B by the mean expression of the selected genes     
             sendDataToSampleScope();
         }
             
@@ -462,7 +462,7 @@ void DualViewPlugin::init()
 
         if (_embeddingDatasetB->getSelection<Points>()->indices.size() != 0)
         { 
-			updateEmbeddingAColor();//if selected in embedding B and coloring/sizing embedding A by the number of connected cells
+			updateEmbeddingASize();//if selected in embedding B and coloring/sizing embedding A by the number of connected cells
             sendDataToSampleScope();
         }
     });
@@ -1143,10 +1143,8 @@ void DualViewPlugin::sendDataToSampleScope()
 	_currentHtmlGeneInfo = html;
 }
 
-void DualViewPlugin::updateEmbeddingBColor()
+void DualViewPlugin::updateEmbeddingBSize()
 {
-    // TODO: this is actually updating size instead of color
-    // For now, only update the color of embedding B when embedding A is selected
     if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
         return;
     
@@ -1161,38 +1159,10 @@ void DualViewPlugin::updateEmbeddingBColor()
         qDebug() << "Warning! selectedGeneMeanExpression size " << _selectedGeneMeanExpression.size() << "is not equal to the number of points in embedding B" << _embeddingDatasetB->getNumPoints();
         return;
     }
-    
-	//set size scalars
-	auto min_max = std::minmax_element(_selectedGeneMeanExpression.begin(), _selectedGeneMeanExpression.end());
-	float min_val = *min_max.first;
-	float max_val = *min_max.second;
-    float range = max_val - min_val;
-    if (range == 0)
-    {
-		range = 1;
-	}
 
+    std::vector<float> selectedGeneMeanExpression;
     float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getSizeAction().getMagnitudeAction().getValue();
-
-    std::vector<float> selectedGeneMeanExpression(_selectedGeneMeanExpression.size());
-
-    // In case the user wants to reverse the point size
-    if (!_reversePointSizeB)
-    {
-#pragma omp parallel for
-        for (int i = 0; i < _selectedGeneMeanExpression.size(); i++)
-        {
-            selectedGeneMeanExpression[i] = ((_selectedGeneMeanExpression[i] - min_val) / range) * ptSize; // TODO: hardcoded factor?
-        }
-    }
-    else
-    {
-#pragma omp parallel for
-        for (int i = 0; i < _selectedGeneMeanExpression.size(); i++)
-        {
-			selectedGeneMeanExpression[i] = (1 - (_selectedGeneMeanExpression[i] - min_val) / range) * ptSize;
-		}
-	}
+    scaleDataRange(_selectedGeneMeanExpression, selectedGeneMeanExpression, _reversePointSizeB, ptSize);
 
 	_embeddingWidgetB->setPointSizeScalars(selectedGeneMeanExpression);
 }
@@ -1211,58 +1181,28 @@ void DualViewPlugin::reversePointSizeB(bool reversePointSizeB)
 		return;
 	}
 
-    // TODO: if this function to be kept
-    // this is same code snippet as in updateEmbeddingBColor(), put in one function
-    auto min_max = std::minmax_element(_selectedGeneMeanExpression.begin(), _selectedGeneMeanExpression.end());
-    float min_val = *min_max.first;
-    float max_val = *min_max.second;
-    float range = max_val - min_val;
-    if (range == 0)
-    {
-		range = 1;
-	}
-
+    std::vector<float> selectedGeneMeanExpression;
     float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getSizeAction().getMagnitudeAction().getValue();
-
-    std::vector<float> selectedGeneMeanExpression(_selectedGeneMeanExpression.size());
-    // In case the user wants to reverse the point size
-    if (!_reversePointSizeB)
-    {
-#pragma omp parallel for
-        for (int i = 0; i < _selectedGeneMeanExpression.size(); i++)
-        {
-            selectedGeneMeanExpression[i] = ((_selectedGeneMeanExpression[i] - min_val) / range) * ptSize; // TODO: hardcoded factor?
-        }
-    }
-    else
-    {
-#pragma omp parallel for
-        for (int i = 0; i < _selectedGeneMeanExpression.size(); i++)
-        {
-            selectedGeneMeanExpression[i] = (1 - (_selectedGeneMeanExpression[i] - min_val) / range) * ptSize;
-        }
-    }
+    scaleDataRange(_selectedGeneMeanExpression, selectedGeneMeanExpression, _reversePointSizeB, ptSize);
 
     _embeddingWidgetB->setPointSizeScalars(selectedGeneMeanExpression);
 }
 
-void DualViewPlugin::updateEmbeddingAColor()
+void DualViewPlugin::updateEmbeddingASize()
 {
-    // TODO: this is actually updating size instead of color
-    // update the color of embedding A when embedding B is selected
     if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
         return;
 
     int numPointsA = _embeddingDatasetA->getNumPoints();
-
     auto selection = _embeddingDatasetB->getSelection<Points>();
 
-    if (selection->indices.size() == 0)
-    {
-        std::vector<float> connectedCellsPerGene(numPointsA, 1.0f);
-        _embeddingWidgetA->setScalars(connectedCellsPerGene);
-		return;
-	}
+ //   if (selection->indices.size() == 0)
+ //   {
+ //       std::vector<float> connectedCellsPerGene(numPointsA, 1.0f);
+ //       _embeddingWidgetA->setScalars(connectedCellsPerGene);
+ //       qDebug() << "<<<<<<<<<<<<<<????";
+	//	return;
+	//}
 
     std::vector<bool> selected; // bool of selected in the current scale
     std::vector<char> highlights;
@@ -1272,7 +1212,7 @@ void DualViewPlugin::updateEmbeddingAColor()
     // get how many connected points in B per point in A
     _connectedCellsPerGene.clear();
     _connectedCellsPerGene.resize(numPointsA, 0.0f);
-    //std::vector<float> connectedCellsPerGene(numPointsA, 0.0f);
+
 #pragma omp parallel for
     for (int i = 0; i < _lines.size(); i++)
     {
@@ -1284,20 +1224,10 @@ void DualViewPlugin::updateEmbeddingAColor()
         }
     }
 
-    //set size scalars
-    auto min_max = std::minmax_element(_connectedCellsPerGene.begin(), _connectedCellsPerGene.end());
-    float min_val = *min_max.first;
-    float max_val = *min_max.second;
-    
+    std::vector<float> scaledConnectedCellsPerGene;
     float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue();
-
-#pragma omp parallel for
-    for (int i = 0; i < _connectedCellsPerGene.size(); i++)
-    {
-        _connectedCellsPerGene[i] = ((_connectedCellsPerGene[i] - min_val) / (max_val - min_val)) * ptSize * 3; // TODO: hardcoded factor 10
-    }
-    //qDebug() << "scalars A computed";
-    _embeddingWidgetA->setPointSizeScalars(_connectedCellsPerGene);
+    scaleDataRange(_connectedCellsPerGene, scaledConnectedCellsPerGene, false, ptSize*3); // TODO: 3 is the hard coded factor
+    _embeddingWidgetA->setPointSizeScalars(scaledConnectedCellsPerGene);
 
     // test2 - use average expression of selected cells in B for the point size in A
 //    std::vector<std::uint32_t> localGlobalIndicesB;

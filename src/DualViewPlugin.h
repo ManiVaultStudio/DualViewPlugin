@@ -76,9 +76,9 @@ private:
 
     void highlightSelectedEmbeddings(ScatterplotWidget*& widget, mv::Dataset<Points> dataset);
 
-    void updateEmbeddingBColor(); // for now only for embedding B - TODO: rename the function to updateColorAndPointSize 
+    void updateEmbeddingBSize(); 
 
-    void updateEmbeddingAColor(); // for now only for embedding A - TODO: rename the function to updateColorAndPointSize
+    void updateEmbeddingASize(); 
 
     void selectPoints(ScatterplotWidget* widget, mv::Dataset<Points> embeddingDataset, const std::vector<mv::Vector2f>& embeddingPositions); // for selection on scatterplot
 
