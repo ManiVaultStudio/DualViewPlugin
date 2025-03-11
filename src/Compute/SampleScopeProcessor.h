@@ -13,3 +13,5 @@ QString buildHtmlForSelection(const bool isASelected, const QString colorDataset
 // build html for the enrichment results
 QString buildHtmlForEnrichmentResults(const QVariantList& data);
 
+// build html for no enrichment results
+QString buildHtmlForEmpty();

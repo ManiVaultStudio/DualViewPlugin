@@ -372,49 +372,25 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
         retrieveGOtermGenes(goTermID);
 		});
 
-     
-    getSamplerAction().setWidgetViewGeneratorFunction([this, widget](const ViewPluginSamplerAction::SampleContext& toolTipContext) -> QWidget* { //, widgetSampleScope
+	getSamplerAction().setWidgetViewGeneratorFunction([this, widget](const ViewPluginSamplerAction::SampleContext& toolTipContext) -> QWidget* { //, widgetSampleScope
 
-       QString html = toolTipContext["GeneInfo"].toString();
+		QString html = toolTipContext["GeneInfo"].toString();
 
-       if (toolTipContext.contains("EnrichmentTable"))
-       {
-           html += "<p style='font-size:14px;'>Enrichment Analysis Results</p>";
+		if (toolTipContext.contains("EnrichmentTable"))
+		{
+			QString tableHtml = toolTipContext["EnrichmentTable"].toString();
+			html += tableHtml;
+		}
 
-           QString tableHtml = toolTipContext["EnrichmentTable"].toString();
+		html += "</body></html>";
 
-           if (!tableHtml.isEmpty()) {
-               html += tableHtml;
-           }
-       }
-
-       // JavaScript for QWebChannel Integration
-       html += "<script src='qrc:///qtwebchannel/qwebchannel.js'></script>"
-           "<script>"
-           "var qtBridge;"
-           "new QWebChannel(qt.webChannelTransport, function(channel) {"
-           "   qtBridge = channel.objects.qtBridge;"
-           "});"
-           "function rowClicked(goTermID) {"
-           "   console.log('Clicked GO Term:', goTermID);"
-           "   if (qtBridge) {"
-           "       qtBridge.js_qt_passSelectionToQt(goTermID);"
-           "   }"
-           "}"
-           "</script>";
-
-       html += "</body></html>";
-
-
-        widget->setHtml(html);
-        return widget;
-        //return widgetSampleScope;
-        });
-
+		widget->setHtml(html);
+		return widget;
+		//return widgetSampleScope;
+		});
      
     getSamplerAction().getEnabledAction().setChecked(false);
     getSamplerAction().setSamplingMode(ViewPluginSamplerAction::SamplingMode::Selection);
-
 }
 
 void DualViewPlugin::init()
@@ -2105,25 +2081,16 @@ void DualViewPlugin::updateEnrichmentTable(const QVariantList& data)
         });
 
 	qDebug() << "updateEnrichmentTable(): Table sent to Sample Scope.";
-
 }
 
 void DualViewPlugin::noDataEnrichmentTable() 
 {
-    qDebug() << "DualViewPlugin::noDataEnrichmentTable()";
-
-    // show no data message
-    QString tableHtml = "<table style='font-size:14px; border-collapse: collapse; width:100%; font-family: Arial;' border='1'>"
-		"<tr>"
-		"<th style='padding: 5px; width: auto;'>No GO term available</th>"
-		"</tr>"
-		"</table>";
+    QString tableHtml = buildHtmlForEmpty();
 
     getSamplerAction().setSampleContext({
 		{ "GeneInfo", _currentHtmlGeneInfo },
-		{ "EnrichmentTable", tableHtml } // TODO: directly send html or send data and generate html there?
+		{ "EnrichmentTable", tableHtml } 
 		});
-
 }
 
 void DualViewPlugin::retrieveGOtermGenes(const QString& GOTermId)

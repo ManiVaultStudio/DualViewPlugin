@@ -233,7 +233,9 @@ QString buildHtmlForEnrichmentResults(const QVariantList& data)
 		limitedData.append(data[i]);
 	}
 
-	QString tableHtml = "<table style='font-size:14px; border-collapse: collapse; width:100%; font-family: Arial;' border='1'>"
+	QString tableHtml = "<p style='font-size:14px;'>Enrichment Analysis Results</p>";
+
+	tableHtml += "<table style='font-size:14px; border-collapse: collapse; width:100%; font-family: Arial;' border='1'>"
 		"<tr>";
 
 	// Add headers with fixed width for better alignment
@@ -271,6 +273,34 @@ QString buildHtmlForEnrichmentResults(const QVariantList& data)
 
 	tableHtml += "</table>";
 
+	// JavaScript for QWebChannel Integration
+	tableHtml += "<script src='qrc:///qtwebchannel/qwebchannel.js'></script>"
+		"<script>"
+		"var qtBridge;"
+		"new QWebChannel(qt.webChannelTransport, function(channel) {"
+		"   qtBridge = channel.objects.qtBridge;"
+		"});"
+		"function rowClicked(goTermID) {"
+		"   console.log('Clicked GO Term:', goTermID);"
+		"   if (qtBridge) {"
+		"       qtBridge.js_qt_passSelectionToQt(goTermID);"
+		"   }"
+		"}"
+		"</script>";
+
 	return tableHtml;
 }
 
+QString buildHtmlForEmpty()
+{
+	// show no data message
+	QString tableHtml = "<p style='font-size:14px;'>Enrichment Analysis Results</p>";
+
+	tableHtml += "<table style='font-size:14px; border-collapse: collapse; width:100%; font-family: Arial;' border='1'>"
+		"<tr>"
+		"<th style='padding: 5px; width: auto;'>No GO term available</th>"
+		"</tr>"
+		"</table>";
+
+	return tableHtml;
+}
