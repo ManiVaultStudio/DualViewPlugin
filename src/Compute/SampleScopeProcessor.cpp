@@ -272,7 +272,7 @@ QString buildHtmlForEnrichmentResults(const QVariantList& data)
 				}
 			}
 
-			tableHtml += "<td style='padding: 5px; text-align: left; width: auto;'>" + value + "</td>";
+			tableHtml += "<td style='padding: 5px; text-align: left; width: auto; white-space:nowrap;'>" + value + "</td>";
 		}
 
 		tableHtml += "</tr>";
