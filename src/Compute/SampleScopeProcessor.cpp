@@ -230,9 +230,9 @@ QString buildHtmlForSelection(const bool isASelected, const QString colorDataset
 QString buildHtmlForEnrichmentResults(const QVariantList& data)
 {
 	// Manually define headers
-	QStringList headers = { "Source", "Term ID", "Term Name", "Padj", "Highlighted", "Symbol" };
+	QStringList headers = { "Source", "Term ID", "Term Name", "Padj", "Highlight", "Symbol" };
 
-	// Limit data to max 10 rows
+	// Limit data to max X rows
 	int maxRows = qMin(30, data.size());
 	QVariantList limitedData;
 	for (int i = 0; i < maxRows; ++i) {
@@ -260,7 +260,8 @@ QString buildHtmlForEnrichmentResults(const QVariantList& data)
 		// enable click on row
 		tableHtml += QString("<tr onclick='rowClicked(\"%1\")' style='cursor:pointer;'>").arg(termID);
 
-		for (const QString& key : headers) {
+		for (const QString& key : headers) 
+		{
 			QString value = dataMap[key].toString();
 
 			// format Padj 3 decimal places
@@ -269,6 +270,23 @@ QString buildHtmlForEnrichmentResults(const QVariantList& data)
 				double pValue = value.toDouble(&ok);
 				if (ok) {
 					value = QString::number(pValue, 'e', 3);
+				}
+			}
+
+			// collapse long symbol list
+			if (key == "Symbol")
+			{
+				QStringList genes = value.split(",");
+				if (genes.size() > 5)
+				{
+					QString shortList = genes.mid(0, 5).join(", ");
+					QString fullList = genes.join(", ");
+					value = QString(
+						"%1 <details onclick='event.stopPropagation()' style='display:inline;'>"
+						"<summary style='cursor:pointer; display:inline;'>and more... </summary>"
+						"<p>%2</p></details>")
+						.arg(shortList)
+						.arg(fullList);
 				}
 			}
 

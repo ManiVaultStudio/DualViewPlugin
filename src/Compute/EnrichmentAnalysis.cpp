@@ -300,7 +300,7 @@ void EnrichmentAnalysis::handleEnrichmentReplyGprofiler() {
                     dataMap["Term ID"] = termID;
                     dataMap["Term Name"] = name;
                     dataMap["Padj"] = pValue;
-                    dataMap["Highlighted"] = highlighted;
+                    dataMap["Highlight"] = highlighted;
                     dataMap["Symbol"] = geneSymbols.join(",");
                     outputList.append(dataMap);
                 }
