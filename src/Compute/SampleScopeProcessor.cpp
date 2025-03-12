@@ -1,5 +1,9 @@
 #include "SampleScopeProcessor.h"
 
+namespace 
+{
+	const int fontSize = 13;
+}
 
 
 std::tuple<QStringList, QStringList, QStringList> computeMetadataCounts(QVector<Cluster>& metadata, std::vector<std::uint32_t>& sampledPoints)
@@ -79,24 +83,25 @@ QString buildHtmlForSelection(const bool isASelected, const QString colorDataset
 	if (hasMoreThan80)
 	{
 		additionalGenesHtml = QString(
-			"<details><summary style='font-size:14px; cursor:pointer;'>and more... </summary>"
-			"<p style='font-size:14px;'>%1</p>"
+			"<details><summary style='font-size:%1px; cursor:pointer;'>and more... </summary>"
+			"<p style='font-size:%1px;'>%2</p>"
 			"</details>")
+			.arg(fontSize)
 			.arg(additionalSymbols.join(", "));
 	}
 
 	if (isASelected) {
 		outputText = QString(
-			"<p style='font-size:14px;'>Gene embedding is selected.</p>"
-			"<table style='font-size:14px;'>"
+			"<p style='font-size:%1px;'>Gene embedding is selected.</p>"
+			"<table style='font-size:%1px;'>"
 			"<tr>"
 			"<td><b>Selected Genes: </b></td>"
-			"<td>%1 %2</td>"  // add the expandable section right inside the same <td>
+			"<td>%2 %3</td>"  // add the expandable section right inside the same <td>
 			"</tr>"
 			"</table>"
-			"<p style='font-size:12px; color:#377fe4;'>"
-			"Click the 'Enrich' button in the gene panel for more details.</p>"
-		)
+			"<p style='font-size:12px; color:#377fe4;'>" // TODO: hard coded font here
+			"Click the 'Enrich' button in the gene panel for more details.</p>")
+			.arg(fontSize)
 			.arg(geneSymbolsLessThan80.join(", "))
 			.arg(additionalGenesHtml);  // append the expandable section here
 
@@ -104,16 +109,16 @@ QString buildHtmlForSelection(const bool isASelected, const QString colorDataset
 	}
 	else {
 		outputText = QString(
-			"<p style='font-size:14px;'>Cell embedding is selected.</p>"
-			"<table style='font-size:14px;'>"
+			"<p style='font-size:%1px;'>Cell embedding is selected.</p>"
+			"<table style='font-size:%1px;'>"
 			"<tr>"
 			"<td><b>Connected Genes: </b></td>"
-			"<td>%1 %2</td>"  // add the expandable section right inside the same <td>
+			"<td>%2 %3</td>"  // add the expandable section right inside the same <td>
 			"</tr>"
 			"</table>"
-			"<p style='font-size:12px; color:#377fe4;'>"
-			"Click the 'Enrich' button in the gene panel for more details.</p>"
-		)
+			"<p style='font-size:12px; color:#377fe4;'>"// TODO: hard coded font here
+			"Click the 'Enrich' button in the gene panel for more details.</p>")
+			.arg(fontSize)
 			.arg(geneSymbolsLessThan80.join(", "))
 			.arg(additionalGenesHtml);
 
@@ -144,8 +149,12 @@ QString buildHtmlForSelection(const bool isASelected, const QString colorDataset
 		}
 
 		html += outputText; // font size al set in the table style
-		html += QString("<p style='font-size:14px;'>%1</p>").arg(colorDatasetIntro);
-		html += QString("<p style='font-size:14px;'>%1</p>").arg(chartTitle);
+		html += QString("<p style='font-size:%1px;'>%2</p>")
+			.arg(fontSize)
+			.arg(colorDatasetIntro);
+		html += QString("<p style='font-size:%1px;'>%2</p>")
+			.arg(fontSize)
+			.arg(chartTitle);
 
 		// dimensions for the stacked bar
 		int barWidth = 50;
@@ -168,7 +177,7 @@ QString buildHtmlForSelection(const bool isASelected, const QString colorDataset
 			double labelY = barHeight / 2.0;
 
 			html += QString(
-				"<text x='%1' y='%2' font-family='Arial' font-size='12' "
+				"<text x='%1' y='%2' font-family='Arial' font-size='12' " // TODO: hard coded font here
 				"fill='black' text-anchor='start' alignment-baseline='middle'>"
 				"%3</text>")
 				.arg(labelX)
@@ -202,20 +211,17 @@ QString buildHtmlForSelection(const bool isASelected, const QString colorDataset
 						.arg(QString::number(percentage, 'f', 1));
 
 					html += QString(
-						"<text x='%1' y='%2' font-family='Arial' font-size='12' "
+						"<text x='%1' y='%2' font-family='Arial' font-size='12' "// TODO: hard coded font here
 						"fill='black' text-anchor='start' alignment-baseline='middle'>"
 						"%3</text>")
 						.arg(labelX)
 						.arg(labelY)
 						.arg(labelText);
 				}
-
 				yOffset += sliceHeight;
 			}
 		}
-
 		html += "</svg>";
-
 	}
 
 	return html;
@@ -233,10 +239,11 @@ QString buildHtmlForEnrichmentResults(const QVariantList& data)
 		limitedData.append(data[i]);
 	}
 
-	QString tableHtml = "<p style='font-size:14px;'>Enrichment Analysis Results</p>";
+	QString tableHtml = QString("<p style='font-size:%1px;'>Enrichment Analysis Results</p>").arg(fontSize);
 
-	tableHtml += "<table style='font-size:14px; border-collapse: collapse; width:100%; font-family: Arial;' border='1'>"
-		"<tr>";
+	tableHtml += QString("<table style='font-size:%1px; border-collapse: collapse; width:100%; font-family: Arial;' border='1'>"
+		"<tr>")
+		.arg(fontSize);
 
 	// Add headers with fixed width for better alignment
 	for (const QString& header : headers) {
