@@ -966,6 +966,80 @@ void DualViewPlugin::highlightInputGenes(const QStringList& dimensionNames)
 	}
 
     _embeddingWidgetA->setHighlights(highlights, 1);
+
+    // test to set as selection
+    //std::vector<std::uint32_t> indicesVec(indices.begin(), indices.end());
+    //_embeddingDatasetA->setSelectionIndices(indicesVec);// TODO FIXME, should this publish selection? or just setHighlights? In associatedGenes?
+    // FIXME: this will trigger dataSelectionChanged, and then highlightSelectedEmbeddings, and then sendDataToSampleScope
+    //qDebug() << "highlightInputGenes - setSelectionIndices 1 ";
+    //events().notifyDatasetDataSelectionChanged(_embeddingDatasetA);
+    //qDebug() << "highlightInputGenes - setSelectionIndices 2 ";
+
+    // test to create a dataset for the selected genes - for potential density plot
+    bool createNewDataset = false;
+    if (!_customisedGenes.isValid())
+    {
+        _customisedGenes = mv::data().createDataset("Points", "CustomisedGenes");
+        createNewDataset = true;
+        qDebug() << "Create new dataset";
+    }
+
+    auto numCustomisedGenes = indices.size();
+
+    QVector<float> customisedGeneCoor(2 * numCustomisedGenes);
+
+    for (int i = 0; i < numCustomisedGenes; i++)
+    {
+        int geneIndice = indices[i];
+        customisedGeneCoor[2 * i] = _embeddingPositionsA[geneIndice].x;
+        customisedGeneCoor[2 * i + 1] = _embeddingPositionsA[geneIndice].y;
+    }
+
+    // first cancel the selection on this dataset, to avoid selection indices conflict after data changed
+    _customisedGenes->setSelectionIndices({});
+
+    _customisedGenes->setData(customisedGeneCoor.data(), numCustomisedGenes, 2);
+    events().notifyDatasetDataChanged(_customisedGenes);
+
+    // link the associated genes to the original embedding
+    mv::SelectionMap mapping;
+    auto& selectionMap = mapping.getMap();
+
+    std::vector<unsigned int> globalIndices;
+    _embeddingDatasetA->getGlobalIndices(globalIndices);
+
+    for (size_t i = 0; i < indices.size(); i++) {
+        int indexOriginal = indices[i]; // Local index in _embeddingDatasetA
+        std::vector<unsigned int> indexOriginalVector = { static_cast<uint32_t>(indexOriginal) };
+        selectionMap[i] = indexOriginalVector; // i: index in _associatedGenes, indexOriginal: index in _embeddingDatasetA
+    }
+
+    if (createNewDataset)
+    {
+        qDebug() << "Add linked data";
+        _customisedGenes->addLinkedData(_embeddingDatasetA, mapping);
+    }
+    else
+    {
+        qDebug() << "Update linked data";
+        //qDebug() << "linkedData size = " << _customisedGenes->getLinkedData().size();
+        mv::LinkedData& linkedData = _customisedGenes->getLinkedData().back(); 
+        //auto test = linkedData.getSourceDataSet();
+        //qDebug() << "highlightInputGenes - source dataset name = " << test->getGuiName();
+
+        linkedData.setMapping(mapping);
+        //qDebug() << " finished setMapping";
+    }
+
+    // test output the found gene symbols
+ //   QStringList foundGeneSymbols;
+ //   auto allNames = _embeddingSourceDatasetB->getDimensionNames();
+ //   for (int i = 0; i < indices.size(); i++)
+	//{
+	//	foundGeneSymbols.append(allNames[indices[i]]);
+	//}
+ //   qDebug() << "Found gene symbols: " << foundGeneSymbols;
+
 }
 
 void DualViewPlugin::highlightSelectedEmbeddings(ScatterplotWidget*& widget, mv::Dataset<Points> dataset)
@@ -1924,8 +1998,11 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QStringList& geneSymb
         qDebug() << "Update linked data";
         //qDebug() << "linkedData size = " << _associatedGenes->getLinkedData().size();
         mv::LinkedData& linkedData = _associatedGenes->getLinkedData().back();
+        //auto test = linkedData.getSourceDataSet();
+        //qDebug() << "highlightGOTermGenesInEmbedding - source dataset name = " << test->getGuiName();
+
         linkedData.setMapping(mapping);
-        //qDebug() << " finished setMapping";
+       // qDebug() << " finished setMapping";
 	}
 
 }
