@@ -2083,10 +2083,22 @@ void DualViewPlugin::fromVariantMap(const QVariantMap& variantMap)
     else
         qDebug() << "DualViewPlugin: fromVariantMap _metaDatasetB is not valid";
 
-    if (variantMap.contains("NavigationA"))
+    if (variantMap.contains("NavigationA")) //FIXME: temp during development for loading old projects, remove later
         _embeddingWidgetA->getNavigationAction().fromVariantMap(variantMap["NavigationA"].toMap());
-    if (variantMap.contains("NavigationB"))
+    if (variantMap.contains("NavigationB")) //FIXME: temp during development for loading old projects, remove later
         _embeddingWidgetB->getNavigationAction().fromVariantMap(variantMap["NavigationB"].toMap());
+
+    // FIXME: temp during development, decide whether to keep or not later
+    if (variantMap.contains("customisedGenes"))
+    {
+        QString customisedGenesId = variantMap["customisedGenes"].toString();
+        _customisedGenes = mv::data().getDataset<Points>(customisedGenesId);
+    }
+    if (variantMap.contains("associatedGenes"))
+    {
+        QString associatedGenesId = variantMap["associatedGenes"].toString();
+        _associatedGenes = mv::data().getDataset<Points>(associatedGenesId);
+    }
 
     _loadingFromProject = false;
 
@@ -2117,6 +2129,17 @@ QVariantMap DualViewPlugin::toVariantMap() const
     insertIntoVariantMap(_embeddingWidgetA->getNavigationAction(), variantMap, "NavigationA");
 
     insertIntoVariantMap(_embeddingWidgetB->getNavigationAction(), variantMap, "NavigationB"); //FIXME: is this correct?
+
+    // FIXME: temp during development
+    if (_customisedGenes.isValid())
+    {
+        variantMap.insert("customisedGenes", _customisedGenes.getDatasetId());
+    }
+    if (_associatedGenes.isValid())
+    {
+        variantMap.insert("_associatedGenes", _associatedGenes.getDatasetId());
+    }
+
 
 	return variantMap;
 }
