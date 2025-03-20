@@ -664,81 +664,39 @@ void DualViewPlugin::update1DEmbeddingColors(bool isA)
     QString embeddingName = isA ? "A" : "B";
     //qDebug() << "<<<<< update1DEmbeddingColors " << embeddingName;
 
-    // test assigning colors to 1D embedding
-    if (_metaDatasetB.isValid() && !isA)
+    auto positionDataset = isA ? _embeddingDatasetA : _embeddingDatasetB;
+    auto& metaDataset = isA ? _metaDatasetA : _metaDatasetB;
+
+    if (!metaDataset.isValid() || !positionDataset.isValid())
+        return;
+
+    std::vector<std::uint32_t> globalIndices;
+    positionDataset->getGlobalIndices(globalIndices);
+
+    int totalNumPoints = positionDataset->isDerivedData()
+        ? positionDataset->getSourceDataset<Points>()->getFullDataset<Points>()->getNumPoints()
+        : positionDataset->getFullDataset<Points>()->getNumPoints();
+
+    std::vector<Vector3f> globalColors(totalNumPoints, Vector3f(0.0f, 0.0f, 0.0f));
+    std::vector<Vector3f> localColors(positionDataset->getNumPoints());
+
+    for (const auto& cluster : metaDataset.get<Clusters>()->getClusters())
     {
-        //qDebug() << "update1DEmbeddingColors B";
-
-        // extract the colors - same as in ColoringAction
-        // TODO: avoid code duplication
-        // Mapping from local to global indices
-        std::vector<std::uint32_t> globalIndices;
-
-        auto positionDataset = _embeddingDatasetB; // TODO:hardcoded to assume only for B
-
-        // Get global indices from the position dataset
-        int totalNumPoints = 0;
-        if (positionDataset->isDerivedData())
-            totalNumPoints = positionDataset->getSourceDataset<Points>()->getFullDataset<Points>()->getNumPoints();
-        else
-            totalNumPoints = positionDataset->getFullDataset<Points>()->getNumPoints();
-
-        positionDataset->getGlobalIndices(globalIndices);
-
-        // Generate color buffer for global and local colors
-        std::vector<Vector3f> globalColors(totalNumPoints);
-        std::vector<Vector3f> localColors(positionDataset->getNumPoints());
-
-        // Loop over all clusters and populate global colors
-        for (const auto& cluster : _metaDatasetB.get<Clusters>()->getClusters())
-            for (const auto& index : cluster.getIndices())
-                globalColors[index] = Vector3f(cluster.getColor().redF(), cluster.getColor().greenF(), cluster.getColor().blueF());
-        std::int32_t localColorIndex = 0;
-
-        // Loop over all global indices and find the corresponding local color
-        for (const auto& globalIndex : globalIndices)
-            localColors[localColorIndex++] = globalColors[globalIndex];
-
-        _embeddingLinesWidget->setPointColorB(localColors); // 
+        const auto& color = Vector3f(cluster.getColor().redF(), cluster.getColor().greenF(), cluster.getColor().blueF());
+        for (const auto& index : cluster.getIndices())
+            globalColors[index] = color;
     }
 
-    if (_metaDatasetA.isValid() && isA)
+#pragma omp parallel for
+    for (std::size_t i = 0; i < globalIndices.size(); i++)
     {
-        //qDebug() << "update1DEmbeddingColors A";
-
-        // extract the colors - same as in ColoringAction
-        // TODO: avoid code duplication
-        // 
-        // Mapping from local to global indices
-        std::vector<std::uint32_t> globalIndices;
-
-        auto positionDataset = _embeddingDatasetA; // TODO:hardcoded to assume only for A
-
-        // Get global indices from the position dataset
-        int totalNumPoints = 0;
-        if (positionDataset->isDerivedData())
-            totalNumPoints = positionDataset->getSourceDataset<Points>()->getFullDataset<Points>()->getNumPoints();
-        else
-            totalNumPoints = positionDataset->getFullDataset<Points>()->getNumPoints();
-
-        positionDataset->getGlobalIndices(globalIndices);
-
-        // Generate color buffer for global and local colors
-        std::vector<Vector3f> globalColors(totalNumPoints);
-        std::vector<Vector3f> localColors(positionDataset->getNumPoints());
-
-        // Loop over all clusters and populate global colors
-        for (const auto& cluster : _metaDatasetA.get<Clusters>()->getClusters())
-            for (const auto& index : cluster.getIndices())
-                globalColors[index] = Vector3f(cluster.getColor().redF(), cluster.getColor().greenF(), cluster.getColor().blueF());
-        std::int32_t localColorIndex = 0;
-
-        // Loop over all global indices and find the corresponding local color
-        for (const auto& globalIndex : globalIndices)
-            localColors[localColorIndex++] = globalColors[globalIndex];
-
-        _embeddingLinesWidget->setPointColorA(localColors); // 
+        localColors[i] = globalColors[globalIndices[i]];
     }
+
+    if (isA)
+        _embeddingLinesWidget->setPointColorA(localColors);
+    else
+        _embeddingLinesWidget->setPointColorB(localColors);
 }
 
 void DualViewPlugin::updateLineConnections()
@@ -1902,7 +1860,7 @@ void DualViewPlugin::updateEnrichmentTable(const QVariantList& data)
 
     getSamplerAction().setSampleContext({
         { "GeneInfo", _currentHtmlGeneInfo },
-        { "EnrichmentTable", tableHtml } // TODO: directly send html or send data and generate html there?
+        { "EnrichmentTable", tableHtml }
         });
 
 	qDebug() << "updateEnrichmentTable(): Table sent to Sample Scope.";
