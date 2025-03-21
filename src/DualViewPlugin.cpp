@@ -457,7 +457,7 @@ void DualViewPlugin::init()
             return;
 
         _isEmbeddingASelected = false;
-        highlightSelectedLines(_embeddingDatasetB);// TODO: this step is the slow part of the interface?
+        highlightSelectedLines(_embeddingDatasetB);
         highlightSelectedEmbeddings(_embeddingWidgetB, _embeddingDatasetB);
 
         if (_embeddingDatasetB->getSelection<Points>()->indices.size() != 0)
@@ -662,7 +662,6 @@ void DualViewPlugin::update1DEmbeddingPositions(bool isA)
 void DualViewPlugin::update1DEmbeddingColors(bool isA)
 {
     QString embeddingName = isA ? "A" : "B";
-    //qDebug() << "<<<<< update1DEmbeddingColors " << embeddingName;
 
     auto positionDataset = isA ? _embeddingDatasetA : _embeddingDatasetB;
     auto& metaDataset = isA ? _metaDatasetA : _metaDatasetB;
