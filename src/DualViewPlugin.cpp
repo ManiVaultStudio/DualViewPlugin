@@ -365,6 +365,10 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _sampleScopeChannel->registerObject("qtBridge", _sampleScopeCommObject);
     _sampleScopeWidget->page()->setWebChannel(_sampleScopeChannel);
 
+    connect(_sampleScopeWidget, &QWidget::destroyed, this, [this]() {
+        qDebug() << "SampleScopeWidget destroyed" << getGuiName();
+		});
+
 
     // Example code for control column width in QTableWidget
     /*auto tableWidget = new QTableWidget(1, 5);
