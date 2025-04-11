@@ -81,6 +81,7 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingAToolbarAction.addAction(&_settingsAction.getEnrichmentAction());
     _embeddingAToolbarAction.addAction(&_settingsAction.getEmbeddingAPointPlotAction());
     _embeddingAToolbarAction.addAction(&getSamplerAction());
+    _embeddingAToolbarAction.addAction(&_settingsAction.getSelectionAction());
     _embeddingAToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction());
     
 
