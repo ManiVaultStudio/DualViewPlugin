@@ -73,8 +73,6 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingBSecondaryToolbarAction(this, "Secondary Toolbar B"),
     _linesToolbarAction(this, "Lines Toolbar")
 {
-    _embeddingWidgetA->getNavigationAction().setParent(this);
-    _embeddingWidgetB->getNavigationAction().setParent(this);
 
     // toolbars A
     _embeddingAToolbarAction.addAction(&_settingsAction.getEnrichmentSettingsAction());
@@ -85,7 +83,7 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingAToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction());
     
 
-    _embeddingASecondaryToolbarAction.addAction(&_embeddingWidgetA->getNavigationAction());
+    //_embeddingASecondaryToolbarAction.addAction(&_embeddingWidgetA->getNavigationAction());
 
     auto focusSelectionActionA = new ToggleAction(this, "Focus selection A");
     focusSelectionActionA->setIconByName("mouse-pointer");
@@ -102,7 +100,7 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingBToolbarAction.addAction(&_settingsAction.getEmbeddingBPointPlotAction());
     _embeddingBToolbarAction.addAction(&_settingsAction.getReversePointSizeBAction());
 
-    _embeddingBSecondaryToolbarAction.addAction(&_embeddingWidgetB->getNavigationAction());
+    //_embeddingBSecondaryToolbarAction.addAction(&_embeddingWidgetB->getNavigationAction());
 
     auto focusSelectionActionB = new ToggleAction(this, "Focus selection B");
     focusSelectionActionA->setIconByName("mouse-pointer");
@@ -1319,40 +1317,40 @@ void DualViewPlugin::samplePoints()
 
     targetSelectionIndices.reserve(_embeddingDatasetA->getNumPoints());
 
+    std::vector<std::pair<float, std::uint32_t>> sampledPoints;
+
     std::vector<std::uint32_t> localGlobalIndices;
 
     _embeddingDatasetA->getGlobalIndices(localGlobalIndices);
 
-    auto& zoomRectangleAction = _embeddingWidgetA->getNavigationAction().getZoomRectangleAction();
+    auto& pointRenderer = _embeddingWidgetA->getPointRenderer();
+    auto& navigator = pointRenderer.getNavigator();
 
-    const auto width = selectionAreaImage.width();
-    const auto height = selectionAreaImage.height();
-    const auto size = width < height ? width : height;
-    const auto uvOffset = QPoint((selectionAreaImage.width() - size) / 2.0f, (selectionAreaImage.height() - size) / 2.0f);
+    const auto zoomRectangleWorld = navigator.getZoomRectangleWorld();
+    const auto screenRectangle = QRect(QPoint(), pointRenderer.getRenderSize());
+    const auto mousePositionWorld = pointRenderer.getScreenPointToWorldPosition(pointRenderer.getNavigator().getViewMatrix(), _embeddingWidgetA->mapFromGlobal(QCursor::pos()));
 
-
-    QPointF pointUvNormalized;
-
-    QPoint  pointUv, mouseUv = _embeddingWidgetA->mapFromGlobal(QCursor::pos());
-
-    std::vector<char> focusHighlights(_embeddingPositionsA.size());
-
-    std::vector<std::pair<float, std::uint32_t>> sampledPoints;
-
+    // Go over all points in the dataset to see if they should be sampled
     for (std::uint32_t localPointIndex = 0; localPointIndex < _embeddingPositionsA.size(); localPointIndex++) {
-        pointUvNormalized = QPointF((_embeddingPositionsA[localPointIndex].x - zoomRectangleAction.getLeft()) / zoomRectangleAction.getWidth(), (zoomRectangleAction.getTop() - _embeddingPositionsA[localPointIndex].y) / zoomRectangleAction.getHeight());
-        pointUv = uvOffset + QPoint(pointUvNormalized.x() * size, pointUvNormalized.y() * size);
+	    // Compute the offset of the point in the world space
+    	const auto pointOffsetWorld = QPointF(_embeddingPositionsA[localPointIndex].x - zoomRectangleWorld.left(), _embeddingPositionsA[localPointIndex].y - zoomRectangleWorld.top());
 
-        if (pointUv.x() >= selectionAreaImage.width() || pointUv.x() < 0 || pointUv.y() >= selectionAreaImage.height() || pointUv.y() < 0)
-            continue;
+    	// Normalize it 
+    	const auto pointOffsetWorldNormalized = QPointF(pointOffsetWorld.x() / zoomRectangleWorld.width(), pointOffsetWorld.y() / zoomRectangleWorld.height());
 
-        if (selectionAreaImage.pixelColor(pointUv).alpha() > 0) {
-            const auto sample = std::pair<float, std::uint32_t>((QVector2D(mouseUv) - QVector2D(pointUv)).length(), localPointIndex);
+    	// Convert it to screen space
+    	const auto pointOffsetScreen = QPoint(pointOffsetWorldNormalized.x() * screenRectangle.width(), screenRectangle.height() - pointOffsetWorldNormalized.y() * screenRectangle.height());
 
-            sampledPoints.emplace_back(sample);
+    	// Continue to next point if the point is outside the screen
+    	if (!screenRectangle.contains(pointOffsetScreen))
+    		continue;
 
-            targetSelectionIndices.push_back(localGlobalIndices[localPointIndex]); // test for connecting sampled points as selected points
-        }
+    	// If the corresponding pixel is not transparent, add the point to the selection
+    	if (selectionAreaImage.pixelColor(pointOffsetScreen).alpha() > 0) {
+    		const auto sample = std::pair((QVector2D(_embeddingPositionsA[localPointIndex].x, _embeddingPositionsA[localPointIndex].y) - mousePositionWorld.toVector2D()).length(), localPointIndex);
+
+    		sampledPoints.emplace_back(sample);
+    	}
     }
 
     QVariantList localPointIndices, globalPointIndices, distances;
@@ -1366,6 +1364,8 @@ void DualViewPlugin::samplePoints()
     std::sort(sampledPoints.begin(), sampledPoints.end(), [](const auto& sampleA, const auto& sampleB) -> bool {
         return sampleB.first > sampleA.first;
         });
+
+    std::vector<char> focusHighlights(_embeddingPositionsA.size());
 
     for (const auto& sampledPoint : sampledPoints) {
         if (getSamplerAction().getRestrictNumberOfElementsAction().isChecked() && numberOfPoints >= getSamplerAction().getMaximumNumberOfElementsAction().getValue())
@@ -1395,66 +1395,70 @@ void DualViewPlugin::samplePoints()
 
 void DualViewPlugin::selectPoints(ScatterplotWidget* widget, mv::Dataset<Points> embeddingDataset, const std::vector<mv::Vector2f>& embeddingPositions)
 {
+    //if (getSettingsAction().getSelectionAction().getFreezeSelectionAction().isChecked())
+    //    return;
+
+    auto& pixelSelectionTool = _embeddingWidgetA->getPixelSelectionTool();
+
     // Only proceed with a valid points position dataset and when the pixel selection tool is active
-    if (!embeddingDataset.isValid() || !widget->getPixelSelectionTool().isActive() || widget->isNavigating() || !widget->getPixelSelectionTool().isEnabled())
+    if (!_embeddingDatasetA.isValid() || !pixelSelectionTool.isActive() || _embeddingWidgetA->getPointRenderer().getNavigator().isNavigating() || !pixelSelectionTool.isEnabled())
         return;
 
-    //qDebug() << _positionDataset->getGuiName() << "selectPoints";
+    auto selectionAreaImage = pixelSelectionTool.getAreaPixmap().toImage();
+    auto selectionSet = _embeddingDatasetA->getSelection<Points>();
 
-    // Get binary selection area image from the pixel selection tool
-    auto selectionAreaImage = widget->getPixelSelectionTool().getAreaPixmap().toImage();
-
-    // Get smart pointer to the position selection dataset
-    auto selectionSet = embeddingDataset->getSelection<Points>();
-
-    // Create vector for target selection indices
     std::vector<std::uint32_t> targetSelectionIndices;
 
-    // Reserve space for the indices
-    targetSelectionIndices.reserve(embeddingDataset->getNumPoints());
+    targetSelectionIndices.reserve(_embeddingDatasetA->getNumPoints());
 
-    // Mapping from local to global indices
     std::vector<std::uint32_t> localGlobalIndices;
 
-    // Get global indices from the position dataset
-    embeddingDataset->getGlobalIndices(localGlobalIndices);
+    _embeddingDatasetA->getGlobalIndices(localGlobalIndices);
 
-    auto& zoomRectangleAction = widget->getNavigationAction().getZoomRectangleAction();
-    const auto width = selectionAreaImage.width();
-    const auto height = selectionAreaImage.height();
-    const auto size = width < height ? width : height;
-    const auto uvOffset = QPoint((selectionAreaImage.width() - size) / 2.0f, (selectionAreaImage.height() - size) / 2.0f);
-    QPointF uvNormalized = {};
-    QPoint uv = {};
+    auto& pointRenderer = _embeddingWidgetA->getPointRenderer();
+    auto& navigator = pointRenderer.getNavigator();
 
-    //qDebug() << "Selection area size:" << width << height << size;
-    //qDebug() << "Data bounds top" << dataBounds.getTop() << "bottom" << dataBounds.getBottom() << "left" << dataBounds.getLeft() << "right" << dataBounds.getRight();
-    //qDebug() << "Data bounds width" << dataBounds.getWidth() << "height" << dataBounds.getHeight();
+    const auto zoomRectangleWorld = navigator.getZoomRectangleWorld();
+    const auto screenRectangle = QRect(QPoint(), pointRenderer.getRenderSize());
 
+    float boundaries[4]{
+        std::numeric_limits<float>::max(),
+        std::numeric_limits<float>::lowest(),
+        std::numeric_limits<float>::max(),
+        std::numeric_limits<float>::lowest()
+    };
 
-    // Loop over all points and establish whether they are selected or not
-    for (std::uint32_t i = 0; i < embeddingPositions.size(); i++) {
-        uvNormalized = QPointF((embeddingPositions[i].x - zoomRectangleAction.getLeft()) / zoomRectangleAction.getWidth(), (zoomRectangleAction.getTop() - embeddingPositions[i].y) / zoomRectangleAction.getHeight());
-        uv = uvOffset + QPoint(uvNormalized.x() * size, uvNormalized.y() * size);
-        if (uv.x() >= selectionAreaImage.width() || uv.x() < 0 ||
-            uv.y() >= selectionAreaImage.height() || uv.y() < 0)
+    // Go over all points in the dataset to see if they are selected
+    for (std::uint32_t localPointIndex = 0; localPointIndex < _embeddingPositionsA.size(); localPointIndex++) {
+        const auto& point = _embeddingPositionsA[localPointIndex];
+
+        // Compute the offset of the point in the world space
+        const auto pointOffsetWorld = QPointF(point.x - zoomRectangleWorld.left(), point.y - zoomRectangleWorld.top());
+
+        // Normalize it 
+        const auto pointOffsetWorldNormalized = QPointF(pointOffsetWorld.x() / zoomRectangleWorld.width(), pointOffsetWorld.y() / zoomRectangleWorld.height());
+
+        // Convert it to screen space
+        const auto pointOffsetScreen = QPoint(pointOffsetWorldNormalized.x() * screenRectangle.width(), screenRectangle.height() - pointOffsetWorldNormalized.y() * screenRectangle.height());
+
+        // Continue to next point if the point is outside the screen
+        if (!screenRectangle.contains(pointOffsetScreen))
             continue;
 
-        // Add point if the corresponding pixel selection is on
-        if (selectionAreaImage.pixelColor(uv).alpha() > 0)
-            targetSelectionIndices.push_back(localGlobalIndices[i]);
+        // If the corresponding pixel is not transparent, add the point to the selection
+        if (selectionAreaImage.pixelColor(pointOffsetScreen).alpha() > 0) {
+            targetSelectionIndices.push_back(localGlobalIndices[localPointIndex]);
 
-
-        /*if (i / 110 == 1)
-        {
-            qDebug() << "embeddingPositions:" << i << "x:" << embeddingPositions[i].x << "y:" << embeddingPositions[i].y << "uvNormalized:" << uvNormalized << "uvOffset" << uvOffset <<"uv:" << uv;
-        }*/
+            boundaries[0] = std::min(boundaries[0], point.x);
+            boundaries[1] = std::max(boundaries[1], point.x);
+            boundaries[2] = std::min(boundaries[2], point.y);
+            boundaries[3] = std::max(boundaries[3], point.y);
+        }
     }
 
-    // Selection should be subtracted when the selection process was aborted by the user (e.g. by pressing the escape key)
-    const auto selectionModifier = widget->getPixelSelectionTool().isAborted() ? PixelSelectionModifierType::Subtract : widget->getPixelSelectionTool().getModifier();
+    //_selectionBoundaries = QRectF(boundaries[0], boundaries[2], boundaries[1] - boundaries[0], boundaries[3] - boundaries[2]);
 
-    switch (selectionModifier)
+    switch (const auto selectionModifier = pixelSelectionTool.isAborted() ? PixelSelectionModifierType::Subtract : pixelSelectionTool.getModifier())
     {
     case PixelSelectionModifierType::Replace:
         break;
@@ -1490,21 +1494,21 @@ void DualViewPlugin::selectPoints(ScatterplotWidget* widget, mv::Dataset<Points>
             break;
         }
 
-        default:
+        case PixelSelectionModifierType::Replace:
             break;
         }
 
-        // Convert set back to vector
         targetSelectionIndices = std::vector<std::uint32_t>(set.begin(), set.end());
 
         break;
     }
-
-    default:
-        break;
     }
 
-    embeddingDataset->setSelectionIndices(targetSelectionIndices);
+    auto& navigationAction = const_cast<NavigationAction&>(_embeddingWidgetA->getPointRenderer().getNavigator().getNavigationAction());
+
+    navigationAction.getZoomSelectionAction().setEnabled(!targetSelectionIndices.empty() && !navigationAction.getFreezeNavigation().isChecked());
+
+    _embeddingDatasetA->setSelectionIndices(targetSelectionIndices);
 
     events().notifyDatasetDataSelectionChanged(embeddingDataset->getSourceDataset<Points>());
 }
@@ -2045,10 +2049,11 @@ void DualViewPlugin::fromVariantMap(const QVariantMap& variantMap)
     else
         qDebug() << "DualViewPlugin: fromVariantMap _metaDatasetB is not valid";
 
-    if (variantMap.contains("NavigationA")) //FIXME: temp during development for loading old projects, remove later
-        _embeddingWidgetA->getNavigationAction().fromVariantMap(variantMap["NavigationA"].toMap());
-    if (variantMap.contains("NavigationB")) //FIXME: temp during development for loading old projects, remove later
-        _embeddingWidgetB->getNavigationAction().fromVariantMap(variantMap["NavigationB"].toMap());
+    // TODO: T. Kroes
+    //if (variantMap.contains("NavigationA")) //FIXME: temp during development for loading old projects, remove later
+    //    _embeddingWidgetA->getNavigationAction().fromVariantMap(variantMap["NavigationA"].toMap());
+    //if (variantMap.contains("NavigationB")) //FIXME: temp during development for loading old projects, remove later
+    //    _embeddingWidgetB->getNavigationAction().fromVariantMap(variantMap["NavigationB"].toMap());
 
     // FIXME: temp during development, decide whether to keep or not later
     if (variantMap.contains("customisedGenes"))
@@ -2088,9 +2093,10 @@ QVariantMap DualViewPlugin::toVariantMap() const
         variantMap.insert("meanExpressionScalars", _meanExpressionScalars.getDatasetId());
     }
 
-    insertIntoVariantMap(_embeddingWidgetA->getNavigationAction(), variantMap, "NavigationA");
+    // TODO: T. Kroes
+    //insertIntoVariantMap(_embeddingWidgetA->getNavigationAction(), variantMap, "NavigationA");
 
-    insertIntoVariantMap(_embeddingWidgetB->getNavigationAction(), variantMap, "NavigationB"); //FIXME: is this correct?
+    //insertIntoVariantMap(_embeddingWidgetB->getNavigationAction(), variantMap, "NavigationB"); //FIXME: is this correct?
 
     // FIXME: temp during development
     if (_customisedGenes.isValid())

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "src/Actions/NavigationAction.h"
-
 #include <renderers/DensityRenderer.h>
 #include <renderers/PointRenderer.h>
 
@@ -136,8 +134,6 @@ public:
     }
     */
 
-    NavigationAction& getNavigationAction() { return _navigationAction; }
-
     bool isNavigating() const {
         return _isNavigating;
     }
@@ -258,10 +254,6 @@ protected:
 
     bool event(QEvent* event) override;
 
-    void zoomAround(const QPointF& at, float factor);
-    void panBy(const QPointF& to);
-    void resetView();
-
 public: // Const access to renderers
 
     const PointRenderer& getPointRenderer() const {
@@ -317,7 +309,6 @@ private:
     ColoringMode                _coloringMode;                  /** Type of point/density coloring */
     widgetSizeInfo              _widgetSizeInfo;                /** Info about size of the scatterplot widget */
     DecimalRectangleAction      _dataRectangleAction;           /** Rectangle action for the bounds of the loaded data */
-    NavigationAction            _navigationAction;              /** All navigation-related actions are grouped in this action */
     QImage                      _colorMapImage;                 /** 1D/2D color map image */
     PixelSelectionTool          _pixelSelectionTool;            /** 2D pixel selection tool */
     PixelSelectionTool          _samplerPixelSelectionTool;     /** 2D pixel selection tool */

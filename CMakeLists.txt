@@ -75,8 +75,6 @@ set(Actions
     src/Actions/PointPlotAction.cpp
 	src/Actions/PointPlotActionB.h
     src/Actions/PointPlotActionB.cpp
-	src/Actions/NavigationAction.h
-    src/Actions/NavigationAction.cpp
 	src/Actions/EnrichmentAction.h
     src/Actions/EnrichmentAction.cpp
 	src/Actions/EnrichmentSettingsAction.h
