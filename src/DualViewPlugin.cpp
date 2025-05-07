@@ -1429,24 +1429,24 @@ void DualViewPlugin::selectPoints(ScatterplotWidget* widget, mv::Dataset<Points>
     //if (getSettingsAction().getSelectionAction().getFreezeSelectionAction().isChecked())
     //    return;
 
-    auto& pixelSelectionTool = _embeddingWidgetA->getPixelSelectionTool();
+    auto& pixelSelectionTool = widget->getPixelSelectionTool();
 
     // Only proceed with a valid points position dataset and when the pixel selection tool is active
-    if (!_embeddingDatasetA.isValid() || !pixelSelectionTool.isActive() || _embeddingWidgetA->getPointRenderer().getNavigator().isNavigating() || !pixelSelectionTool.isEnabled())
+    if (!embeddingDataset.isValid() || !pixelSelectionTool.isActive() || widget->getPointRenderer().getNavigator().isNavigating() || !pixelSelectionTool.isEnabled())
         return;
 
     auto selectionAreaImage = pixelSelectionTool.getAreaPixmap().toImage();
-    auto selectionSet = _embeddingDatasetA->getSelection<Points>();
+    auto selectionSet = embeddingDataset->getSelection<Points>();
 
     std::vector<std::uint32_t> targetSelectionIndices;
 
-    targetSelectionIndices.reserve(_embeddingDatasetA->getNumPoints());
+    targetSelectionIndices.reserve(embeddingDataset->getNumPoints());
 
     std::vector<std::uint32_t> localGlobalIndices;
 
-    _embeddingDatasetA->getGlobalIndices(localGlobalIndices);
+    embeddingDataset->getGlobalIndices(localGlobalIndices);
 
-    auto& pointRenderer = _embeddingWidgetA->getPointRenderer();
+    auto& pointRenderer = widget->getPointRenderer();
     auto& navigator = pointRenderer.getNavigator();
 
     const auto zoomRectangleWorld = navigator.getZoomRectangleWorld();
@@ -1460,8 +1460,8 @@ void DualViewPlugin::selectPoints(ScatterplotWidget* widget, mv::Dataset<Points>
     };
 
     // Go over all points in the dataset to see if they are selected
-    for (std::uint32_t localPointIndex = 0; localPointIndex < _embeddingPositionsA.size(); localPointIndex++) {
-        const auto& point = _embeddingPositionsA[localPointIndex];
+    for (std::uint32_t localPointIndex = 0; localPointIndex < embeddingPositions.size(); localPointIndex++) {
+        const auto& point = embeddingPositions[localPointIndex];
 
         // Compute the offset of the point in the world space
         const auto pointOffsetWorld = QPointF(point.x - zoomRectangleWorld.left(), point.y - zoomRectangleWorld.top());
@@ -1535,11 +1535,11 @@ void DualViewPlugin::selectPoints(ScatterplotWidget* widget, mv::Dataset<Points>
     }
     }
 
-    auto& navigationAction = const_cast<NavigationAction&>(_embeddingWidgetA->getPointRenderer().getNavigator().getNavigationAction());
+    auto& navigationAction = const_cast<NavigationAction&>(widget->getPointRenderer().getNavigator().getNavigationAction());
 
     navigationAction.getZoomSelectionAction().setEnabled(!targetSelectionIndices.empty() && !navigationAction.getFreezeNavigation().isChecked());
 
-    _embeddingDatasetA->setSelectionIndices(targetSelectionIndices);
+    embeddingDataset->setSelectionIndices(targetSelectionIndices);
 
     events().notifyDatasetDataSelectionChanged(embeddingDataset->getSourceDataset<Points>());
 }
@@ -1552,7 +1552,7 @@ void DualViewPlugin::selectPoints(EmbeddingLinesWidget* widget, const std::vecto
         qDebug() << "DualViewPlugin: selectPoints() - invalid 1D dataset or pixel selection tool is not active";
         return;
     }
-        
+
     // Get binary selection area image from the pixel selection tool
     auto selectionAreaImage = widget->getPixelSelectionTool().getAreaPixmap().toImage();
 
