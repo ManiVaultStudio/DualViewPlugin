@@ -2103,6 +2103,8 @@ void DualViewPlugin::fromVariantMap(const QVariantMap& variantMap)
 
     _loadingFromProject = false;
 
+    getLearningCenterAction().getToolbarVisibleAction().setChecked(false);
+    getLearningCenterAction().setAlignment(Qt::AlignmentFlag::AlignBottom | Qt::AlignmentFlag::AlignRight);
 }
 
 QVariantMap DualViewPlugin::toVariantMap() const
