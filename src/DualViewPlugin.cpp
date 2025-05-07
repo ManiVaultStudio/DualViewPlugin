@@ -74,6 +74,9 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _linesToolbarAction(this, "Lines Toolbar")
 {
 
+    _settingsAction.getEnrichmentAction().setDefaultWidgetFlag(GroupAction::WidgetFlag::NoMargins);
+    _settingsAction.getDimensionSelectionAction().setDefaultWidgetFlag(GroupAction::WidgetFlag::NoMargins);
+
     // toolbars A
     _embeddingAToolbarAction.addAction(&_settingsAction.getEnrichmentSettingsAction());
     _embeddingAToolbarAction.addAction(&_settingsAction.getEnrichmentAction());
