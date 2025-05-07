@@ -152,6 +152,10 @@ void MyShaderProgram::uniformMatrix3f(const char* name, Matrix3f& m) {
     glUniformMatrix3fv(location(name), 1, false, m.toArray());
 }
 
+void MyShaderProgram::uniformMatrix3f(const char* name, const float* const m) {
+    glUniformMatrix3fv(location(name), 1, false, m);
+}
+
 //void Shader::uniformMatrix4f(const char* name, Matrix4f& m) {
 //    glUniformMatrix4fv(location(name), 1, false, m.toArray());
 //}

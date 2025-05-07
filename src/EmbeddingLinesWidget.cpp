@@ -8,6 +8,7 @@
 
 #include <QDebug>
 #include <chrono>
+#include <graphics/Matrix3f.h>
 //#include <QOpenGLDebugLogger>
 
 using namespace mv;
@@ -21,7 +22,7 @@ EmbeddingLinesWidget::EmbeddingLinesWidget() :
     _vboPositions(0),
     _lineConnections(0),
     _highlightSource(true),
-    _pointRenderer(),
+    _pointRenderer(this),
     _colors(),
     _bounds(),
     /*_embedding_src(nullptr),
@@ -44,6 +45,8 @@ EmbeddingLinesWidget::EmbeddingLinesWidget() :
         if (isInitialized())
             update();
         });
+
+    _pointRenderer.getNavigator().setZoomMarginScreen(25.f);
 }
 
 void EmbeddingLinesWidget::setData(const std::vector<mv::Vector2f>& embedding_src, const std::vector<mv::Vector2f>& embedding_dst) 
@@ -79,11 +82,15 @@ void EmbeddingLinesWidget::setData(const std::vector<mv::Vector2f>& embedding_sr
         _bounds.setTop(std::max(point.y, _bounds.getTop()));
     }
 
-    _bounds.ensureMinimumSize(1e-07f, 1e-07f);
-    _bounds.makeSquare();
-    _bounds.expand(0.1f);
+    //_bounds.ensureMinimumSize(1e-07f, 1e-07f);
+    //_bounds.makeSquare();
+    //_bounds.expand(0.1f);
 
-    _pointRenderer.setBounds(_bounds);
+    const auto dataBoundsRect = QRectF(QPointF(_bounds.getLeft(), _bounds.getBottom()), QSizeF(_bounds.getWidth(), _bounds.getHeight()));
+
+    _pointRenderer.setDataBounds(dataBoundsRect);
+
+	_pointRenderer.getNavigator().resetView(true);
     _pointRenderer.setData(points);
     _pointRenderer.setColors(_colors);
 
@@ -401,9 +408,9 @@ void EmbeddingLinesWidget::onWidgetRendered()
             _shader.bind();
 
             // set the projection matrix
-            Matrix3f projection = _pointRenderer.getProjectionMatrix();
-            _shader.uniformMatrix3f("projection", projection);
-
+            const auto projection = _pointRenderer.getModelViewProjectionMatrix();
+            _shader.uniformMatrix4f("projection", projection.data());
+            
             // pass foreground and background colors as uniforms
             _shader.uniform4f("backgroundColor", _color.redF(), _color.greenF(), _color.blueF(), _alpha);
             _shader.uniform4f("foregroundColor", 252.0f / 255.0f, 102.0f / 255.0f, 0.0f / 255.0f, 0.3f); // Orange for highlights, not used anymore
