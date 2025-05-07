@@ -6,13 +6,13 @@ layout (location = 1) in int aMode; // background or foreground
 //flat out int vMode;
 out int vMode; 
 
-uniform mat3 projection;
+uniform mat4 projection;
 
 void main()
 {
-    vec3 pos = vec3(aPos, 1.0);
+    vec4 pos = vec4(aPos, 0.0, 1.0);
 	
-	vec3 projectedPos = projection * pos;
+	vec4 projectedPos = projection * pos;
 	
 	vMode = aMode;
 

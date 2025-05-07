@@ -22,7 +22,7 @@ EmbeddingLinesWidget::EmbeddingLinesWidget() :
     _vboPositions(0),
     _lineConnections(0),
     _highlightSource(true),
-    _pointRenderer(),
+    _pointRenderer(this),
     _colors(),
     _bounds(),
     /*_embedding_src(nullptr),
@@ -45,6 +45,8 @@ EmbeddingLinesWidget::EmbeddingLinesWidget() :
         if (isInitialized())
             update();
         });
+
+    _pointRenderer.getNavigator().setZoomMarginScreen(25.f);
 }
 
 void EmbeddingLinesWidget::setData(const std::vector<mv::Vector2f>& embedding_src, const std::vector<mv::Vector2f>& embedding_dst) 
@@ -87,6 +89,8 @@ void EmbeddingLinesWidget::setData(const std::vector<mv::Vector2f>& embedding_sr
     const auto dataBoundsRect = QRectF(QPointF(_bounds.getLeft(), _bounds.getBottom()), QSizeF(_bounds.getWidth(), _bounds.getHeight()));
 
     _pointRenderer.setDataBounds(dataBoundsRect);
+
+	_pointRenderer.getNavigator().resetView(true);
     _pointRenderer.setData(points);
     _pointRenderer.setColors(_colors);
 
@@ -404,8 +408,8 @@ void EmbeddingLinesWidget::onWidgetRendered()
             _shader.bind();
 
             // set the projection matrix
-            QMatrix3x3 projection = _pointRenderer.getProjectionMatrix().normalMatrix();
-            _shader.uniformMatrix3f("projection", projection.data());
+            const auto projection = _pointRenderer.getModelViewProjectionMatrix();
+            _shader.uniformMatrix4f("projection", projection.data());
             
             // pass foreground and background colors as uniforms
             _shader.uniform4f("backgroundColor", _color.redF(), _color.greenF(), _color.blueF(), _alpha);

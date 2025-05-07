@@ -412,22 +412,53 @@ void DualViewPlugin::init()
     // Create layout
     auto layout = new QHBoxLayout();
     layout->setContentsMargins(0, 0, 0, 0);
- 
-    auto embeddinglayoutA = new QVBoxLayout();
-    embeddinglayoutA->addWidget(_embeddingAToolbarAction.createWidget(&getWidget()), 1);   
-    embeddinglayoutA->addWidget(_embeddingWidgetA, 100);
-    embeddinglayoutA->addWidget(_embeddingASecondaryToolbarAction.createWidget(&getWidget()), 1);
+
+    const auto toolbarHeight = 30;
+
+	auto embeddinglayoutA = new QVBoxLayout();
+
+    auto embeddingAToolbarWidget = _embeddingAToolbarAction.createWidget(&getWidget());
+
+    embeddingAToolbarWidget->setFixedHeight(toolbarHeight);
+
+    embeddinglayoutA->addWidget(embeddingAToolbarWidget);
+    embeddinglayoutA->addWidget(_embeddingWidgetA, 1);
+    embeddinglayoutA->addWidget(_embeddingASecondaryToolbarAction.createWidget(&getWidget()));
     layout->addLayout(embeddinglayoutA, 1);
 
     auto lineslayout = new QVBoxLayout();
-    lineslayout->addWidget(_linesToolbarAction.createWidget(&getWidget()), 1);     
-    lineslayout->addWidget(_embeddingLinesWidget, 100);
+
+	auto linesToolbarWidget = _linesToolbarAction.createWidget(&getWidget());
+
+    linesToolbarWidget->setFixedHeight(toolbarHeight);
+
+    lineslayout->addWidget(linesToolbarWidget);
+    lineslayout->addWidget(_embeddingLinesWidget, 1);
+
+    auto placeholderWidget = _embeddingASecondaryToolbarAction.createWidget(&getWidget());
+
+    auto sizePolicy = placeholderWidget->sizePolicy();
+
+    sizePolicy.setRetainSizeWhenHidden(true);
+
+    placeholderWidget->setSizePolicy(sizePolicy);
+
+    placeholderWidget->hide();
+
+    lineslayout->addWidget(placeholderWidget);
+
+
     layout->addLayout(lineslayout, 1);
 
     auto embeddinglayoutB = new QVBoxLayout();
-    embeddinglayoutB->addWidget(_embeddingBToolbarAction.createWidget(&getWidget()), 1);   
-    embeddinglayoutB->addWidget(_embeddingWidgetB, 100);
-    embeddinglayoutB->addWidget(_embeddingBSecondaryToolbarAction.createWidget(&getWidget()), 1);
+
+	auto embeddingBToolbarWidget = _embeddingBToolbarAction.createWidget(&getWidget());
+
+    embeddingBToolbarWidget->setFixedHeight(toolbarHeight);
+
+    embeddinglayoutB->addWidget(embeddingBToolbarWidget);
+    embeddinglayoutB->addWidget(_embeddingWidgetB, 1);
+    embeddinglayoutB->addWidget(_embeddingBSecondaryToolbarAction.createWidget(&getWidget()));
 	layout->addLayout(embeddinglayoutB, 1);
 
     getWidget().setLayout(layout);

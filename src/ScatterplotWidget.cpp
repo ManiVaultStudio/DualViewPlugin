@@ -128,6 +128,8 @@ ScatterplotWidget::ScatterplotWidget(mv::plugin::ViewPlugin* parentPlugin) :
 
         QObject::connect(winHandle, &QWindow::screenChanged, this, &ScatterplotWidget::updatePixelRatio, Qt::UniqueConnection);
     });
+
+    _pointRenderer.getNavigator().setZoomMarginScreen(25.f);
 }
 
 bool ScatterplotWidget::event(QEvent* event)
@@ -267,6 +269,8 @@ void ScatterplotWidget::setData(const std::vector<Vector2f>* points)
     _pointRenderer.setDataBounds(dataBoundsRect);
 
     _dataRectangleAction.setBounds(dataBounds);
+
+    _pointRenderer.getNavigator().resetView(true);
 
 	_pointRenderer.setData(*points);
 
