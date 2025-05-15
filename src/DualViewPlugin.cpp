@@ -1876,8 +1876,6 @@ void DualViewPlugin::computeTopCellForEachGene()
 
 void DualViewPlugin::getEnrichmentAnalysis()
 {
-    qDebug() << "DualViewPlugin: getEnrichmentAnalysis()";
-
    //TODO: some genes end with _dup+number, should deal with this
 
     //// output _simplifiedToIndexGeneMapping if not empty
@@ -1892,7 +1890,12 @@ void DualViewPlugin::getEnrichmentAnalysis()
 
     if (!_currentGeneSymbols.isEmpty()) 
     {      
+        qDebug() << "DualViewPlugin: getEnrichmentAnalysis()";
             _client->postGeneGprofiler(_currentGeneSymbols, _backgroundGeneNames, _currentEnrichmentSpecies, _currentSignificanceThresholdMethod);
+    }
+    else
+    {
+        qDebug() << "DualViewPlugin: getEnrichmentAnalysis() - no gene selected";
     }
 }
 
