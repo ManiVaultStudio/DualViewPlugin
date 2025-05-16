@@ -1384,6 +1384,8 @@ void DualViewPlugin::samplePoints()
 			const auto sample = std::pair((QVector2D(_embeddingPositionsA[localPointIndex].x, _embeddingPositionsA[localPointIndex].y) - mousePositionWorld.toVector2D()).length(), localPointIndex);
 
 			sampledPoints.emplace_back(sample);
+
+			targetSelectionIndices.push_back(localGlobalIndices[localPointIndex]); // for connecting sampled points as selected points TODO: is this proper?
 		}
 	}
 
