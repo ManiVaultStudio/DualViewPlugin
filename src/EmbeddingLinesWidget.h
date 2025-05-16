@@ -50,6 +50,12 @@ public:
         return _bounds;
     }
 
+public: // Const access to renderers
+
+    const PointRenderer& getPointRenderer() const {
+        return _pointRenderer;
+    }
+
 signals:
     void initialized();
 

@@ -36,353 +36,353 @@ using namespace mv;
 // Example code for control column width in QTableWidget
 class ElidedItemDelegate : public QStyledItemDelegate {
 public:
-    using QStyledItemDelegate::QStyledItemDelegate;
+	using QStyledItemDelegate::QStyledItemDelegate;
 
-    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override {
-        painter->save();
+	void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override {
+		painter->save();
 
-        QString text = index.data(Qt::DisplayRole).toString();
-        QFontMetrics fm(option.font);
-        QString elidedText = fm.elidedText(text, Qt::ElideRight, option.rect.width());
+		QString text = index.data(Qt::DisplayRole).toString();
+		QFontMetrics fm(option.font);
+		QString elidedText = fm.elidedText(text, Qt::ElideRight, option.rect.width());
 
-        // Draw the text
-        painter->drawText(option.rect, Qt::AlignLeft | Qt::AlignVCenter, elidedText);
+		// Draw the text
+		painter->drawText(option.rect, Qt::AlignLeft | Qt::AlignVCenter, elidedText);
 
-        painter->restore();
-    }
+		painter->restore();
+	}
 };
 
 DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
-    ViewPlugin(factory),
-    //_chartWidget(nullptr),
-    _embeddingDropWidgetA(nullptr),
-    _embeddingDropWidgetB(nullptr),
-    _sampleScopeWidget(nullptr),
-    _sampleScopeChannel(nullptr),
-    _sampleScopeCommObject(nullptr),
-    _embeddingDatasetA(),
-    _embeddingDatasetB(),
-    _embeddingWidgetA(new ScatterplotWidget(this)),
-    _embeddingWidgetB(new ScatterplotWidget(this)),
-    _embeddingLinesWidget(new EmbeddingLinesWidget()),
-    _colorMapAction(this, "Color map", "RdYlBu"),
-    _settingsAction(this, "SettingsAction"),
-    _embeddingAToolbarAction(this, "Toolbar A"),
-    _embeddingBToolbarAction(this, "Toolbar B"),
-    _embeddingASecondaryToolbarAction(this, "Secondary Toolbar A"),
-    _embeddingBSecondaryToolbarAction(this, "Secondary Toolbar B"),
-    _linesToolbarAction(this, "Lines Toolbar")
+	ViewPlugin(factory),
+	//_chartWidget(nullptr),
+	_embeddingDropWidgetA(nullptr),
+	_embeddingDropWidgetB(nullptr),
+	_sampleScopeWidget(nullptr),
+	_sampleScopeChannel(nullptr),
+	_sampleScopeCommObject(nullptr),
+	_embeddingDatasetA(),
+	_embeddingDatasetB(),
+	_embeddingWidgetA(new ScatterplotWidget(this)),
+	_embeddingWidgetB(new ScatterplotWidget(this)),
+	_embeddingLinesWidget(new EmbeddingLinesWidget()),
+	_colorMapAction(this, "Color map", "RdYlBu"),
+	_settingsAction(this, "SettingsAction"),
+	_embeddingAToolbarAction(this, "Toolbar A"),
+	_embeddingBToolbarAction(this, "Toolbar B"),
+	_embeddingASecondaryToolbarAction(this, "Secondary Toolbar A"),
+	_embeddingBSecondaryToolbarAction(this, "Secondary Toolbar B"),
+	_linesToolbarAction(this, "Lines Toolbar")
 {
 
-    _settingsAction.getEnrichmentAction().setDefaultWidgetFlag(GroupAction::WidgetFlag::NoMargins);
-    _settingsAction.getDimensionSelectionAction().setDefaultWidgetFlag(GroupAction::WidgetFlag::NoMargins);
+	_settingsAction.getEnrichmentAction().setDefaultWidgetFlag(GroupAction::WidgetFlag::NoMargins);
+	_settingsAction.getDimensionSelectionAction().setDefaultWidgetFlag(GroupAction::WidgetFlag::NoMargins);
 
-    // toolbars A
-    _embeddingAToolbarAction.addAction(&_settingsAction.getEnrichmentSettingsAction());
-    _embeddingAToolbarAction.addAction(&_settingsAction.getEnrichmentAction());
-    _embeddingAToolbarAction.addAction(&_settingsAction.getEmbeddingAPointPlotAction());
-    _embeddingAToolbarAction.addAction(&getSamplerAction());
-    _embeddingAToolbarAction.addAction(&_settingsAction.getSelectionAction());
-    _embeddingAToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction());
-    
-
-    //_embeddingASecondaryToolbarAction.addAction(&_embeddingWidgetA->getNavigationAction());
-
-    auto focusSelectionActionA = new ToggleAction(this, "Focus selection A");
-    focusSelectionActionA->setIconByName("mouse-pointer");
-    connect(focusSelectionActionA, &ToggleAction::toggled, this, [this](bool toggled) -> void {
-        _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getFocusSelection().setChecked(toggled);
-        });
-    connect(&_settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getFocusSelection(), &ToggleAction::toggled, this, [this, focusSelectionActionA](bool toggled) -> void {
-        focusSelectionActionA->setChecked(toggled);
-        });
-
-    _embeddingASecondaryToolbarAction.addAction(focusSelectionActionA);
-
-    // toolbars B
-    _embeddingBToolbarAction.addAction(&_settingsAction.getEmbeddingBPointPlotAction());
-    _embeddingBToolbarAction.addAction(&_settingsAction.getReversePointSizeBAction());
-
-    //_embeddingBSecondaryToolbarAction.addAction(&_embeddingWidgetB->getNavigationAction());
-
-    auto focusSelectionActionB = new ToggleAction(this, "Focus selection B");
-    focusSelectionActionA->setIconByName("mouse-pointer");
-    connect(focusSelectionActionB, &ToggleAction::toggled, this, [this](bool toggled) -> void {
-        _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getFocusSelection().setChecked(toggled);
-        });
-    connect(&_settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getFocusSelection(), &ToggleAction::toggled, this, [this, focusSelectionActionB](bool toggled) -> void {
-        focusSelectionActionB->setChecked(toggled);
-        });
-
-    _embeddingBSecondaryToolbarAction.addAction(focusSelectionActionB);
-
-    // toolbar line widget
-    _linesToolbarAction.addAction(&_settingsAction.getThresholdLinesAction());
-
-    // context menu
-    connect(_embeddingWidgetA, &ScatterplotWidget::customContextMenuRequested, this, [this](const QPoint& point) {
-        if (!_embeddingDatasetA.isValid())
-            return;
-
-        _embeddingWidgetA->setContextMenuPolicy(Qt::CustomContextMenu);
-
-        auto contextMenu = new QMenu(); //auto contextMenu = _settingsAction.getContextMenu();
-        contextMenu->addSeparator();
-
-        _embeddingDatasetA->populateContextMenu(contextMenu);
-        contextMenu->exec(_embeddingWidgetA->mapToGlobal(point));
-        });
-
-    connect(_embeddingWidgetB, &ScatterplotWidget::customContextMenuRequested, this, [this](const QPoint& point) {
-        if (!_embeddingDatasetB.isValid())
-            return;
-
-        _embeddingWidgetB->setContextMenuPolicy(Qt::CustomContextMenu);
-
-        auto contextMenu = new QMenu();
-        contextMenu->addSeparator();
-
-        _embeddingDatasetB->populateContextMenu(contextMenu);
-        contextMenu->exec(_embeddingWidgetB->mapToGlobal(point));
-        });
-
-    // Instantiate new drop widget for gene embedding
-    _embeddingDropWidgetA = new DropWidget(_embeddingWidgetA);
-    _embeddingDropWidgetA->setDropIndicatorWidget(new DropWidget::DropIndicatorWidget(&getWidget(), "No data loaded", "Drag the gene embedding in this view"));
-    _embeddingDropWidgetA->initialize([this](const QMimeData* mimeData) -> DropWidget::DropRegions {
-
-        // A drop widget can contain zero or more drop regions
-        DropWidget::DropRegions dropRegions;
-
-        const auto datasetsMimeData = dynamic_cast<const DatasetsMimeData*>(mimeData);
-
-        if (datasetsMimeData == nullptr)
-            return dropRegions;
-
-        if (datasetsMimeData->getDatasets().count() > 1)
-            return dropRegions;
-
-        const auto dataset = datasetsMimeData->getDatasets().first();
-        const auto datasetGuiName = dataset->text();
-        const auto datasetId = dataset->getId();
-        const auto dataType = dataset->getDataType();
-        const auto dataTypes = DataTypes({ PointType, ClusterType });
-
-        //check if the data type can be dropped
-        if (!dataTypes.contains(dataType))
-            dropRegions << new DropWidget::DropRegion(this, "Incompatible data", "This type of data is not supported", "exclamation-circle", false);
-
-        //Points dataset is about to be dropped
-        if (dataType == PointType) {
-
-            if (datasetId == getCurrentEmebeddingDataSetID(_embeddingDatasetA)) {
-                dropRegions << new DropWidget::DropRegion(this, "Warning", "Data already loaded", "exclamation-circle", false);
-            }
-            else {
-                // Get points datset from the core
-                auto candidateDataset = mv::data().getDataset<Points>(datasetId);
-                qDebug() << " point dataset is dropped";
-
-                // Establish drop region description
-                const auto description = QString("Visualize %1 as points ").arg(datasetGuiName);
-
-                if (!_embeddingDatasetA.isValid()) {
-
-                    // Load as point positions when no dataset is currently loaded
-                    dropRegions << new DropWidget::DropRegion(this, "Point position", description, "map-marker-alt", true, [this, candidateDataset]() {
-                        _embeddingDatasetA = candidateDataset;
-                        _embeddingDropWidgetA->setShowDropIndicator(false);
-                        });
-                }
-                else {
-                    if (_embeddingDatasetA != candidateDataset && candidateDataset->getNumDimensions() >= 2) {
-
-                        // The number of points is equal, so offer the option to replace the existing points dataset
-                        dropRegions << new DropWidget::DropRegion(this, "Point position", description, "map-marker-alt", true, [this, candidateDataset]() {
-                            _embeddingDatasetA = candidateDataset;
-                            });
-                    }
-                }
-            }
-        }
-
-        //Cluster dataset is about to be dropped
-        if (dataType == ClusterType) {
-
-            // Get clusters dataset from the core
-            auto candidateDataset = mv::data().getDataset<Clusters>(datasetId);
-
-            // Establish drop region description
-            const auto description = QString("Color points by %1").arg(candidateDataset->text());
-
-            // Only allow user to color by clusters when there is a positions dataset loaded
-            if (_embeddingDatasetA.isValid()) {
-
-                //qDebug() << " Not implemented yet";
-                if (_settingsAction.getColoringActionA().getCurrentColorDataset() == candidateDataset) {
-
-                    qDebug() << "The clusters dataset is already loaded";
-                    dropRegions << new DropWidget::DropRegion(this, "Warning", "Data already loaded", "exclamation-circle", false);
-                }
-                else {
-
-                    // Use the clusters set for points color
-                    dropRegions << new DropWidget::DropRegion(this, "Color", description, "palette", true, [this, candidateDataset]() {
-                        _settingsAction.getColoringActionA().setCurrentColorDataset(candidateDataset);
-
-                        _metaDatasetA = candidateDataset;
-                        qDebug() << "DropWidget metaDatasetA is set to " << _metaDatasetA->getGuiName();
-                        });
-                }
-            }
-            else {
-                // Only allow user to color by clusters when there is a positions dataset loaded
-                dropRegions << new DropWidget::DropRegion(this, "No points data loaded", "Clusters can only be visualized in concert with points data", "exclamation-circle", false);
-            }
-        }
-
-        return dropRegions;
-
-        });
-
-    // Instantiate new drop widget for 2D embedding B
-    _embeddingDropWidgetB = new DropWidget(_embeddingWidgetB);
-    _embeddingDropWidgetB->setDropIndicatorWidget(new DropWidget::DropIndicatorWidget(&getWidget(), "No data loaded", "Drag the cell embedding in this view"));
-    _embeddingDropWidgetB->initialize([this](const QMimeData* mimeData) -> DropWidget::DropRegions {
-
-        // A drop widget can contain zero or more drop regions
-        DropWidget::DropRegions dropRegions;
-
-        const auto datasetsMimeData = dynamic_cast<const DatasetsMimeData*>(mimeData);
-
-        if (datasetsMimeData == nullptr)
-            return dropRegions;
-
-        if (datasetsMimeData->getDatasets().count() > 1)
-            return dropRegions;
-
-        const auto dataset = datasetsMimeData->getDatasets().first();
-        const auto datasetGuiName = dataset->text();
-        const auto datasetId = dataset->getId();
-        const auto dataType = dataset->getDataType();
-        const auto dataTypes = DataTypes({ PointType, ClusterType });
-
-        //check if the data type can be dropped
-        if (!dataTypes.contains(dataType))
-            dropRegions << new DropWidget::DropRegion(this, "Incompatible data", "This type of data is not supported", "exclamation-circle", false);
-
-        //Points dataset is about to be dropped
-        if (dataType == PointType) {
-
-            if (datasetId == getCurrentEmebeddingDataSetID(_embeddingDatasetB)) {
-                dropRegions << new DropWidget::DropRegion(this, "Warning", "Data already loaded", "exclamation-circle", false);
-            }
-            else {
-                // Get points datset from the core
-                auto candidateDataset = mv::data().getDataset<Points>(datasetId);
-                qDebug() << " point dataset is dropped";
-
-                // Establish drop region description
-                const auto description = QString("Visualize %1 as points ").arg(datasetGuiName);
-
-                if (!_embeddingDatasetB.isValid()) {
-
-                    // Load as point positions when no dataset is currently loaded
-                    dropRegions << new DropWidget::DropRegion(this, "Point position", description, "map-marker-alt", true, [this, candidateDataset]() {
-                        _embeddingDatasetB = candidateDataset;
-                        _embeddingDropWidgetB->setShowDropIndicator(false);
-                        });
-                }
-                else {
-                    if (_embeddingDatasetB != candidateDataset && candidateDataset->getNumDimensions() >= 2) {
-
-                        // The number of points is equal, so offer the option to replace the existing points dataset
-                        dropRegions << new DropWidget::DropRegion(this, "Point position", description, "map-marker-alt", true, [this, candidateDataset]() {
-                            _embeddingDatasetB = candidateDataset;
-                            });
-                    }
-                }
-            }
-        }
-
-        //Cluster dataset is about to be dropped
-        if (dataType == ClusterType) {
-
-            // Get clusters dataset from the core
-            auto candidateDataset = mv::data().getDataset<Clusters>(datasetId);
-
-            // Establish drop region description
-            const auto description = QString("Color points by %1").arg(candidateDataset->text());
-
-            // Only allow user to color by clusters when there is a positions dataset loaded
-            if (_embeddingDatasetB.isValid()) {
-
-                //qDebug() << " Not implemented yet";
-                if (_settingsAction.getColoringActionB().getCurrentColorDataset() == candidateDataset) {
-
-                    qDebug() << "The clusters dataset is already loaded";
-                    dropRegions << new DropWidget::DropRegion(this, "Warning", "Data already loaded", "exclamation-circle", false);
-                }
-                else {
-
-                    // Use the clusters set for points color
-                    dropRegions << new DropWidget::DropRegion(this, "Color", description, "palette", true, [this, candidateDataset]() {
-                        _settingsAction.getColoringActionB().setCurrentColorDataset(candidateDataset);
-
-                        _metaDatasetB = candidateDataset;
-                        qDebug() << "DropWidget metaDatasetB is set to " << _metaDatasetB->getGuiName();
-
-                        });
-                }
-            }
-            else {
-                // Only allow user to color by clusters when there is a positions dataset loaded
-                dropRegions << new DropWidget::DropRegion(this, "No points data loaded", "Clusters can only be visualized in concert with points data", "exclamation-circle", false);
-            }
-        }
-        return dropRegions;
-
-        });
-
-
-    // Add tooltip to the scatterplot widget - TODO: only works for embedding A now
-    auto& selectionAction = _settingsAction.getSelectionAction();
-
-    getSamplerAction().initialize(this, &selectionAction.getPixelSelectionAction(), &selectionAction.getSamplerPixelSelectionAction());
-
-    // Example code for adding a QTable widget in the tooltip
-   /* auto widgetSampleScope = new QWidget();
-    auto layoutSampleScope = new QVBoxLayout();
-
-    widgetSampleScope->setLayout(layoutSampleScope);*/
-
-   /* auto widget = new QWebEngineView();
-    auto channel = new QWebChannel(widget->page());
-    auto chartCommObject = new ChartCommObject();
-    channel->registerObject("qtBridge", chartCommObject);
-    widget->page()->setWebChannel(channel);*/
-    _sampleScopeWidget = new QWebEngineView();
-    _sampleScopeChannel = new QWebChannel(_sampleScopeWidget->page());
-    _sampleScopeCommObject = new ChartCommObject();
-    _sampleScopeChannel->registerObject("qtBridge", _sampleScopeCommObject);
-    _sampleScopeWidget->page()->setWebChannel(_sampleScopeChannel);
-
-    connect(_sampleScopeWidget, &QWidget::destroyed, this, [this]() {
-        qDebug() << "SampleScopeWidget destroyed" << getGuiName();
+	// toolbars A
+	_embeddingAToolbarAction.addAction(&_settingsAction.getEnrichmentSettingsAction());
+	_embeddingAToolbarAction.addAction(&_settingsAction.getEnrichmentAction());
+	_embeddingAToolbarAction.addAction(&_settingsAction.getEmbeddingAPointPlotAction());
+	_embeddingAToolbarAction.addAction(&getSamplerAction());
+	_embeddingAToolbarAction.addAction(&_settingsAction.getSelectionAction());
+	_embeddingAToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction());
+
+
+	//_embeddingASecondaryToolbarAction.addAction(&_embeddingWidgetA->getNavigationAction());
+
+	auto focusSelectionActionA = new ToggleAction(this, "Focus selection A");
+	focusSelectionActionA->setIconByName("mouse-pointer");
+	connect(focusSelectionActionA, &ToggleAction::toggled, this, [this](bool toggled) -> void {
+		_settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getFocusSelection().setChecked(toggled);
+		});
+	connect(&_settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getFocusSelection(), &ToggleAction::toggled, this, [this, focusSelectionActionA](bool toggled) -> void {
+		focusSelectionActionA->setChecked(toggled);
+		});
+
+	_embeddingASecondaryToolbarAction.addAction(focusSelectionActionA);
+
+	// toolbars B
+	_embeddingBToolbarAction.addAction(&_settingsAction.getEmbeddingBPointPlotAction());
+	_embeddingBToolbarAction.addAction(&_settingsAction.getReversePointSizeBAction());
+
+	//_embeddingBSecondaryToolbarAction.addAction(&_embeddingWidgetB->getNavigationAction());
+
+	auto focusSelectionActionB = new ToggleAction(this, "Focus selection B");
+	focusSelectionActionA->setIconByName("mouse-pointer");
+	connect(focusSelectionActionB, &ToggleAction::toggled, this, [this](bool toggled) -> void {
+		_settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getFocusSelection().setChecked(toggled);
+		});
+	connect(&_settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getFocusSelection(), &ToggleAction::toggled, this, [this, focusSelectionActionB](bool toggled) -> void {
+		focusSelectionActionB->setChecked(toggled);
+		});
+
+	_embeddingBSecondaryToolbarAction.addAction(focusSelectionActionB);
+
+	// toolbar line widget
+	_linesToolbarAction.addAction(&_settingsAction.getThresholdLinesAction());
+
+	// context menu
+	connect(_embeddingWidgetA, &ScatterplotWidget::customContextMenuRequested, this, [this](const QPoint& point) {
+		if (!_embeddingDatasetA.isValid())
+			return;
+
+		_embeddingWidgetA->setContextMenuPolicy(Qt::CustomContextMenu);
+
+		auto contextMenu = new QMenu(); //auto contextMenu = _settingsAction.getContextMenu();
+		contextMenu->addSeparator();
+
+		_embeddingDatasetA->populateContextMenu(contextMenu);
+		contextMenu->exec(_embeddingWidgetA->mapToGlobal(point));
+		});
+
+	connect(_embeddingWidgetB, &ScatterplotWidget::customContextMenuRequested, this, [this](const QPoint& point) {
+		if (!_embeddingDatasetB.isValid())
+			return;
+
+		_embeddingWidgetB->setContextMenuPolicy(Qt::CustomContextMenu);
+
+		auto contextMenu = new QMenu();
+		contextMenu->addSeparator();
+
+		_embeddingDatasetB->populateContextMenu(contextMenu);
+		contextMenu->exec(_embeddingWidgetB->mapToGlobal(point));
+		});
+
+	// Instantiate new drop widget for gene embedding
+	_embeddingDropWidgetA = new DropWidget(_embeddingWidgetA);
+	_embeddingDropWidgetA->setDropIndicatorWidget(new DropWidget::DropIndicatorWidget(&getWidget(), "No data loaded", "Drag the gene embedding in this view"));
+	_embeddingDropWidgetA->initialize([this](const QMimeData* mimeData) -> DropWidget::DropRegions {
+
+		// A drop widget can contain zero or more drop regions
+		DropWidget::DropRegions dropRegions;
+
+		const auto datasetsMimeData = dynamic_cast<const DatasetsMimeData*>(mimeData);
+
+		if (datasetsMimeData == nullptr)
+			return dropRegions;
+
+		if (datasetsMimeData->getDatasets().count() > 1)
+			return dropRegions;
+
+		const auto dataset = datasetsMimeData->getDatasets().first();
+		const auto datasetGuiName = dataset->text();
+		const auto datasetId = dataset->getId();
+		const auto dataType = dataset->getDataType();
+		const auto dataTypes = DataTypes({ PointType, ClusterType });
+
+		//check if the data type can be dropped
+		if (!dataTypes.contains(dataType))
+			dropRegions << new DropWidget::DropRegion(this, "Incompatible data", "This type of data is not supported", "exclamation-circle", false);
+
+		//Points dataset is about to be dropped
+		if (dataType == PointType) {
+
+			if (datasetId == getCurrentEmebeddingDataSetID(_embeddingDatasetA)) {
+				dropRegions << new DropWidget::DropRegion(this, "Warning", "Data already loaded", "exclamation-circle", false);
+			}
+			else {
+				// Get points datset from the core
+				auto candidateDataset = mv::data().getDataset<Points>(datasetId);
+				qDebug() << " point dataset is dropped";
+
+				// Establish drop region description
+				const auto description = QString("Visualize %1 as points ").arg(datasetGuiName);
+
+				if (!_embeddingDatasetA.isValid()) {
+
+					// Load as point positions when no dataset is currently loaded
+					dropRegions << new DropWidget::DropRegion(this, "Point position", description, "map-marker-alt", true, [this, candidateDataset]() {
+						_embeddingDatasetA = candidateDataset;
+						_embeddingDropWidgetA->setShowDropIndicator(false);
+						});
+				}
+				else {
+					if (_embeddingDatasetA != candidateDataset && candidateDataset->getNumDimensions() >= 2) {
+
+						// The number of points is equal, so offer the option to replace the existing points dataset
+						dropRegions << new DropWidget::DropRegion(this, "Point position", description, "map-marker-alt", true, [this, candidateDataset]() {
+							_embeddingDatasetA = candidateDataset;
+							});
+					}
+				}
+			}
+		}
+
+		//Cluster dataset is about to be dropped
+		if (dataType == ClusterType) {
+
+			// Get clusters dataset from the core
+			auto candidateDataset = mv::data().getDataset<Clusters>(datasetId);
+
+			// Establish drop region description
+			const auto description = QString("Color points by %1").arg(candidateDataset->text());
+
+			// Only allow user to color by clusters when there is a positions dataset loaded
+			if (_embeddingDatasetA.isValid()) {
+
+				//qDebug() << " Not implemented yet";
+				if (_settingsAction.getColoringActionA().getCurrentColorDataset() == candidateDataset) {
+
+					qDebug() << "The clusters dataset is already loaded";
+					dropRegions << new DropWidget::DropRegion(this, "Warning", "Data already loaded", "exclamation-circle", false);
+				}
+				else {
+
+					// Use the clusters set for points color
+					dropRegions << new DropWidget::DropRegion(this, "Color", description, "palette", true, [this, candidateDataset]() {
+						_settingsAction.getColoringActionA().setCurrentColorDataset(candidateDataset);
+
+						_metaDatasetA = candidateDataset;
+						qDebug() << "DropWidget metaDatasetA is set to " << _metaDatasetA->getGuiName();
+						});
+				}
+			}
+			else {
+				// Only allow user to color by clusters when there is a positions dataset loaded
+				dropRegions << new DropWidget::DropRegion(this, "No points data loaded", "Clusters can only be visualized in concert with points data", "exclamation-circle", false);
+			}
+		}
+
+		return dropRegions;
+
+		});
+
+	// Instantiate new drop widget for 2D embedding B
+	_embeddingDropWidgetB = new DropWidget(_embeddingWidgetB);
+	_embeddingDropWidgetB->setDropIndicatorWidget(new DropWidget::DropIndicatorWidget(&getWidget(), "No data loaded", "Drag the cell embedding in this view"));
+	_embeddingDropWidgetB->initialize([this](const QMimeData* mimeData) -> DropWidget::DropRegions {
+
+		// A drop widget can contain zero or more drop regions
+		DropWidget::DropRegions dropRegions;
+
+		const auto datasetsMimeData = dynamic_cast<const DatasetsMimeData*>(mimeData);
+
+		if (datasetsMimeData == nullptr)
+			return dropRegions;
+
+		if (datasetsMimeData->getDatasets().count() > 1)
+			return dropRegions;
+
+		const auto dataset = datasetsMimeData->getDatasets().first();
+		const auto datasetGuiName = dataset->text();
+		const auto datasetId = dataset->getId();
+		const auto dataType = dataset->getDataType();
+		const auto dataTypes = DataTypes({ PointType, ClusterType });
+
+		//check if the data type can be dropped
+		if (!dataTypes.contains(dataType))
+			dropRegions << new DropWidget::DropRegion(this, "Incompatible data", "This type of data is not supported", "exclamation-circle", false);
+
+		//Points dataset is about to be dropped
+		if (dataType == PointType) {
+
+			if (datasetId == getCurrentEmebeddingDataSetID(_embeddingDatasetB)) {
+				dropRegions << new DropWidget::DropRegion(this, "Warning", "Data already loaded", "exclamation-circle", false);
+			}
+			else {
+				// Get points datset from the core
+				auto candidateDataset = mv::data().getDataset<Points>(datasetId);
+				qDebug() << " point dataset is dropped";
+
+				// Establish drop region description
+				const auto description = QString("Visualize %1 as points ").arg(datasetGuiName);
+
+				if (!_embeddingDatasetB.isValid()) {
+
+					// Load as point positions when no dataset is currently loaded
+					dropRegions << new DropWidget::DropRegion(this, "Point position", description, "map-marker-alt", true, [this, candidateDataset]() {
+						_embeddingDatasetB = candidateDataset;
+						_embeddingDropWidgetB->setShowDropIndicator(false);
+						});
+				}
+				else {
+					if (_embeddingDatasetB != candidateDataset && candidateDataset->getNumDimensions() >= 2) {
+
+						// The number of points is equal, so offer the option to replace the existing points dataset
+						dropRegions << new DropWidget::DropRegion(this, "Point position", description, "map-marker-alt", true, [this, candidateDataset]() {
+							_embeddingDatasetB = candidateDataset;
+							});
+					}
+				}
+			}
+		}
+
+		//Cluster dataset is about to be dropped
+		if (dataType == ClusterType) {
+
+			// Get clusters dataset from the core
+			auto candidateDataset = mv::data().getDataset<Clusters>(datasetId);
+
+			// Establish drop region description
+			const auto description = QString("Color points by %1").arg(candidateDataset->text());
+
+			// Only allow user to color by clusters when there is a positions dataset loaded
+			if (_embeddingDatasetB.isValid()) {
+
+				//qDebug() << " Not implemented yet";
+				if (_settingsAction.getColoringActionB().getCurrentColorDataset() == candidateDataset) {
+
+					qDebug() << "The clusters dataset is already loaded";
+					dropRegions << new DropWidget::DropRegion(this, "Warning", "Data already loaded", "exclamation-circle", false);
+				}
+				else {
+
+					// Use the clusters set for points color
+					dropRegions << new DropWidget::DropRegion(this, "Color", description, "palette", true, [this, candidateDataset]() {
+						_settingsAction.getColoringActionB().setCurrentColorDataset(candidateDataset);
+
+						_metaDatasetB = candidateDataset;
+						qDebug() << "DropWidget metaDatasetB is set to " << _metaDatasetB->getGuiName();
+
+						});
+				}
+			}
+			else {
+				// Only allow user to color by clusters when there is a positions dataset loaded
+				dropRegions << new DropWidget::DropRegion(this, "No points data loaded", "Clusters can only be visualized in concert with points data", "exclamation-circle", false);
+			}
+		}
+		return dropRegions;
+
 		});
 
 
-    // Example code for control column width in QTableWidget
-    /*auto tableWidget = new QTableWidget(1, 5);
+	// Add tooltip to the scatterplot widget - TODO: only works for embedding A now
+	auto& selectionAction = _settingsAction.getSelectionAction();
 
-    tableWidget->setItem(0, 0, new QTableWidgetItem("aslkdjaskljdklasjdkljasklgjhklfghjkldfhjklghdfkjhgjkhdfjkghdfjkghkjdsakljaskldjsakljdklajdklsajlhgjkhdsajkhgdjk"));
-    tableWidget->setItemDelegateForColumn(0, new ElidedItemDelegate(tableWidget));
+	getSamplerAction().initialize(this, &selectionAction.getPixelSelectionAction(), &selectionAction.getSamplerPixelSelectionAction());
 
-    widgetSampleScope->layout()->addWidget(widget);
-    widgetSampleScope->layout()->addWidget(tableWidget);*/
+	// Example code for adding a QTable widget in the tooltip
+   /* auto widgetSampleScope = new QWidget();
+	auto layoutSampleScope = new QVBoxLayout();
 
-    connect(_sampleScopeCommObject, &ChartCommObject::goTermClicked, this, [this](const QString& goTermID) {
-        retrieveGOtermGenes(goTermID);
+	widgetSampleScope->setLayout(layoutSampleScope);*/
+
+	/* auto widget = new QWebEngineView();
+	 auto channel = new QWebChannel(widget->page());
+	 auto chartCommObject = new ChartCommObject();
+	 channel->registerObject("qtBridge", chartCommObject);
+	 widget->page()->setWebChannel(channel);*/
+	_sampleScopeWidget = new QWebEngineView();
+	_sampleScopeChannel = new QWebChannel(_sampleScopeWidget->page());
+	_sampleScopeCommObject = new ChartCommObject();
+	_sampleScopeChannel->registerObject("qtBridge", _sampleScopeCommObject);
+	_sampleScopeWidget->page()->setWebChannel(_sampleScopeChannel);
+
+	connect(_sampleScopeWidget, &QWidget::destroyed, this, [this]() {
+		qDebug() << "SampleScopeWidget destroyed" << getGuiName();
+		});
+
+
+	// Example code for control column width in QTableWidget
+	/*auto tableWidget = new QTableWidget(1, 5);
+
+	tableWidget->setItem(0, 0, new QTableWidgetItem("aslkdjaskljdklasjdkljasklgjhklfghjkldfhjklghdfkjhgjkhdfjkghdfjkghkjdsakljaskldjsakljdklajdklsajlhgjkhdsajkhgdjk"));
+	tableWidget->setItemDelegateForColumn(0, new ElidedItemDelegate(tableWidget));
+
+	widgetSampleScope->layout()->addWidget(widget);
+	widgetSampleScope->layout()->addWidget(tableWidget);*/
+
+	connect(_sampleScopeCommObject, &ChartCommObject::goTermClicked, this, [this](const QString& goTermID) {
+		retrieveGOtermGenes(goTermID);
 		});
 
 	getSamplerAction().setWidgetViewGeneratorFunction([this](const ViewPluginSamplerAction::SampleContext& toolTipContext) -> QWidget* { //, widgetSampleScope
@@ -397,252 +397,252 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
 
 		html += "</body></html>";
 
-        qDebug() << "_sampleScopewidget " << _sampleScopeWidget;
+		qDebug() << "_sampleScopewidget " << _sampleScopeWidget;
 
-        _sampleScopeWidget->setHtml(html);
+		_sampleScopeWidget->setHtml(html);
 		return _sampleScopeWidget;
 		//return widgetSampleScope;
 		});
-     
-    getSamplerAction().getEnabledAction().setChecked(false);
-    getSamplerAction().setSamplingMode(ViewPluginSamplerAction::SamplingMode::Selection);
+
+	getSamplerAction().getEnabledAction().setChecked(false);
+	getSamplerAction().setSamplingMode(ViewPluginSamplerAction::SamplingMode::Selection);
 }
 
 void DualViewPlugin::init()
 {
-    getWidget().setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+	getWidget().setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
-    // Create layout
-    auto layout = new QHBoxLayout();
-    layout->setContentsMargins(0, 0, 0, 0);
+	// Create layout
+	auto layout = new QHBoxLayout();
+	layout->setContentsMargins(0, 0, 0, 0);
 
-    const auto toolbarHeight = 30;
+	const auto toolbarHeight = 30;
 
 	auto embeddinglayoutA = new QVBoxLayout();
 
-    auto embeddingAToolbarWidget = _embeddingAToolbarAction.createWidget(&getWidget());
+	auto embeddingAToolbarWidget = _embeddingAToolbarAction.createWidget(&getWidget());
 
-    embeddingAToolbarWidget->setFixedHeight(toolbarHeight);
+	embeddingAToolbarWidget->setFixedHeight(toolbarHeight);
 
-    embeddinglayoutA->addWidget(embeddingAToolbarWidget);
-    embeddinglayoutA->addWidget(_embeddingWidgetA, 1);
-    embeddinglayoutA->addWidget(_embeddingASecondaryToolbarAction.createWidget(&getWidget()));
-    layout->addLayout(embeddinglayoutA, 1);
+	embeddinglayoutA->addWidget(embeddingAToolbarWidget);
+	embeddinglayoutA->addWidget(_embeddingWidgetA, 1);
+	embeddinglayoutA->addWidget(_embeddingASecondaryToolbarAction.createWidget(&getWidget()));
+	layout->addLayout(embeddinglayoutA, 1);
 
-    auto lineslayout = new QVBoxLayout();
+	auto lineslayout = new QVBoxLayout();
 
 	auto linesToolbarWidget = _linesToolbarAction.createWidget(&getWidget());
 
-    linesToolbarWidget->setFixedHeight(toolbarHeight);
+	linesToolbarWidget->setFixedHeight(toolbarHeight);
 
-    lineslayout->addWidget(linesToolbarWidget);
-    lineslayout->addWidget(_embeddingLinesWidget, 1);
+	lineslayout->addWidget(linesToolbarWidget);
+	lineslayout->addWidget(_embeddingLinesWidget, 1);
 
-    auto placeholderWidget = _embeddingASecondaryToolbarAction.createWidget(&getWidget());
+	auto placeholderWidget = _embeddingASecondaryToolbarAction.createWidget(&getWidget());
 
-    auto sizePolicy = placeholderWidget->sizePolicy();
+	auto sizePolicy = placeholderWidget->sizePolicy();
 
-    sizePolicy.setRetainSizeWhenHidden(true);
+	sizePolicy.setRetainSizeWhenHidden(true);
 
-    placeholderWidget->setSizePolicy(sizePolicy);
+	placeholderWidget->setSizePolicy(sizePolicy);
 
-    placeholderWidget->hide();
+	placeholderWidget->hide();
 
-    lineslayout->addWidget(placeholderWidget);
+	lineslayout->addWidget(placeholderWidget);
 
 
-    layout->addLayout(lineslayout, 1);
+	layout->addLayout(lineslayout, 1);
 
-    auto embeddinglayoutB = new QVBoxLayout();
+	auto embeddinglayoutB = new QVBoxLayout();
 
 	auto embeddingBToolbarWidget = _embeddingBToolbarAction.createWidget(&getWidget());
 
-    embeddingBToolbarWidget->setFixedHeight(toolbarHeight);
+	embeddingBToolbarWidget->setFixedHeight(toolbarHeight);
 
-    embeddinglayoutB->addWidget(embeddingBToolbarWidget);
-    embeddinglayoutB->addWidget(_embeddingWidgetB, 1);
-    embeddinglayoutB->addWidget(_embeddingBSecondaryToolbarAction.createWidget(&getWidget()));
+	embeddinglayoutB->addWidget(embeddingBToolbarWidget);
+	embeddinglayoutB->addWidget(_embeddingWidgetB, 1);
+	embeddinglayoutB->addWidget(_embeddingBSecondaryToolbarAction.createWidget(&getWidget()));
 	layout->addLayout(embeddinglayoutB, 1);
 
-    getWidget().setLayout(layout);
+	getWidget().setLayout(layout);
 
-    connect(&_embeddingDatasetA, &Dataset<Points>::changed, this, &DualViewPlugin::embeddingDatasetAChanged);
+	connect(&_embeddingDatasetA, &Dataset<Points>::changed, this, &DualViewPlugin::embeddingDatasetAChanged);
 
-    connect(&_embeddingDatasetB, &Dataset<Points>::changed, this, &DualViewPlugin::embeddingDatasetBChanged);
+	connect(&_embeddingDatasetB, &Dataset<Points>::changed, this, &DualViewPlugin::embeddingDatasetBChanged);
 
-    connect(&_embeddingDatasetA, &Dataset<Points>::dataSelectionChanged, this, [this]() {
-        if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
+	connect(&_embeddingDatasetA, &Dataset<Points>::dataSelectionChanged, this, [this]() {
+		if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
 			return;
 
-        auto test = _embeddingDatasetA->getSelection<Points>()->indices.size();
-        //qDebug() << "embeddingDatasetA dataSelectionChanged" << test;
+		auto test = _embeddingDatasetA->getSelection<Points>()->indices.size();
+		//qDebug() << "embeddingDatasetA dataSelectionChanged" << test;
 
-        _isEmbeddingASelected = true;
-        highlightSelectedLines(_embeddingDatasetA);
-        highlightSelectedEmbeddings(_embeddingWidgetA, _embeddingDatasetA);
+		_isEmbeddingASelected = true;
+		highlightSelectedLines(_embeddingDatasetA);
+		highlightSelectedEmbeddings(_embeddingWidgetA, _embeddingDatasetA);
 
-        if (_embeddingDatasetA->getSelection<Points>()->indices.size() != 0)
-        {
-            updateEmbeddingBSize();//if selected in embedding A and coloring/sizing embedding B by the mean expression of the selected genes     
-            sendDataToSampleScope();
-        }
-            
-    });
+		if (_embeddingDatasetA->getSelection<Points>()->indices.size() != 0)
+		{
+			updateEmbeddingBSize();//if selected in embedding A and coloring/sizing embedding B by the mean expression of the selected genes     
+			sendDataToSampleScope();
+		}
 
-    connect(&_embeddingDatasetB, &Dataset<Points>::dataSelectionChanged, this, [this]() {
-        if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
-            return;
+		});
 
-        _isEmbeddingASelected = false;
-        highlightSelectedLines(_embeddingDatasetB);
-        highlightSelectedEmbeddings(_embeddingWidgetB, _embeddingDatasetB);
+	connect(&_embeddingDatasetB, &Dataset<Points>::dataSelectionChanged, this, [this]() {
+		if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
+			return;
 
-        if (_embeddingDatasetB->getSelection<Points>()->indices.size() != 0)
-        { 
+		_isEmbeddingASelected = false;
+		highlightSelectedLines(_embeddingDatasetB);
+		highlightSelectedEmbeddings(_embeddingWidgetB, _embeddingDatasetB);
+
+		if (_embeddingDatasetB->getSelection<Points>()->indices.size() != 0)
+		{
 			updateEmbeddingASize();//if selected in embedding B and coloring/sizing embedding A by the number of connected cells
-            sendDataToSampleScope();
-        }
-    });
+			sendDataToSampleScope();
+		}
+		});
 
-    // TEMP: hard code the isNotifyDuringSelection to false
-    _embeddingWidgetA->getPixelSelectionTool().setNotifyDuringSelection(false);
-    _embeddingWidgetB->getPixelSelectionTool().setNotifyDuringSelection(false);
-    _embeddingLinesWidget->getPixelSelectionTool().setNotifyDuringSelection(false);
+	// TEMP: hard code the isNotifyDuringSelection to false
+	_embeddingWidgetA->getPixelSelectionTool().setNotifyDuringSelection(false);
+	_embeddingWidgetB->getPixelSelectionTool().setNotifyDuringSelection(false);
+	_embeddingLinesWidget->getPixelSelectionTool().setNotifyDuringSelection(false);
 
-    // Update the selection when the pixel selection tool selected area changed
-    connect(&_embeddingWidgetA->getPixelSelectionTool(), &PixelSelectionTool::areaChanged, [this]() {
-        if (_embeddingWidgetA->getPixelSelectionTool().isNotifyDuringSelection()) {
-            selectPoints(_embeddingWidgetA, _embeddingDatasetA, _embeddingPositionsA);
-        }
-        });
+	// Update the selection when the pixel selection tool selected area changed
+	connect(&_embeddingWidgetA->getPixelSelectionTool(), &PixelSelectionTool::areaChanged, [this]() {
+		if (_embeddingWidgetA->getPixelSelectionTool().isNotifyDuringSelection()) {
+			selectPoints(_embeddingWidgetA, _embeddingDatasetA, _embeddingPositionsA);
+		}
+		});
 
-    // Update the selection when the pixel selection process ended
-    connect(&_embeddingWidgetA->getPixelSelectionTool(), &PixelSelectionTool::ended, [this]() {
-        if (_embeddingWidgetA->getPixelSelectionTool().isNotifyDuringSelection())
-            return;
-        selectPoints(_embeddingWidgetA, _embeddingDatasetA, _embeddingPositionsA);
-        });
+	// Update the selection when the pixel selection process ended
+	connect(&_embeddingWidgetA->getPixelSelectionTool(), &PixelSelectionTool::ended, [this]() {
+		if (_embeddingWidgetA->getPixelSelectionTool().isNotifyDuringSelection())
+			return;
+		selectPoints(_embeddingWidgetA, _embeddingDatasetA, _embeddingPositionsA);
+		});
 
-    // Update the selection when the pixel selection tool selected area changed
-    connect(&_embeddingWidgetB->getPixelSelectionTool(), &PixelSelectionTool::areaChanged, [this]() {
-        if (_embeddingWidgetB->getPixelSelectionTool().isNotifyDuringSelection()) {
-            selectPoints(_embeddingWidgetB, _embeddingDatasetB, _embeddingPositionsB);
-        }
-        });
+	// Update the selection when the pixel selection tool selected area changed
+	connect(&_embeddingWidgetB->getPixelSelectionTool(), &PixelSelectionTool::areaChanged, [this]() {
+		if (_embeddingWidgetB->getPixelSelectionTool().isNotifyDuringSelection()) {
+			selectPoints(_embeddingWidgetB, _embeddingDatasetB, _embeddingPositionsB);
+		}
+		});
 
-    // Update the selection when the pixel selection process ended
-    connect(&_embeddingWidgetB->getPixelSelectionTool(), &PixelSelectionTool::ended, [this]() {
-        if (_embeddingWidgetB->getPixelSelectionTool().isNotifyDuringSelection())
-            return;
-        selectPoints(_embeddingWidgetB, _embeddingDatasetB, _embeddingPositionsB);
-        });
+	// Update the selection when the pixel selection process ended
+	connect(&_embeddingWidgetB->getPixelSelectionTool(), &PixelSelectionTool::ended, [this]() {
+		if (_embeddingWidgetB->getPixelSelectionTool().isNotifyDuringSelection())
+			return;
+		selectPoints(_embeddingWidgetB, _embeddingDatasetB, _embeddingPositionsB);
+		});
 
-    // selection in embedding lines widget
-    connect(&_embeddingLinesWidget->getPixelSelectionTool(), &PixelSelectionTool::areaChanged, [this]() {
-        if (_embeddingLinesWidget->getPixelSelectionTool().isNotifyDuringSelection()) {
-            std::vector<mv::Vector2f> both1DEmbeddingPositions;
-            both1DEmbeddingPositions.reserve(_embedding_src.size() + _embedding_dst.size());
-            both1DEmbeddingPositions.insert(both1DEmbeddingPositions.end(), _embedding_src.begin(), _embedding_src.end());
-            both1DEmbeddingPositions.insert(both1DEmbeddingPositions.end(), _embedding_dst.begin(), _embedding_dst.end());
-            selectPoints(_embeddingLinesWidget, both1DEmbeddingPositions);
-        }
-        });
+	// selection in embedding lines widget
+	connect(&_embeddingLinesWidget->getPixelSelectionTool(), &PixelSelectionTool::areaChanged, [this]() {
+		if (_embeddingLinesWidget->getPixelSelectionTool().isNotifyDuringSelection()) {
+			std::vector<mv::Vector2f> both1DEmbeddingPositions;
+			both1DEmbeddingPositions.reserve(_embedding_src.size() + _embedding_dst.size());
+			both1DEmbeddingPositions.insert(both1DEmbeddingPositions.end(), _embedding_src.begin(), _embedding_src.end());
+			both1DEmbeddingPositions.insert(both1DEmbeddingPositions.end(), _embedding_dst.begin(), _embedding_dst.end());
+			selectPoints(_embeddingLinesWidget, both1DEmbeddingPositions);
+		}
+		});
 	connect(&_embeddingLinesWidget->getPixelSelectionTool(), &PixelSelectionTool::ended, [this]() {
 		if (_embeddingLinesWidget->getPixelSelectionTool().isNotifyDuringSelection())
 			return;
 
 		std::vector<mv::Vector2f> both1DEmbeddingPositions;
-        both1DEmbeddingPositions.reserve(_embedding_src.size() + _embedding_dst.size());
-        both1DEmbeddingPositions.insert(both1DEmbeddingPositions.end(), _embedding_src.begin(), _embedding_src.end());
-        both1DEmbeddingPositions.insert(both1DEmbeddingPositions.end(), _embedding_dst.begin(), _embedding_dst.end());
+		both1DEmbeddingPositions.reserve(_embedding_src.size() + _embedding_dst.size());
+		both1DEmbeddingPositions.insert(both1DEmbeddingPositions.end(), _embedding_src.begin(), _embedding_src.end());
+		both1DEmbeddingPositions.insert(both1DEmbeddingPositions.end(), _embedding_dst.begin(), _embedding_dst.end());
 		selectPoints(_embeddingLinesWidget, both1DEmbeddingPositions);
 
 		});
-    
-    connect(&_embeddingDatasetA, &Dataset<Points>::dataChanged, this, [this]() {
-        updateEmbeddingDataA();
-        });
 
-    connect(&_embeddingDatasetB, &Dataset<Points>::dataChanged, this, [this]() {
-        updateEmbeddingDataB();
-        });
-
-    connect(&_oneDEmbeddingDatasetA, &Dataset<Points>::dataChanged, this, [this]() {
-        update1DEmbeddingPositions(true);
+	connect(&_embeddingDatasetA, &Dataset<Points>::dataChanged, this, [this]() {
+		updateEmbeddingDataA();
 		});
 
-    connect(&_oneDEmbeddingDatasetB, &Dataset<Points>::dataChanged, this, [this]() {
-        update1DEmbeddingPositions(false);
-        });
+	connect(&_embeddingDatasetB, &Dataset<Points>::dataChanged, this, [this]() {
+		updateEmbeddingDataB();
+		});
 
-    // update the dropped metadata for coloring 1D embeddings
-    connect(&_metaDatasetA, &Dataset<Cluster>::dataChanged, this, [this]() {
-        update1DEmbeddingColors(true);
+	connect(&_oneDEmbeddingDatasetA, &Dataset<Points>::dataChanged, this, [this]() {
+		update1DEmbeddingPositions(true);
+		});
 
-        _settingsAction.getColoringActionA().updateScatterPlotWidgetColors();// update color in 2D embedding A
+	connect(&_oneDEmbeddingDatasetB, &Dataset<Points>::dataChanged, this, [this]() {
+		update1DEmbeddingPositions(false);
+		});
 
-        qDebug() << "metaDatasetA dataChanged";
-        });
+	// update the dropped metadata for coloring 1D embeddings
+	connect(&_metaDatasetA, &Dataset<Cluster>::dataChanged, this, [this]() {
+		update1DEmbeddingColors(true);
 
-    connect(&_metaDatasetA, &Dataset<Cluster>::changed, this, [this]() {
-        update1DEmbeddingColors(true);
+		_settingsAction.getColoringActionA().updateScatterPlotWidgetColors();// update color in 2D embedding A
 
-        if (_metaDatasetA.isValid())
-        {
-            _settingsAction.getColoringActionA().setCurrentColorDataset(_metaDatasetA);
-        }
-        else
-            qDebug() << "_metaDatasetA changed: metaDatasetA is not valid";
+		qDebug() << "metaDatasetA dataChanged";
+		});
 
-        });
+	connect(&_metaDatasetA, &Dataset<Cluster>::changed, this, [this]() {
+		update1DEmbeddingColors(true);
 
-    connect(&_metaDatasetB, &Dataset<Cluster>::dataChanged, this, [this]() {
-        update1DEmbeddingColors(false);
+		if (_metaDatasetA.isValid())
+		{
+			_settingsAction.getColoringActionA().setCurrentColorDataset(_metaDatasetA);
+		}
+		else
+			qDebug() << "_metaDatasetA changed: metaDatasetA is not valid";
 
-        _settingsAction.getColoringActionB().updateScatterPlotWidgetColors();// update color in 2D embedding B
+		});
 
-        qDebug() << "metaDatasetB dataChanged";
-        });
+	connect(&_metaDatasetB, &Dataset<Cluster>::dataChanged, this, [this]() {
+		update1DEmbeddingColors(false);
 
-    connect(&_metaDatasetB, &Dataset<Cluster>::changed, this, [this]() {
-        update1DEmbeddingColors(false);
+		_settingsAction.getColoringActionB().updateScatterPlotWidgetColors();// update color in 2D embedding B
 
-        if (_metaDatasetB.isValid())
-        {
-            _settingsAction.getColoringActionB().setCurrentColorDataset(_metaDatasetB);
-        }
-        else 
-            qDebug() << "_metaDatasetB changed: metaDatasetB is not valid";
+		qDebug() << "metaDatasetB dataChanged";
+		});
 
-        // FIXME: this is a hack to update the top cell types of each gene
+	connect(&_metaDatasetB, &Dataset<Cluster>::changed, this, [this]() {
+		update1DEmbeddingColors(false);
+
+		if (_metaDatasetB.isValid())
+		{
+			_settingsAction.getColoringActionB().setCurrentColorDataset(_metaDatasetB);
+		}
+		else
+			qDebug() << "_metaDatasetB changed: metaDatasetB is not valid";
+
+		// FIXME: this is a hack to update the top cell types of each gene
 		if (!_loadingFromProject)
-        { 
+		{
 			computeTopCellForEachGene();
-        }
+		}
 
-        });
+		});
 
-    connect(&getSamplerAction(), &ViewPluginSamplerAction::sampleContextRequested, this, &DualViewPlugin::samplePoints);  
+	connect(&getSamplerAction(), &ViewPluginSamplerAction::sampleContextRequested, this, &DualViewPlugin::samplePoints);
 
-    // Enrichment analysis
-    _client = new EnrichmentAnalysis(this);
-    connect(_client, &EnrichmentAnalysis::enrichmentDataReady, this, &DualViewPlugin::updateEnrichmentTable);
-    connect(_client, &EnrichmentAnalysis::enrichmentDataNotExists, this, &DualViewPlugin::noDataEnrichmentTable);
+	// Enrichment analysis
+	_client = new EnrichmentAnalysis(this);
+	connect(_client, &EnrichmentAnalysis::enrichmentDataReady, this, &DualViewPlugin::updateEnrichmentTable);
+	connect(_client, &EnrichmentAnalysis::enrichmentDataNotExists, this, &DualViewPlugin::noDataEnrichmentTable);
 
-    connect(_client, &EnrichmentAnalysis::genesFromGOtermDataReady, this, &DualViewPlugin::highlightGOTermGenesInEmbedding);
+	connect(_client, &EnrichmentAnalysis::genesFromGOtermDataReady, this, &DualViewPlugin::highlightGOTermGenesInEmbedding);
 }
 
 void DualViewPlugin::update1DEmbeddingPositions(bool isA)
 {
-    QString embeddingName = isA ? "A" : "B";
-    //qDebug() << "<<<<< update1DEmbeddingPositions " << embeddingName;
-    
+	QString embeddingName = isA ? "A" : "B";
+	//qDebug() << "<<<<< update1DEmbeddingPositions " << embeddingName;
+
 	if (isA)
 	{   // A
 		std::vector<mv::Vector2f> embedding_src;
-        // FIXME: _oneDEmbeddingDatasetA could be not updated, i.e. the 1D embedding can be from the previous 2D embedding dataset, maybe add check numPoints; 
-        // FIXME: or if _oneDEmbeddingDatasetA is cleared in embeddingDatasetChanged, then do not need to check numPoints
-		if (_oneDEmbeddingDatasetA.isValid()) 
+		// FIXME: _oneDEmbeddingDatasetA could be not updated, i.e. the 1D embedding can be from the previous 2D embedding dataset, maybe add check numPoints; 
+		// FIXME: or if _oneDEmbeddingDatasetA is cleared in embeddingDatasetChanged, then do not need to check numPoints
+		if (_oneDEmbeddingDatasetA.isValid())
 		{
 			std::vector<float> yValuesA;
 			_oneDEmbeddingDatasetA->extractDataForDimension(yValuesA, 0);
@@ -659,12 +659,12 @@ void DualViewPlugin::update1DEmbeddingPositions(bool isA)
 			embedding_src = _embeddingPositionsA;
 		}
 
-        normalizeYValues(embedding_src);
+		normalizeYValues(embedding_src);
 
-        projectToVerticalAxis(embedding_src, 0.0f);
-        _embedding_src = embedding_src;
+		projectToVerticalAxis(embedding_src, 0.0f);
+		_embedding_src = embedding_src;
 	}
-	else 
+	else
 	{   // B
 		std::vector<mv::Vector2f> embedding_dst;
 		if (_oneDEmbeddingDatasetB.isValid())
@@ -684,97 +684,97 @@ void DualViewPlugin::update1DEmbeddingPositions(bool isA)
 			embedding_dst = _embeddingPositionsB;
 		}
 
-        normalizeYValues(embedding_dst);
-        projectToVerticalAxis(embedding_dst, 1.0f); // TODO : make this value dynamic
-        _embedding_dst = embedding_dst;
-	} 
+		normalizeYValues(embedding_dst);
+		projectToVerticalAxis(embedding_dst, 1.0f); // TODO : make this value dynamic
+		_embedding_dst = embedding_dst;
+	}
 
-    _embeddingLinesWidget->setData(_embedding_src, _embedding_dst);
+	_embeddingLinesWidget->setData(_embedding_src, _embedding_dst);
 
-    update1DEmbeddingColors(true);
-    update1DEmbeddingColors(false);
- 
+	update1DEmbeddingColors(true);
+	update1DEmbeddingColors(false);
+
 }
 
 void DualViewPlugin::update1DEmbeddingColors(bool isA)
 {
-    QString embeddingName = isA ? "A" : "B";
+	QString embeddingName = isA ? "A" : "B";
 
-    auto positionDataset = isA ? _embeddingDatasetA : _embeddingDatasetB;
-    auto& metaDataset = isA ? _metaDatasetA : _metaDatasetB;
+	auto positionDataset = isA ? _embeddingDatasetA : _embeddingDatasetB;
+	auto& metaDataset = isA ? _metaDatasetA : _metaDatasetB;
 
-    if (!metaDataset.isValid() || !positionDataset.isValid())
-        return;
+	if (!metaDataset.isValid() || !positionDataset.isValid())
+		return;
 
-    std::vector<std::uint32_t> globalIndices;
-    positionDataset->getGlobalIndices(globalIndices);
+	std::vector<std::uint32_t> globalIndices;
+	positionDataset->getGlobalIndices(globalIndices);
 
-    int totalNumPoints = positionDataset->isDerivedData()
-        ? positionDataset->getSourceDataset<Points>()->getFullDataset<Points>()->getNumPoints()
-        : positionDataset->getFullDataset<Points>()->getNumPoints();
+	int totalNumPoints = positionDataset->isDerivedData()
+		? positionDataset->getSourceDataset<Points>()->getFullDataset<Points>()->getNumPoints()
+		: positionDataset->getFullDataset<Points>()->getNumPoints();
 
-    std::vector<Vector3f> globalColors(totalNumPoints, Vector3f(0.0f, 0.0f, 0.0f));
-    std::vector<Vector3f> localColors(positionDataset->getNumPoints());
+	std::vector<Vector3f> globalColors(totalNumPoints, Vector3f(0.0f, 0.0f, 0.0f));
+	std::vector<Vector3f> localColors(positionDataset->getNumPoints());
 
-    for (const auto& cluster : metaDataset.get<Clusters>()->getClusters())
-    {
-        const auto& color = Vector3f(cluster.getColor().redF(), cluster.getColor().greenF(), cluster.getColor().blueF());
-        for (const auto& index : cluster.getIndices())
-            globalColors[index] = color;
-    }
+	for (const auto& cluster : metaDataset.get<Clusters>()->getClusters())
+	{
+		const auto& color = Vector3f(cluster.getColor().redF(), cluster.getColor().greenF(), cluster.getColor().blueF());
+		for (const auto& index : cluster.getIndices())
+			globalColors[index] = color;
+	}
 
 #pragma omp parallel for
-    for (std::size_t i = 0; i < globalIndices.size(); i++)
-    {
-        localColors[i] = globalColors[globalIndices[i]];
-    }
+	for (std::size_t i = 0; i < globalIndices.size(); i++)
+	{
+		localColors[i] = globalColors[globalIndices[i]];
+	}
 
-    if (isA)
-        _embeddingLinesWidget->setPointColorA(localColors);
-    else
-        _embeddingLinesWidget->setPointColorB(localColors);
+	if (isA)
+		_embeddingLinesWidget->setPointColorA(localColors);
+	else
+		_embeddingLinesWidget->setPointColorB(localColors);
 }
 
 void DualViewPlugin::updateLineConnections()
 {
-    if (_embedding_src.empty() || _embedding_dst.empty())
-    {
+	if (_embedding_src.empty() || _embedding_dst.empty())
+	{
 		qDebug() << "Both 1D embedding positions must be assigned before connecting lines";
 		return;
 	}
 
-    // define lines - assume embedding A is dimension embedding, embedding B is observation embedding
-    int numDimensions = _embeddingSourceDatasetB->getNumDimensions(); // Assume the number of points in A is the same as the number of dimensions in B
-    int numDimensionsFull = _embeddingSourceDatasetB->getNumDimensions();
-    int numPoints = _embeddingSourceDatasetB->getNumPoints(); // num of points in source dataset B
-    int numPointsLocal = _embeddingDatasetB->getNumPoints(); // num of points in the embedding B
+	// define lines - assume embedding A is dimension embedding, embedding B is observation embedding
+	int numDimensions = _embeddingSourceDatasetB->getNumDimensions(); // Assume the number of points in A is the same as the number of dimensions in B
+	int numDimensionsFull = _embeddingSourceDatasetB->getNumDimensions();
+	int numPoints = _embeddingSourceDatasetB->getNumPoints(); // num of points in source dataset B
+	int numPointsLocal = _embeddingDatasetB->getNumPoints(); // num of points in the embedding B
 
-    std::vector<std::uint32_t> localGlobalIndicesB;
-    _embeddingSourceDatasetB->getGlobalIndices(localGlobalIndicesB);
+	std::vector<std::uint32_t> localGlobalIndicesB;
+	_embeddingSourceDatasetB->getGlobalIndices(localGlobalIndicesB);
 
-    _lines.clear();
+	_lines.clear();
 
-    // Iterate over each row and column in the subset to generate lines
-   auto start2 = std::chrono::high_resolution_clock::now();
-    for (int cellLocalIndex = 0; cellLocalIndex < numPointsLocal; cellLocalIndex++) {
-        for (int dimIdx = 0; dimIdx < numDimensions; dimIdx++) {
+	// Iterate over each row and column in the subset to generate lines
+	auto start2 = std::chrono::high_resolution_clock::now();
+	for (int cellLocalIndex = 0; cellLocalIndex < numPointsLocal; cellLocalIndex++) {
+		for (int dimIdx = 0; dimIdx < numDimensions; dimIdx++) {
 
-            int cellGlobalIdx = static_cast<int>(localGlobalIndicesB[cellLocalIndex]);
-            float expression = _embeddingSourceDatasetB->getValueAt(cellGlobalIdx * numDimensionsFull + dimIdx);
+			int cellGlobalIdx = static_cast<int>(localGlobalIndicesB[cellLocalIndex]);
+			float expression = _embeddingSourceDatasetB->getValueAt(cellGlobalIdx * numDimensionsFull + dimIdx);
 
-            //if (expression != columnMins[dimLocalIdx]) { // only draw lines for cells whose expression are not at the minimum
-            if (expression > (_columnMins[dimIdx] + _thresholdLines * _columnRanges[dimIdx])) { // draw lines for cells whose expression are above the thresholdvalue
-                _lines.emplace_back(dimIdx, cellLocalIndex);
-            }
-        }
-    }
-    auto end2 = std::chrono::high_resolution_clock::now();
-    auto duration2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
-    qDebug() << "Iterate over each row and column in the subset to generate lines took " << duration2.count() << "ms";
+			//if (expression != columnMins[dimLocalIdx]) { // only draw lines for cells whose expression are not at the minimum
+			if (expression > (_columnMins[dimIdx] + _thresholdLines * _columnRanges[dimIdx])) { // draw lines for cells whose expression are above the thresholdvalue
+				_lines.emplace_back(dimIdx, cellLocalIndex);
+			}
+		}
+	}
+	auto end2 = std::chrono::high_resolution_clock::now();
+	auto duration2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
+	qDebug() << "Iterate over each row and column in the subset to generate lines took " << duration2.count() << "ms";
 
-    //qDebug() << "DualViewPlugin::updateLineConnections() _lines size" << _lines.size();
+	//qDebug() << "DualViewPlugin::updateLineConnections() _lines size" << _lines.size();
 
-    _embeddingLinesWidget->setLines(_lines);
+	_embeddingLinesWidget->setLines(_lines);
 }
 
 void DualViewPlugin::updateEmbeddingDataA()
@@ -788,83 +788,83 @@ void DualViewPlugin::updateEmbeddingDataA()
 
 void DualViewPlugin::updateEmbeddingDataB()
 {
-    if (!_embeddingDatasetB.isValid())
-        return;
+	if (!_embeddingDatasetB.isValid())
+		return;
 
-    _embeddingDatasetB->extractDataForDimensions(_embeddingPositionsB, 0, 1);
-    _embeddingWidgetB->setData(&_embeddingPositionsB);
+	_embeddingDatasetB->extractDataForDimensions(_embeddingPositionsB, 0, 1);
+	_embeddingWidgetB->setData(&_embeddingPositionsB);
 }
 
 void DualViewPlugin::embeddingDatasetAChanged()
 {
-    _embeddingDropWidgetA->setShowDropIndicator(!_embeddingDatasetA.isValid());
+	_embeddingDropWidgetA->setShowDropIndicator(!_embeddingDatasetA.isValid());
 
-    if (!_embeddingDatasetA.isValid())
-        return;
+	if (!_embeddingDatasetA.isValid())
+		return;
 
-    _embeddingDatasetA->extractDataForDimensions(_embeddingPositionsA, 0, 1);
-    qDebug() << "_embeddingPositionsA size" << _embeddingPositionsA.size();
+	_embeddingDatasetA->extractDataForDimensions(_embeddingPositionsA, 0, 1);
+	qDebug() << "_embeddingPositionsA size" << _embeddingPositionsA.size();
 
-    _embeddingWidgetA->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true));
-    _embeddingWidgetA->setData(&_embeddingPositionsA);
-    
-    _embeddingSourceDatasetA = _embeddingDatasetA->getSourceDataset<Points>();
+	_embeddingWidgetA->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true));
+	_embeddingWidgetA->setData(&_embeddingPositionsA);
 
-    // TODO: hard code to clear _metaDatasetA, when the embedding A is changed - check if better way to do this
-    _metaDatasetA = nullptr;
-    qDebug() << "embeddingDatasetAChanged(): metaDatasetA removed";
+	_embeddingSourceDatasetA = _embeddingDatasetA->getSourceDataset<Points>();
 
-    // update 1D embedding
-    bool oneDEmbeddingExists = false;
-    for (const auto& child : _embeddingDatasetA->getChildren({ PointType }, false)) // bool recursively = false
-    {
-        if (child->getGuiName().contains("1D Embedding")) //child->getGuiName() == "1D Embedding A" // TO DO : change to work with the analysis plugin
-        {
-            _oneDEmbeddingDatasetA = child;
-            oneDEmbeddingExists = true;
-            update1DEmbeddingPositions(true);
-            updateLineConnections();
+	// TODO: hard code to clear _metaDatasetA, when the embedding A is changed - check if better way to do this
+	_metaDatasetA = nullptr;
+	qDebug() << "embeddingDatasetAChanged(): metaDatasetA removed";
 
-            break;
-        }
-    }
+	// update 1D embedding
+	bool oneDEmbeddingExists = false;
+	for (const auto& child : _embeddingDatasetA->getChildren({ PointType }, false)) // bool recursively = false
+	{
+		if (child->getGuiName().contains("1D Embedding")) //child->getGuiName() == "1D Embedding A" // TO DO : change to work with the analysis plugin
+		{
+			_oneDEmbeddingDatasetA = child;
+			oneDEmbeddingExists = true;
+			update1DEmbeddingPositions(true);
+			updateLineConnections();
 
-    if (!oneDEmbeddingExists)
-    {
-        //compute1DEmbedding(_embeddingDatasetA, _oneDEmbeddingDatasetA);
-        qDebug() << "1D embedding A does not exist";
-        // TODO: clear  _oneDEmbeddingDatasetB and then use projection, and then need to assign the positions to the embedding dataset for selectPoints()
-        _oneDEmbeddingDatasetA = nullptr;
-        update1DEmbeddingPositions(true);
-        updateLineConnections();
-    }      
+			break;
+		}
+	}
+
+	if (!oneDEmbeddingExists)
+	{
+		//compute1DEmbedding(_embeddingDatasetA, _oneDEmbeddingDatasetA);
+		qDebug() << "1D embedding A does not exist";
+		// TODO: clear  _oneDEmbeddingDatasetB and then use projection, and then need to assign the positions to the embedding dataset for selectPoints()
+		_oneDEmbeddingDatasetA = nullptr;
+		update1DEmbeddingPositions(true);
+		updateLineConnections();
+	}
 }
 
 void DualViewPlugin::embeddingDatasetBChanged()
 {
-    _embeddingDropWidgetB->setShowDropIndicator(!_embeddingDatasetB.isValid());
+	_embeddingDropWidgetB->setShowDropIndicator(!_embeddingDatasetB.isValid());
 
-    if (!_embeddingDatasetB.isValid())
-        return;
+	if (!_embeddingDatasetB.isValid())
+		return;
 
-    _embeddingDatasetB->extractDataForDimensions(_embeddingPositionsB, 0, 1);
-    qDebug() << "_embeddingPositionsB size" << _embeddingPositionsB.size();
+	_embeddingDatasetB->extractDataForDimensions(_embeddingPositionsB, 0, 1);
+	qDebug() << "_embeddingPositionsB size" << _embeddingPositionsB.size();
 
-    _embeddingWidgetB->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true));
-    _embeddingWidgetB->setData(&_embeddingPositionsB);
+	_embeddingWidgetB->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true));
+	_embeddingWidgetB->setData(&_embeddingPositionsB);
 
-    _embeddingSourceDatasetB = _embeddingDatasetB->getSourceDataset<Points>(); 
-    qDebug() << "DualViewPlugin::_embeddingSourceDatasetB: " << _embeddingSourceDatasetB->getGuiName(); // Note: different from that of DualAnalysisPlugin
+	_embeddingSourceDatasetB = _embeddingDatasetB->getSourceDataset<Points>();
+	qDebug() << "DualViewPlugin::_embeddingSourceDatasetB: " << _embeddingSourceDatasetB->getGuiName(); // Note: different from that of DualAnalysisPlugin
 
-    // TODO: hard code to clear _metaDatasetB, when the embedding B is changed - check if better way to do this
-    _metaDatasetB = nullptr;
-    qDebug() << "embeddingDatasetBChanged(): metaDatasetB removed";
+	// TODO: hard code to clear _metaDatasetB, when the embedding B is changed - check if better way to do this
+	_metaDatasetB = nullptr;
+	qDebug() << "embeddingDatasetBChanged(): metaDatasetB removed";
 
-    // precompute the data range
-    computeDataRange(_embeddingSourceDatasetB, _columnMins, _columnRanges);
-    qDebug() << "Data range computed" << _columnMins.size() << _columnRanges.size() << _columnMins[0] << _columnRanges[0];
+	// precompute the data range
+	computeDataRange(_embeddingSourceDatasetB, _columnMins, _columnRanges);
+	qDebug() << "Data range computed" << _columnMins.size() << _columnRanges.size() << _columnMins[0] << _columnRanges[0];
 
-    // set the background gene names for the enrichment analysis
+	// set the background gene names for the enrichment analysis
 	if (_embeddingSourceDatasetB->getDimensionNames().size() < 19000) // FIXME: hard code the threshold for the number of genes
 	{
 		if (_backgroundGeneNames.size() == _embeddingSourceDatasetB->getDimensionNames().size())
@@ -881,33 +881,33 @@ void DualViewPlugin::embeddingDatasetBChanged()
 			qDebug() << _backgroundGeneNames.size() << " background gene names set";
 		}
 	}
-    else 
-        qDebug() << "Background gene names not set: genes more than 19000";
-   
-    // update 1D embedding
-    bool oneDEmbeddingExists = false;
-    for (const auto& child : _embeddingDatasetB->getChildren({ PointType }, false)) // bool recursively = false
-    {
-        if (child->getGuiName().contains("1D Embedding")) //child->getGuiName() == "1D Embedding B" // TO DO : change to work with the analysis plugin
-        {
-            _oneDEmbeddingDatasetB = child;        
-            oneDEmbeddingExists = true;
-            update1DEmbeddingPositions(false);
-            updateLineConnections();
+	else
+		qDebug() << "Background gene names not set: genes more than 19000";
 
-            break;
-        }
-    }
+	// update 1D embedding
+	bool oneDEmbeddingExists = false;
+	for (const auto& child : _embeddingDatasetB->getChildren({ PointType }, false)) // bool recursively = false
+	{
+		if (child->getGuiName().contains("1D Embedding")) //child->getGuiName() == "1D Embedding B" // TO DO : change to work with the analysis plugin
+		{
+			_oneDEmbeddingDatasetB = child;
+			oneDEmbeddingExists = true;
+			update1DEmbeddingPositions(false);
+			updateLineConnections();
 
-    if (!oneDEmbeddingExists)
-    { 
-        //compute1DEmbedding(_embeddingDatasetB, _oneDEmbeddingDatasetB);
-        qDebug() << "1D embedding B does not exist";
-        // TODO: clear  _oneDEmbeddingDatasetB and then use projection, and then need to assign the positions to the embedding dataset for selectPoints()
-        _oneDEmbeddingDatasetB = nullptr;
-        update1DEmbeddingPositions(false); 
-        updateLineConnections();
-    }
+			break;
+		}
+	}
+
+	if (!oneDEmbeddingExists)
+	{
+		//compute1DEmbedding(_embeddingDatasetB, _oneDEmbeddingDatasetB);
+		qDebug() << "1D embedding B does not exist";
+		// TODO: clear  _oneDEmbeddingDatasetB and then use projection, and then need to assign the positions to the embedding dataset for selectPoints()
+		_oneDEmbeddingDatasetB = nullptr;
+		update1DEmbeddingPositions(false);
+		updateLineConnections();
+	}
 }
 
 void DualViewPlugin::highlightSelectedLines(mv::Dataset<Points> dataset)
@@ -943,89 +943,89 @@ void DualViewPlugin::highlightSelectedLines(mv::Dataset<Points> dataset)
 
 void DualViewPlugin::highlightInputGenes(const QStringList& dimensionNames)
 {
-    if (dimensionNames.isEmpty() || !_embeddingSourceDatasetB.isValid())
+	if (dimensionNames.isEmpty() || !_embeddingSourceDatasetB.isValid())
 		return;
 
-    QList<int> indices;
-    identifyGeneSymbolsInDataset(_embeddingSourceDatasetB, dimensionNames, indices);
+	QList<int> indices;
+	identifyGeneSymbolsInDataset(_embeddingSourceDatasetB, dimensionNames, indices);
 
-    if (indices.isEmpty())
+	if (indices.isEmpty())
 		return;
 
-    // set the selected indices to 1 in highlights
-    std::vector<char> highlights(_embeddingPositionsA.size(), 0);
-    for (int i = 0; i < indices.size(); i++)
-    {
+	// set the selected indices to 1 in highlights
+	std::vector<char> highlights(_embeddingPositionsA.size(), 0);
+	for (int i = 0; i < indices.size(); i++)
+	{
 		highlights[indices[i]] = 1;
 	}
 
-    _embeddingWidgetA->setHighlights(highlights, 1);
+	_embeddingWidgetA->setHighlights(highlights, 1);
 
-    // test to set as selection
-    //std::vector<std::uint32_t> indicesVec(indices.begin(), indices.end());
-    //_embeddingDatasetA->setSelectionIndices(indicesVec);// TODO FIXME, should this publish selection? or just setHighlights? In associatedGenes?
-    // FIXME: this will trigger dataSelectionChanged, and then highlightSelectedEmbeddings, and then sendDataToSampleScope
-    //qDebug() << "highlightInputGenes - setSelectionIndices 1 ";
-    //events().notifyDatasetDataSelectionChanged(_embeddingDatasetA);
-    //qDebug() << "highlightInputGenes - setSelectionIndices 2 ";
+	// test to set as selection
+	//std::vector<std::uint32_t> indicesVec(indices.begin(), indices.end());
+	//_embeddingDatasetA->setSelectionIndices(indicesVec);// TODO FIXME, should this publish selection? or just setHighlights? In associatedGenes?
+	// FIXME: this will trigger dataSelectionChanged, and then highlightSelectedEmbeddings, and then sendDataToSampleScope
+	//qDebug() << "highlightInputGenes - setSelectionIndices 1 ";
+	//events().notifyDatasetDataSelectionChanged(_embeddingDatasetA);
+	//qDebug() << "highlightInputGenes - setSelectionIndices 2 ";
 
-    // test to create a dataset for the selected genes - for potential density plot
-    bool createNewDataset = false;
-    if (!_customisedGenes.isValid())
-    {
-        _customisedGenes = mv::data().createDataset("Points", "CustomisedGenes");
-        createNewDataset = true;
-        qDebug() << "Create new dataset";
-    }
+	// test to create a dataset for the selected genes - for potential density plot
+	bool createNewDataset = false;
+	if (!_customisedGenes.isValid())
+	{
+		_customisedGenes = mv::data().createDataset("Points", "CustomisedGenes");
+		createNewDataset = true;
+		qDebug() << "Create new dataset";
+	}
 
-    auto numCustomisedGenes = indices.size();
+	auto numCustomisedGenes = indices.size();
 
-    QVector<float> customisedGeneCoor(2 * numCustomisedGenes);
+	QVector<float> customisedGeneCoor(2 * numCustomisedGenes);
 
-    for (int i = 0; i < numCustomisedGenes; i++)
-    {
-        int geneIndice = indices[i];
-        customisedGeneCoor[2 * i] = _embeddingPositionsA[geneIndice].x;
-        customisedGeneCoor[2 * i + 1] = _embeddingPositionsA[geneIndice].y;
-    }
+	for (int i = 0; i < numCustomisedGenes; i++)
+	{
+		int geneIndice = indices[i];
+		customisedGeneCoor[2 * i] = _embeddingPositionsA[geneIndice].x;
+		customisedGeneCoor[2 * i + 1] = _embeddingPositionsA[geneIndice].y;
+	}
 
-    // first cancel the selection on this dataset, to avoid selection indices conflict after data changed
-    _customisedGenes->setSelectionIndices({});
+	// first cancel the selection on this dataset, to avoid selection indices conflict after data changed
+	_customisedGenes->setSelectionIndices({});
 
-    _customisedGenes->setData(customisedGeneCoor.data(), numCustomisedGenes, 2);
-    events().notifyDatasetDataChanged(_customisedGenes);
+	_customisedGenes->setData(customisedGeneCoor.data(), numCustomisedGenes, 2);
+	events().notifyDatasetDataChanged(_customisedGenes);
 
-    // link the associated genes to the original embedding
-    mv::SelectionMap mapping;
-    auto& selectionMap = mapping.getMap();
+	// link the associated genes to the original embedding
+	mv::SelectionMap mapping;
+	auto& selectionMap = mapping.getMap();
 
-    std::vector<unsigned int> globalIndices;
-    _embeddingDatasetA->getGlobalIndices(globalIndices);
+	std::vector<unsigned int> globalIndices;
+	_embeddingDatasetA->getGlobalIndices(globalIndices);
 
-    for (size_t i = 0; i < indices.size(); i++) {
-        int indexOriginal = indices[i]; // Local index in _embeddingDatasetA
-        std::vector<unsigned int> indexOriginalVector = { static_cast<uint32_t>(indexOriginal) };
-        selectionMap[i] = indexOriginalVector; // i: index in _associatedGenes, indexOriginal: index in _embeddingDatasetA
-    }
+	for (size_t i = 0; i < indices.size(); i++) {
+		int indexOriginal = indices[i]; // Local index in _embeddingDatasetA
+		std::vector<unsigned int> indexOriginalVector = { static_cast<uint32_t>(indexOriginal) };
+		selectionMap[i] = indexOriginalVector; // i: index in _associatedGenes, indexOriginal: index in _embeddingDatasetA
+	}
 
-    if (createNewDataset)
-    {
-        qDebug() << "Add linked data";
-        _customisedGenes->addLinkedData(_embeddingDatasetA, mapping);
-    }
-    else
-    {
-        qDebug() << "Update linked data";
-        //qDebug() << "linkedData size = " << _customisedGenes->getLinkedData().size();
-        mv::LinkedData& linkedData = _customisedGenes->getLinkedData().back(); 
-        //auto test = linkedData.getSourceDataSet();
-        //qDebug() << "highlightInputGenes - source dataset name = " << test->getGuiName();
+	if (createNewDataset)
+	{
+		qDebug() << "Add linked data";
+		_customisedGenes->addLinkedData(_embeddingDatasetA, mapping);
+	}
+	else
+	{
+		qDebug() << "Update linked data";
+		//qDebug() << "linkedData size = " << _customisedGenes->getLinkedData().size();
+		mv::LinkedData& linkedData = _customisedGenes->getLinkedData().back();
+		//auto test = linkedData.getSourceDataSet();
+		//qDebug() << "highlightInputGenes - source dataset name = " << test->getGuiName();
 
-        linkedData.setMapping(mapping);
-        //qDebug() << " finished setMapping";
-    }
+		linkedData.setMapping(mapping);
+		//qDebug() << " finished setMapping";
+	}
 
-    // test output the found gene symbols
+	// test output the found gene symbols
  //   QStringList foundGeneSymbols;
  //   auto allNames = _embeddingSourceDatasetB->getDimensionNames();
  //   for (int i = 0; i < indices.size(); i++)
@@ -1038,23 +1038,23 @@ void DualViewPlugin::highlightInputGenes(const QStringList& dimensionNames)
 
 void DualViewPlugin::highlightSelectedEmbeddings(ScatterplotWidget*& widget, mv::Dataset<Points> dataset)
 {
-    if (!dataset.isValid())
-        return;
+	if (!dataset.isValid())
+		return;
 
-    auto selection = dataset->getSelection<Points>();
+	auto selection = dataset->getSelection<Points>();
 
-    std::vector<bool> selected; // bool of selected in the current scale
-    std::vector<char> highlights;
+	std::vector<bool> selected; // bool of selected in the current scale
+	std::vector<char> highlights;
 
-    dataset->selectedLocalIndices(selection->indices, selected);
+	dataset->selectedLocalIndices(selection->indices, selected);
 
-    highlights.resize(dataset->getNumPoints(), 0);
+	highlights.resize(dataset->getNumPoints(), 0);
 
-    for (std::size_t i = 0; i < selected.size(); i++)
-        highlights[i] = selected[i] ? 1 : 0;
+	for (std::size_t i = 0; i < selected.size(); i++)
+		highlights[i] = selected[i] ? 1 : 0;
 
-    //update the scatterplot widget
-    widget->setHighlights(highlights, static_cast<std::int32_t>(selection->indices.size())); // TODO: repeated when threshold changing
+	//update the scatterplot widget
+	widget->setHighlights(highlights, static_cast<std::int32_t>(selection->indices.size())); // TODO: repeated when threshold changing
 }
 
 void DualViewPlugin::sendDataToSampleScope()
@@ -1107,18 +1107,18 @@ void DualViewPlugin::sendDataToSampleScope()
 
 			int numPointsB = _embeddingSourceDatasetB->getNumPoints();
 
-            int top10 = numPointsB / 10; // top 10% of the cells
+			int top10 = numPointsB / 10; // top 10% of the cells
 
-            // count the number of cells that have expression more than the lowest value
-            int countMin = 0;
-            float minExpression = *std::min_element(_columnMins.begin(), _columnMins.end());
-            for (int i = 0; i < numPointsB; i++)
-            {
-                if (_selectedGeneMeanExpression[i] > minExpression)
-                    countMin++;
-            }
-            // if the number of cells with expression more than min is less than 10%, use that number
-            int numCellsCounted = (countMin > top10) ? top10 : countMin;
+			// count the number of cells that have expression more than the lowest value
+			int countMin = 0;
+			float minExpression = *std::min_element(_columnMins.begin(), _columnMins.end());
+			for (int i = 0; i < numPointsB; i++)
+			{
+				if (_selectedGeneMeanExpression[i] > minExpression)
+					countMin++;
+			}
+			// if the number of cells with expression more than min is less than 10%, use that number
+			int numCellsCounted = (countMin > top10) ? top10 : countMin;
 
 			// first, sort the indices based on the selected gene expression
 			std::vector<std::pair<float, int>> rankedCells;
@@ -1126,24 +1126,24 @@ void DualViewPlugin::sendDataToSampleScope()
 
 			for (int i = 0; i < numPointsB; i++)
 			{
-                rankedCells.emplace_back(_selectedGeneMeanExpression[i], i);
+				rankedCells.emplace_back(_selectedGeneMeanExpression[i], i);
 			}
 
-            auto nth = rankedCells.begin() + numCellsCounted;
-            std::nth_element(rankedCells.begin(), nth, rankedCells.end(), std::greater<std::pair<float, int>>());
+			auto nth = rankedCells.begin() + numCellsCounted;
+			std::nth_element(rankedCells.begin(), nth, rankedCells.end(), std::greater<std::pair<float, int>>());
 
-            // mapping from local to global indices
-            std::vector<std::uint32_t> localGlobalIndicesB;
-            _embeddingSourceDatasetB->getGlobalIndices(localGlobalIndicesB);
+			// mapping from local to global indices
+			std::vector<std::uint32_t> localGlobalIndicesB;
+			_embeddingSourceDatasetB->getGlobalIndices(localGlobalIndicesB);
 
-            std::vector<std::uint32_t> sampledPoints; // global indices of the cells in the top 10%
-            for (int i = 0; i < numCellsCounted; ++i)
-            {
+			std::vector<std::uint32_t> sampledPoints; // global indices of the cells in the top 10%
+			for (int i = 0; i < numCellsCounted; ++i)
+			{
 				int localCellIndex = rankedCells[i].second;
 				int globalCellIndex = localGlobalIndicesB[localCellIndex];
-                sampledPoints.push_back(globalCellIndex);
+				sampledPoints.push_back(globalCellIndex);
 			}
-            std::tie(labels, data, backgroundColors) = computeMetadataCounts(metadata, sampledPoints);
+			std::tie(labels, data, backgroundColors) = computeMetadataCounts(metadata, sampledPoints);
 		}
 	}
 	else
@@ -1171,19 +1171,19 @@ void DualViewPlugin::sendDataToSampleScope()
 			std::vector<std::uint32_t> sampledPoints;
 			sampledPoints.reserve(_embeddingPositionsB.size());
 
-            for (auto selectionIndex : selection->indices)
-            {
-                sampledPoints.push_back(selectionIndex);// global cell index
-                //qDebug() << "selectionIndex" << selectionIndex;
-            }
+			for (auto selectionIndex : selection->indices)
+			{
+				sampledPoints.push_back(selectionIndex);// global cell index
+				//qDebug() << "selectionIndex" << selectionIndex;
+			}
 
-            std::tie(labels, data, backgroundColors) = computeMetadataCounts(metadata, sampledPoints);
+			std::tie(labels, data, backgroundColors) = computeMetadataCounts(metadata, sampledPoints);
 		}
 	}
 
-    // --------- prepare the data for the sampler action ------------------------------- 
-    assert(_embeddingDatasetA->getNumPoints() == _embeddingSourceDatasetB->getNumDimensions());
-    std::vector<QString> dimensionNames = _embeddingSourceDatasetB->getDimensionNames(); // TODO: hardcode, assume embedding A is gene map and embedding B stores all the genes in A
+	// --------- prepare the data for the sampler action ------------------------------- 
+	assert(_embeddingDatasetA->getNumPoints() == _embeddingSourceDatasetB->getNumDimensions());
+	std::vector<QString> dimensionNames = _embeddingSourceDatasetB->getDimensionNames(); // TODO: hardcode, assume embedding A is gene map and embedding B stores all the genes in A
 
 	_currentGeneSymbols.clear();
 	// assign gene symbols corresponding to globalPointIndices
@@ -1194,13 +1194,13 @@ void DualViewPlugin::sendDataToSampleScope()
 		_currentGeneSymbols.append(geneSymbol);
 	}
 
-    QString colorDatasetID = _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId();
-    QString colorDatasetName;
-    if (!colorDatasetID.isEmpty())
-    	colorDatasetName = mv::data().getDataset(colorDatasetID)->getGuiName();
+	QString colorDatasetID = _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId();
+	QString colorDatasetName;
+	if (!colorDatasetID.isEmpty())
+		colorDatasetName = mv::data().getDataset(colorDatasetID)->getGuiName();
 
-    QString html = buildHtmlForSelection(_isEmbeddingASelected, colorDatasetName, _currentGeneSymbols, labels, data, backgroundColors);
-    
+	QString html = buildHtmlForSelection(_isEmbeddingASelected, colorDatasetName, _currentGeneSymbols, labels, data, backgroundColors);
+
 
 	getSamplerAction().setSampleContext({
 		{ "GeneInfo", html}
@@ -1213,83 +1213,83 @@ void DualViewPlugin::sendDataToSampleScope()
 
 void DualViewPlugin::updateEmbeddingBSize()
 {
-    if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
-        return;
-    
-    auto start1 = std::chrono::high_resolution_clock::now();
-    updateSelectedGeneMeanExpression();
-    auto end1 = std::chrono::high_resolution_clock::now();
-    auto duration1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1 - start1);
-    qDebug() << "updateSelectedGeneMeanExpression() took " << duration1.count() << "ms";
+	if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
+		return;
 
-    if (_selectedGeneMeanExpression.size() != _embeddingDatasetB->getNumPoints())
-    {
-        qDebug() << "Warning! selectedGeneMeanExpression size " << _selectedGeneMeanExpression.size() << "is not equal to the number of points in embedding B" << _embeddingDatasetB->getNumPoints();
-        return;
-    }
+	auto start1 = std::chrono::high_resolution_clock::now();
+	updateSelectedGeneMeanExpression();
+	auto end1 = std::chrono::high_resolution_clock::now();
+	auto duration1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1 - start1);
+	qDebug() << "updateSelectedGeneMeanExpression() took " << duration1.count() << "ms";
 
-    std::vector<float> selectedGeneMeanExpression;
-    float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getSizeAction().getMagnitudeAction().getValue();
-    scaleDataRange(_selectedGeneMeanExpression, selectedGeneMeanExpression, _reversePointSizeB, ptSize);
+	if (_selectedGeneMeanExpression.size() != _embeddingDatasetB->getNumPoints())
+	{
+		qDebug() << "Warning! selectedGeneMeanExpression size " << _selectedGeneMeanExpression.size() << "is not equal to the number of points in embedding B" << _embeddingDatasetB->getNumPoints();
+		return;
+	}
+
+	std::vector<float> selectedGeneMeanExpression;
+	float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getSizeAction().getMagnitudeAction().getValue();
+	scaleDataRange(_selectedGeneMeanExpression, selectedGeneMeanExpression, _reversePointSizeB, ptSize);
 
 	_embeddingWidgetB->setPointSizeScalars(selectedGeneMeanExpression);
 }
 
 void DualViewPlugin::reversePointSizeB(bool reversePointSizeB)
 {
-    _reversePointSizeB = reversePointSizeB;
+	_reversePointSizeB = reversePointSizeB;
 
-    if (!_embeddingDatasetB.isValid())
+	if (!_embeddingDatasetB.isValid())
 		return;
 
-    if (_selectedGeneMeanExpression.size() == 0)
-    {
+	if (_selectedGeneMeanExpression.size() == 0)
+	{
 		qDebug() << "reversePointSizeB canceled, because no gene is selected.";
-        _settingsAction.getReversePointSizeBAction().setChecked(false);
+		_settingsAction.getReversePointSizeBAction().setChecked(false);
 		return;
 	}
 
-    std::vector<float> selectedGeneMeanExpression;
-    float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getSizeAction().getMagnitudeAction().getValue();
-    scaleDataRange(_selectedGeneMeanExpression, selectedGeneMeanExpression, _reversePointSizeB, ptSize);
+	std::vector<float> selectedGeneMeanExpression;
+	float ptSize = _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getSizeAction().getMagnitudeAction().getValue();
+	scaleDataRange(_selectedGeneMeanExpression, selectedGeneMeanExpression, _reversePointSizeB, ptSize);
 
-    _embeddingWidgetB->setPointSizeScalars(selectedGeneMeanExpression);
+	_embeddingWidgetB->setPointSizeScalars(selectedGeneMeanExpression);
 }
 
 void DualViewPlugin::updateEmbeddingASize()
 {
-    if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
-        return;
+	if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
+		return;
 
-    int numPointsA = _embeddingDatasetA->getNumPoints();
-    auto selection = _embeddingDatasetB->getSelection<Points>();
+	int numPointsA = _embeddingDatasetA->getNumPoints();
+	auto selection = _embeddingDatasetB->getSelection<Points>();
 
-    std::vector<bool> selected; // bool of selected in the current scale
-    std::vector<char> highlights;
-    _embeddingDatasetB->selectedLocalIndices(selection->indices, selected);
-    qDebug() << "DualViewPlugin: " << selection->indices.size() << " points in B selected";
+	std::vector<bool> selected; // bool of selected in the current scale
+	std::vector<char> highlights;
+	_embeddingDatasetB->selectedLocalIndices(selection->indices, selected);
+	qDebug() << "DualViewPlugin: " << selection->indices.size() << " points in B selected";
 
-    // get how many connected points in B per point in A
-    _connectedCellsPerGene.clear();
-    _connectedCellsPerGene.resize(numPointsA, 0.0f);
+	// get how many connected points in B per point in A
+	_connectedCellsPerGene.clear();
+	_connectedCellsPerGene.resize(numPointsA, 0.0f);
 
 #pragma omp parallel for
-    for (int i = 0; i < _lines.size(); i++)
-    {
-        int pointB = _lines[i].second;
-        if (pointB < selected.size() && selected[pointB])
-        {
+	for (int i = 0; i < _lines.size(); i++)
+	{
+		int pointB = _lines[i].second;
+		if (pointB < selected.size() && selected[pointB])
+		{
 #pragma omp atomic
-            _connectedCellsPerGene[_lines[i].first] += 1.0f;
-        }
-    }
+			_connectedCellsPerGene[_lines[i].first] += 1.0f;
+		}
+	}
 
-    std::vector<float> scaledConnectedCellsPerGene;
-    float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue();
-    scaleDataRange(_connectedCellsPerGene, scaledConnectedCellsPerGene, false, ptSize*3); // TODO: 3 is the hard coded factor
-    _embeddingWidgetA->setPointSizeScalars(scaledConnectedCellsPerGene);
+	std::vector<float> scaledConnectedCellsPerGene;
+	float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue();
+	scaleDataRange(_connectedCellsPerGene, scaledConnectedCellsPerGene, false, ptSize * 3); // TODO: 3 is the hard coded factor
+	_embeddingWidgetA->setPointSizeScalars(scaledConnectedCellsPerGene);
 
-    // test2 - use average expression of selected cells in B for the point size in A
+	// test2 - use average expression of selected cells in B for the point size in A
 //    std::vector<std::uint32_t> localGlobalIndicesB;
 //    _embeddingSourceDatasetB->getGlobalIndices(localGlobalIndicesB);
 //
@@ -1332,452 +1332,487 @@ void DualViewPlugin::updateEmbeddingASize()
 //    qDebug() << "scalars A computed";
 //    _embeddingWidgetA->setPointSizeScalars(selectedMeanExpression);
 
-    // test2 - end
+	// test2 - end
 
 }
 
-void DualViewPlugin::samplePoints() 
+void DualViewPlugin::samplePoints()
 {
-    
-    // for now only for embedding A
-    auto& samplerPixelSelectionTool = _embeddingWidgetA->getSamplerPixelSelectionTool();
 
-    if (!_embeddingDatasetA.isValid() || _embeddingWidgetA->isNavigating() || !samplerPixelSelectionTool.isEnabled())
-        return;
+	// for now only for embedding A
+	auto& samplerPixelSelectionTool = _embeddingWidgetA->getSamplerPixelSelectionTool();
 
-    auto selectionAreaImage = samplerPixelSelectionTool.getAreaPixmap().toImage();
+	if (!_embeddingDatasetA.isValid() || _embeddingWidgetA->isNavigating() || !samplerPixelSelectionTool.isEnabled())
+		return;
 
-    std::vector<std::uint32_t> targetSelectionIndices;
+	auto selectionAreaImage = samplerPixelSelectionTool.getAreaPixmap().toImage();
 
-    targetSelectionIndices.reserve(_embeddingDatasetA->getNumPoints());
+	std::vector<std::uint32_t> targetSelectionIndices;
 
-    std::vector<std::pair<float, std::uint32_t>> sampledPoints;
+	targetSelectionIndices.reserve(_embeddingDatasetA->getNumPoints());
 
-    std::vector<std::uint32_t> localGlobalIndices;
+	std::vector<std::pair<float, std::uint32_t>> sampledPoints;
 
-    _embeddingDatasetA->getGlobalIndices(localGlobalIndices);
+	std::vector<std::uint32_t> localGlobalIndices;
 
-    auto& pointRenderer = _embeddingWidgetA->getPointRenderer();
-    auto& navigator = pointRenderer.getNavigator();
+	_embeddingDatasetA->getGlobalIndices(localGlobalIndices);
 
-    const auto zoomRectangleWorld = navigator.getZoomRectangleWorld();
-    const auto screenRectangle = QRect(QPoint(), pointRenderer.getRenderSize());
-    const auto mousePositionWorld = pointRenderer.getScreenPointToWorldPosition(pointRenderer.getNavigator().getViewMatrix(), _embeddingWidgetA->mapFromGlobal(QCursor::pos()));
+	auto& pointRenderer = _embeddingWidgetA->getPointRenderer();
+	auto& navigator = pointRenderer.getNavigator();
 
-    // Go over all points in the dataset to see if they should be sampled
-    for (std::uint32_t localPointIndex = 0; localPointIndex < _embeddingPositionsA.size(); localPointIndex++) {
-	    // Compute the offset of the point in the world space
-    	const auto pointOffsetWorld = QPointF(_embeddingPositionsA[localPointIndex].x - zoomRectangleWorld.left(), _embeddingPositionsA[localPointIndex].y - zoomRectangleWorld.top());
+	const auto zoomRectangleWorld = navigator.getZoomRectangleWorld();
+	const auto screenRectangle = QRect(QPoint(), pointRenderer.getRenderSize());
+	const auto mousePositionWorld = pointRenderer.getScreenPointToWorldPosition(pointRenderer.getNavigator().getViewMatrix(), _embeddingWidgetA->mapFromGlobal(QCursor::pos()));
 
-    	// Normalize it 
-    	const auto pointOffsetWorldNormalized = QPointF(pointOffsetWorld.x() / zoomRectangleWorld.width(), pointOffsetWorld.y() / zoomRectangleWorld.height());
+	// Go over all points in the dataset to see if they should be sampled
+	for (std::uint32_t localPointIndex = 0; localPointIndex < _embeddingPositionsA.size(); localPointIndex++) {
+		// Compute the offset of the point in the world space
+		const auto pointOffsetWorld = QPointF(_embeddingPositionsA[localPointIndex].x - zoomRectangleWorld.left(), _embeddingPositionsA[localPointIndex].y - zoomRectangleWorld.top());
 
-    	// Convert it to screen space
-    	const auto pointOffsetScreen = QPoint(pointOffsetWorldNormalized.x() * screenRectangle.width(), screenRectangle.height() - pointOffsetWorldNormalized.y() * screenRectangle.height());
+		// Normalize it 
+		const auto pointOffsetWorldNormalized = QPointF(pointOffsetWorld.x() / zoomRectangleWorld.width(), pointOffsetWorld.y() / zoomRectangleWorld.height());
 
-    	// Continue to next point if the point is outside the screen
-    	if (!screenRectangle.contains(pointOffsetScreen))
-    		continue;
+		// Convert it to screen space
+		const auto pointOffsetScreen = QPoint(pointOffsetWorldNormalized.x() * screenRectangle.width(), screenRectangle.height() - pointOffsetWorldNormalized.y() * screenRectangle.height());
 
-    	// If the corresponding pixel is not transparent, add the point to the selection
-    	if (selectionAreaImage.pixelColor(pointOffsetScreen).alpha() > 0) {
-    		const auto sample = std::pair((QVector2D(_embeddingPositionsA[localPointIndex].x, _embeddingPositionsA[localPointIndex].y) - mousePositionWorld.toVector2D()).length(), localPointIndex);
+		// Continue to next point if the point is outside the screen
+		if (!screenRectangle.contains(pointOffsetScreen))
+			continue;
 
-    		sampledPoints.emplace_back(sample);
-    	}
-    }
+		// If the corresponding pixel is not transparent, add the point to the selection
+		if (selectionAreaImage.pixelColor(pointOffsetScreen).alpha() > 0) {
+			const auto sample = std::pair((QVector2D(_embeddingPositionsA[localPointIndex].x, _embeddingPositionsA[localPointIndex].y) - mousePositionWorld.toVector2D()).length(), localPointIndex);
 
-    QVariantList localPointIndices, globalPointIndices, distances;
+			sampledPoints.emplace_back(sample);
+		}
+	}
 
-    localPointIndices.reserve(static_cast<std::int32_t>(sampledPoints.size()));
-    globalPointIndices.reserve(static_cast<std::int32_t>(sampledPoints.size()));
-    distances.reserve(static_cast<std::int32_t>(sampledPoints.size()));
+	QVariantList localPointIndices, globalPointIndices, distances;
 
-    std::int32_t numberOfPoints = 0;
+	localPointIndices.reserve(static_cast<std::int32_t>(sampledPoints.size()));
+	globalPointIndices.reserve(static_cast<std::int32_t>(sampledPoints.size()));
+	distances.reserve(static_cast<std::int32_t>(sampledPoints.size()));
 
-    std::sort(sampledPoints.begin(), sampledPoints.end(), [](const auto& sampleA, const auto& sampleB) -> bool {
-        return sampleB.first > sampleA.first;
-        });
+	std::int32_t numberOfPoints = 0;
 
-    std::vector<char> focusHighlights(_embeddingPositionsA.size());
+	std::sort(sampledPoints.begin(), sampledPoints.end(), [](const auto& sampleA, const auto& sampleB) -> bool {
+		return sampleB.first > sampleA.first;
+		});
 
-    for (const auto& sampledPoint : sampledPoints) {
-        if (getSamplerAction().getRestrictNumberOfElementsAction().isChecked() && numberOfPoints >= getSamplerAction().getMaximumNumberOfElementsAction().getValue())
-            break;
+	std::vector<char> focusHighlights(_embeddingPositionsA.size());
 
-        const auto& distance = sampledPoint.first;
-        const auto& localPointIndex = sampledPoint.second;
-        const auto& globalPointIndex = localGlobalIndices[localPointIndex];
+	for (const auto& sampledPoint : sampledPoints) {
+		if (getSamplerAction().getRestrictNumberOfElementsAction().isChecked() && numberOfPoints >= getSamplerAction().getMaximumNumberOfElementsAction().getValue())
+			break;
 
-        distances << distance;
-        localPointIndices << localPointIndex;
-        globalPointIndices << globalPointIndex;
+		const auto& distance = sampledPoint.first;
+		const auto& localPointIndex = sampledPoint.second;
+		const auto& globalPointIndex = localGlobalIndices[localPointIndex];
 
-        focusHighlights[localPointIndex] = true;
+		distances << distance;
+		localPointIndices << localPointIndex;
+		globalPointIndices << globalPointIndex;
 
-        numberOfPoints++;
-    }
+		focusHighlights[localPointIndex] = true;
 
-    qDebug() << "DualViewPlugin samplePoints" << numberOfPoints << "points sampled";
+		numberOfPoints++;
+	}
 
-    // connect sampled points as selected points
-    _embeddingDatasetA->setSelectionIndices(targetSelectionIndices);
+	qDebug() << "DualViewPlugin samplePoints" << numberOfPoints << "points sampled";
 
-    events().notifyDatasetDataSelectionChanged(_embeddingDatasetA->getSourceDataset<Points>());
+	// connect sampled points as selected points
+	_embeddingDatasetA->setSelectionIndices(targetSelectionIndices);
+
+	events().notifyDatasetDataSelectionChanged(_embeddingDatasetA->getSourceDataset<Points>());
 
 }
 
 void DualViewPlugin::selectPoints(ScatterplotWidget* widget, mv::Dataset<Points> embeddingDataset, const std::vector<mv::Vector2f>& embeddingPositions)
 {
-    //if (getSettingsAction().getSelectionAction().getFreezeSelectionAction().isChecked())
-    //    return;
+	//if (getSettingsAction().getSelectionAction().getFreezeSelectionAction().isChecked())
+	//    return;
 
-    auto& pixelSelectionTool = widget->getPixelSelectionTool();
+	auto& pixelSelectionTool = widget->getPixelSelectionTool();
 
-    // Only proceed with a valid points position dataset and when the pixel selection tool is active
-    if (!embeddingDataset.isValid() || !pixelSelectionTool.isActive() || widget->getPointRenderer().getNavigator().isNavigating() || !pixelSelectionTool.isEnabled())
-        return;
+	// Only proceed with a valid points position dataset and when the pixel selection tool is active
+	if (!embeddingDataset.isValid() || !pixelSelectionTool.isActive() || widget->getPointRenderer().getNavigator().isNavigating() || !pixelSelectionTool.isEnabled())
+		return;
 
-    auto selectionAreaImage = pixelSelectionTool.getAreaPixmap().toImage();
-    auto selectionSet = embeddingDataset->getSelection<Points>();
+	auto selectionAreaImage = pixelSelectionTool.getAreaPixmap().toImage();
+	auto selectionSet = embeddingDataset->getSelection<Points>();
 
-    std::vector<std::uint32_t> targetSelectionIndices;
+	std::vector<std::uint32_t> targetSelectionIndices;
 
-    targetSelectionIndices.reserve(embeddingDataset->getNumPoints());
+	targetSelectionIndices.reserve(embeddingDataset->getNumPoints());
 
-    std::vector<std::uint32_t> localGlobalIndices;
+	std::vector<std::uint32_t> localGlobalIndices;
 
-    embeddingDataset->getGlobalIndices(localGlobalIndices);
+	embeddingDataset->getGlobalIndices(localGlobalIndices);
 
-    auto& pointRenderer = widget->getPointRenderer();
-    auto& navigator = pointRenderer.getNavigator();
+	auto& pointRenderer = widget->getPointRenderer();
+	auto& navigator = pointRenderer.getNavigator();
 
-    const auto zoomRectangleWorld = navigator.getZoomRectangleWorld();
-    const auto screenRectangle = QRect(QPoint(), pointRenderer.getRenderSize());
+	const auto zoomRectangleWorld = navigator.getZoomRectangleWorld();
+	const auto screenRectangle = QRect(QPoint(), pointRenderer.getRenderSize());
 
-    float boundaries[4]{
-        std::numeric_limits<float>::max(),
-        std::numeric_limits<float>::lowest(),
-        std::numeric_limits<float>::max(),
-        std::numeric_limits<float>::lowest()
-    };
+	float boundaries[4]{
+		std::numeric_limits<float>::max(),
+		std::numeric_limits<float>::lowest(),
+		std::numeric_limits<float>::max(),
+		std::numeric_limits<float>::lowest()
+	};
 
-    // Go over all points in the dataset to see if they are selected
-    for (std::uint32_t localPointIndex = 0; localPointIndex < embeddingPositions.size(); localPointIndex++) {
-        const auto& point = embeddingPositions[localPointIndex];
+	// Go over all points in the dataset to see if they are selected
+	for (std::uint32_t localPointIndex = 0; localPointIndex < embeddingPositions.size(); localPointIndex++) {
+		const auto& point = embeddingPositions[localPointIndex];
 
-        // Compute the offset of the point in the world space
-        const auto pointOffsetWorld = QPointF(point.x - zoomRectangleWorld.left(), point.y - zoomRectangleWorld.top());
+		// Compute the offset of the point in the world space
+		const auto pointOffsetWorld = QPointF(point.x - zoomRectangleWorld.left(), point.y - zoomRectangleWorld.top());
 
-        // Normalize it 
-        const auto pointOffsetWorldNormalized = QPointF(pointOffsetWorld.x() / zoomRectangleWorld.width(), pointOffsetWorld.y() / zoomRectangleWorld.height());
+		// Normalize it 
+		const auto pointOffsetWorldNormalized = QPointF(pointOffsetWorld.x() / zoomRectangleWorld.width(), pointOffsetWorld.y() / zoomRectangleWorld.height());
 
-        // Convert it to screen space
-        const auto pointOffsetScreen = QPoint(pointOffsetWorldNormalized.x() * screenRectangle.width(), screenRectangle.height() - pointOffsetWorldNormalized.y() * screenRectangle.height());
+		// Convert it to screen space
+		const auto pointOffsetScreen = QPoint(pointOffsetWorldNormalized.x() * screenRectangle.width(), screenRectangle.height() - pointOffsetWorldNormalized.y() * screenRectangle.height());
 
-        // Continue to next point if the point is outside the screen
-        if (!screenRectangle.contains(pointOffsetScreen))
-            continue;
+		// Continue to next point if the point is outside the screen
+		if (!screenRectangle.contains(pointOffsetScreen))
+			continue;
 
-        // If the corresponding pixel is not transparent, add the point to the selection
-        if (selectionAreaImage.pixelColor(pointOffsetScreen).alpha() > 0) {
-            targetSelectionIndices.push_back(localGlobalIndices[localPointIndex]);
+		// If the corresponding pixel is not transparent, add the point to the selection
+		if (selectionAreaImage.pixelColor(pointOffsetScreen).alpha() > 0) {
+			targetSelectionIndices.push_back(localGlobalIndices[localPointIndex]);
 
-            boundaries[0] = std::min(boundaries[0], point.x);
-            boundaries[1] = std::max(boundaries[1], point.x);
-            boundaries[2] = std::min(boundaries[2], point.y);
-            boundaries[3] = std::max(boundaries[3], point.y);
-        }
-    }
+			boundaries[0] = std::min(boundaries[0], point.x);
+			boundaries[1] = std::max(boundaries[1], point.x);
+			boundaries[2] = std::min(boundaries[2], point.y);
+			boundaries[3] = std::max(boundaries[3], point.y);
+		}
+	}
 
-    //_selectionBoundaries = QRectF(boundaries[0], boundaries[2], boundaries[1] - boundaries[0], boundaries[3] - boundaries[2]);
+	//_selectionBoundaries = QRectF(boundaries[0], boundaries[2], boundaries[1] - boundaries[0], boundaries[3] - boundaries[2]);
 
-    switch (const auto selectionModifier = pixelSelectionTool.isAborted() ? PixelSelectionModifierType::Subtract : pixelSelectionTool.getModifier())
-    {
-    case PixelSelectionModifierType::Replace:
-        break;
+	switch (const auto selectionModifier = pixelSelectionTool.isAborted() ? PixelSelectionModifierType::Subtract : pixelSelectionTool.getModifier())
+	{
+	case PixelSelectionModifierType::Replace:
+		break;
 
-    case PixelSelectionModifierType::Add:
-    case PixelSelectionModifierType::Subtract:
-    {
-        // Get reference to the indices of the selection set
-        auto& selectionSetIndices = selectionSet->indices;
+	case PixelSelectionModifierType::Add:
+	case PixelSelectionModifierType::Subtract:
+	{
+		// Get reference to the indices of the selection set
+		auto& selectionSetIndices = selectionSet->indices;
 
-        // Create a set from the selection set indices
-        QSet<std::uint32_t> set(selectionSetIndices.begin(), selectionSetIndices.end());
+		// Create a set from the selection set indices
+		QSet<std::uint32_t> set(selectionSetIndices.begin(), selectionSetIndices.end());
 
-        switch (selectionModifier)
-        {
-            // Add points to the current selection
-        case PixelSelectionModifierType::Add:
-        {
-            // Add indices to the set 
-            for (const auto& targetIndex : targetSelectionIndices)
-                set.insert(targetIndex);
+		switch (selectionModifier)
+		{
+			// Add points to the current selection
+		case PixelSelectionModifierType::Add:
+		{
+			// Add indices to the set 
+			for (const auto& targetIndex : targetSelectionIndices)
+				set.insert(targetIndex);
 
-            break;
-        }
+			break;
+		}
 
-        // Remove points from the current selection
-        case PixelSelectionModifierType::Subtract:
-        {
-            // Remove indices from the set 
-            for (const auto& targetIndex : targetSelectionIndices)
-                set.remove(targetIndex);
+		// Remove points from the current selection
+		case PixelSelectionModifierType::Subtract:
+		{
+			// Remove indices from the set 
+			for (const auto& targetIndex : targetSelectionIndices)
+				set.remove(targetIndex);
 
-            break;
-        }
+			break;
+		}
 
-        case PixelSelectionModifierType::Replace:
-            break;
-        }
+		case PixelSelectionModifierType::Replace:
+			break;
+		}
 
-        targetSelectionIndices = std::vector<std::uint32_t>(set.begin(), set.end());
+		targetSelectionIndices = std::vector<std::uint32_t>(set.begin(), set.end());
 
-        break;
-    }
-    }
+		break;
+	}
+	}
 
-    auto& navigationAction = const_cast<NavigationAction&>(widget->getPointRenderer().getNavigator().getNavigationAction());
+	auto& navigationAction = const_cast<NavigationAction&>(widget->getPointRenderer().getNavigator().getNavigationAction());
 
-    navigationAction.getZoomSelectionAction().setEnabled(!targetSelectionIndices.empty() && !navigationAction.getFreezeNavigation().isChecked());
+	navigationAction.getZoomSelectionAction().setEnabled(!targetSelectionIndices.empty() && !navigationAction.getFreezeNavigation().isChecked());
 
-    embeddingDataset->setSelectionIndices(targetSelectionIndices);
+	embeddingDataset->setSelectionIndices(targetSelectionIndices);
 
-    events().notifyDatasetDataSelectionChanged(embeddingDataset->getSourceDataset<Points>());
+	events().notifyDatasetDataSelectionChanged(embeddingDataset->getSourceDataset<Points>());
 }
 
 void DualViewPlugin::selectPoints(EmbeddingLinesWidget* widget, const std::vector<mv::Vector2f>& embeddingPositions)
 {
-    // Only proceed with a valid points position dataset and when the pixel selection tool is active
-    if (!_oneDEmbeddingDatasetA.isValid() || !_oneDEmbeddingDatasetB.isValid() || !widget->getPixelSelectionTool().isActive())
-    {
-        qDebug() << "DualViewPlugin: selectPoints() - invalid 1D dataset or pixel selection tool is not active";
-        return;
-    }
+	// Only proceed with a valid points position dataset and when the pixel selection tool is active
+	/*if (!_oneDEmbeddingDatasetA.isValid() || !_oneDEmbeddingDatasetB.isValid() || !widget->getPixelSelectionTool().isActive())
+	{
+		qDebug() << "DualViewPlugin: selectPoints() - invalid 1D dataset or pixel selection tool is not active";
+		return;
+	}*/
 
-    // Get binary selection area image from the pixel selection tool
-    auto selectionAreaImage = widget->getPixelSelectionTool().getAreaPixmap().toImage();
+	//if (getSettingsAction().getSelectionAction().getFreezeSelectionAction().isChecked())
+   //    return;
 
-    // Get smart pointer to the position selection dataset
-    auto selectionSetA = _oneDEmbeddingDatasetA->getSelection<Points>();
-    auto selectionSetB = _oneDEmbeddingDatasetB->getSelection<Points>();
+	auto& pixelSelectionTool = widget->getPixelSelectionTool();
 
-    // Create vector for target selection indices
-    std::vector<std::uint32_t> targetSelectionIndicesA;
-    std::vector<std::uint32_t> targetSelectionIndicesB;
+	// Only proceed with a valid points position dataset and when the pixel selection tool is active
+	if (!_oneDEmbeddingDatasetA.isValid() || !_oneDEmbeddingDatasetB.isValid() || !widget->getPixelSelectionTool().isActive())
+	{
+		qDebug() << "DualViewPlugin: selectPoints() - invalid 1D dataset or pixel selection tool is not active";
+		return;
+	}
 
-    // Reserve space for the indices
-    targetSelectionIndicesA.reserve(_oneDEmbeddingDatasetA->getNumPoints());
-    targetSelectionIndicesB.reserve(_oneDEmbeddingDatasetB->getNumPoints());
+	auto selectionAreaImage = pixelSelectionTool.getAreaPixmap().toImage();
 
-    // Mapping from local to global indices
-    std::vector<std::uint32_t> localGlobalIndicesA;
-    std::vector<std::uint32_t> localGlobalIndicesB;
+	// Get smart pointer to the position selection dataset
+	auto selectionSetA = _oneDEmbeddingDatasetA->getSelection<Points>();
+	auto selectionSetB = _oneDEmbeddingDatasetB->getSelection<Points>();
 
-    // Get global indices from the position dataset
-    _oneDEmbeddingDatasetA->getGlobalIndices(localGlobalIndicesA);
-    _oneDEmbeddingDatasetB->getGlobalIndices(localGlobalIndicesB);
+	// Create vector for target selection indices
+	std::vector<std::uint32_t> targetSelectionIndicesA;
+	std::vector<std::uint32_t> targetSelectionIndicesB;
 
-    const auto dataBounds = widget->getBounds();
-    const auto width = selectionAreaImage.width();
-    const auto height = selectionAreaImage.height();
-    const auto size = width < height ? width : height;
+	// Reserve space for the indices
+	targetSelectionIndicesA.reserve(_oneDEmbeddingDatasetA->getNumPoints());
+	targetSelectionIndicesB.reserve(_oneDEmbeddingDatasetB->getNumPoints());
 
-    //qDebug() << "Selection area size:" << width << height << size;
-    //qDebug() << "Data bounds top" << dataBounds.getTop() << "bottom" << dataBounds.getBottom() << "left" << dataBounds.getLeft() << "right" << dataBounds.getRight();
-    //qDebug() << "Data bounds width" << dataBounds.getWidth() << "height" << dataBounds.getHeight();
+	// Mapping from local to global indices
+	std::vector<std::uint32_t> localGlobalIndicesA;
+	std::vector<std::uint32_t> localGlobalIndicesB;
 
-    std::size_t datasetASize = _oneDEmbeddingDatasetA->getNumPoints();
-    std::size_t datasetBSize = _oneDEmbeddingDatasetB->getNumPoints();
+	// Get global indices from the position dataset
+	_oneDEmbeddingDatasetA->getGlobalIndices(localGlobalIndicesA);
+	_oneDEmbeddingDatasetB->getGlobalIndices(localGlobalIndicesB);
 
-    // Loop over all points and establish whether they are selected or not
-    for (std::uint32_t i = 0; i < embeddingPositions.size(); i++) {
-        const auto uvNormalized = QPointF((embeddingPositions[i].x - dataBounds.getLeft()) / dataBounds.getWidth(), (dataBounds.getTop() - embeddingPositions[i].y) / dataBounds.getHeight());
-        const auto uvOffset = QPoint((selectionAreaImage.width() - size) / 2.0f, (selectionAreaImage.height() - size) / 2.0f);
-        const auto uv = uvOffset + QPoint(uvNormalized.x() * size, uvNormalized.y() * size);
+	auto& pointRenderer = widget->getPointRenderer();
+	auto& navigator = pointRenderer.getNavigator();
+	const auto zoomRectangleWorld = navigator.getZoomRectangleWorld();
+	const auto screenRectangle = QRect(QPoint(), pointRenderer.getRenderSize());
 
-        // Add point if the corresponding pixel selection is on
-        if (i < datasetASize) {
-            if (selectionAreaImage.pixelColor(uv).alpha() > 0)
-                targetSelectionIndicesA.push_back(localGlobalIndicesA[i]);
-        }
-        else {
-            std::size_t datasetBIndex = i - datasetASize;
-            if (selectionAreaImage.pixelColor(uv).alpha() > 0)
-                targetSelectionIndicesB.push_back(localGlobalIndicesB[datasetBIndex]);
-        }
-    }
+	float boundaries[4]{
+		std::numeric_limits<float>::max(),
+		std::numeric_limits<float>::lowest(),
+		std::numeric_limits<float>::max(),
+		std::numeric_limits<float>::lowest()
+	};
 
-    //qDebug() << "selection done" << "targetSelectionIndicesA.size() = " << targetSelectionIndicesA.size() << "targetSelectionIndicesB.size() = " << targetSelectionIndicesB.size();
+	//qDebug() << "Selection area size:" << width << height << size;
+	//qDebug() << "Data bounds top" << dataBounds.getTop() << "bottom" << dataBounds.getBottom() << "left" << dataBounds.getLeft() << "right" << dataBounds.getRight();
+	//qDebug() << "Data bounds width" << dataBounds.getWidth() << "height" << dataBounds.getHeight();
 
-    _oneDEmbeddingDatasetA->setSelectionIndices(targetSelectionIndicesA);
+	std::size_t datasetASize = _oneDEmbeddingDatasetA->getNumPoints();
+	std::size_t datasetBSize = _oneDEmbeddingDatasetB->getNumPoints();
 
-    if (targetSelectionIndicesA.size() != 0) // only notify if there are selected points
-        events().notifyDatasetDataSelectionChanged(_oneDEmbeddingDatasetA->getSourceDataset<Points>()->getSourceDataset<Points>());
+	// Loop over all points and establish whether they are selected or not
+	for (std::uint32_t localPointIndex = 0; localPointIndex < embeddingPositions.size(); localPointIndex++) {
+	    const auto& point = embeddingPositions[localPointIndex];
+		const auto pointOffsetWorld = QPointF(point.x - zoomRectangleWorld.left(), point.y - zoomRectangleWorld.top());
+		const auto pointOffsetWorldNormalized = QPointF(pointOffsetWorld.x() / zoomRectangleWorld.width(), pointOffsetWorld.y() / zoomRectangleWorld.height());
+		const auto pointOffsetScreen = QPoint(pointOffsetWorldNormalized.x() * screenRectangle.width(), screenRectangle.height() - pointOffsetWorldNormalized.y() * screenRectangle.height());
 
-    _oneDEmbeddingDatasetB->setSelectionIndices(targetSelectionIndicesB);
+		if (!screenRectangle.contains(pointOffsetScreen))
+			continue;
 
-    if (targetSelectionIndicesB.size() != 0) // only notify if there are selected points
-        events().notifyDatasetDataSelectionChanged(_oneDEmbeddingDatasetB->getSourceDataset<Points>()->getSourceDataset<Points>());
+		// Add point if the corresponding pixel selection is on
+		if (localPointIndex < datasetASize) {
+			if (selectionAreaImage.pixelColor(pointOffsetScreen).alpha() > 0)
+			{ 
+				targetSelectionIndicesA.push_back(localGlobalIndicesA[localPointIndex]);
+				boundaries[0] = std::min(boundaries[0], point.x);
+				boundaries[1] = std::max(boundaries[1], point.x);
+				boundaries[2] = std::min(boundaries[2], point.y);
+				boundaries[3] = std::max(boundaries[3], point.y);
+			}
+
+		}
+		else {
+			std::size_t datasetBIndex = localPointIndex - datasetASize;
+			if (selectionAreaImage.pixelColor(pointOffsetScreen).alpha() > 0)
+			{ 
+				targetSelectionIndicesB.push_back(localGlobalIndicesB[datasetBIndex]);
+				boundaries[0] = std::min(boundaries[0], point.x);
+				boundaries[1] = std::max(boundaries[1], point.x);
+				boundaries[2] = std::min(boundaries[2], point.y);
+				boundaries[3] = std::max(boundaries[3], point.y);
+			}
+		}
+	}
+
+	//qDebug() << "selection done" << "targetSelectionIndicesA.size() = " << targetSelectionIndicesA.size() << "targetSelectionIndicesB.size() = " << targetSelectionIndicesB.size();
+
+	_oneDEmbeddingDatasetA->setSelectionIndices(targetSelectionIndicesA);
+
+	if (targetSelectionIndicesA.size() != 0) // only notify if there are selected points
+		events().notifyDatasetDataSelectionChanged(_oneDEmbeddingDatasetA->getSourceDataset<Points>()->getSourceDataset<Points>());
+
+	_oneDEmbeddingDatasetB->setSelectionIndices(targetSelectionIndicesB);
+
+	if (targetSelectionIndicesB.size() != 0) // only notify if there are selected points
+		events().notifyDatasetDataSelectionChanged(_oneDEmbeddingDatasetB->getSourceDataset<Points>()->getSourceDataset<Points>());
 
 }
 
 void DualViewPlugin::updateSelectedGeneMeanExpression()
 {
-    std::vector<float> selectedGeneMeanExpressionFull;
-    computeSelectedGeneMeanExpression(_embeddingSourceDatasetB, _embeddingDatasetA, selectedGeneMeanExpressionFull);
+	std::vector<float> selectedGeneMeanExpressionFull;
+	computeSelectedGeneMeanExpression(_embeddingSourceDatasetB, _embeddingDatasetA, selectedGeneMeanExpressionFull);
 
-    extractSelectedGeneMeanExpression(_embeddingSourceDatasetB, selectedGeneMeanExpressionFull, _selectedGeneMeanExpression);
+	extractSelectedGeneMeanExpression(_embeddingSourceDatasetB, selectedGeneMeanExpressionFull, _selectedGeneMeanExpression);
 
-    if (!_meanExpressionScalars.isValid())
-    {
-        _meanExpressionScalars = mv::data().createDataset<Points>("Points", "ExprScalars");
-        events().notifyDatasetAdded(_meanExpressionScalars);
-    }
+	if (!_meanExpressionScalars.isValid())
+	{
+		_meanExpressionScalars = mv::data().createDataset<Points>("Points", "ExprScalars");
+		events().notifyDatasetAdded(_meanExpressionScalars);
+	}
 
-    _meanExpressionScalars->setData<float>(selectedGeneMeanExpressionFull.data(), selectedGeneMeanExpressionFull.size(), 1);
-    events().notifyDatasetDataChanged(_meanExpressionScalars);
+	_meanExpressionScalars->setData<float>(selectedGeneMeanExpressionFull.data(), selectedGeneMeanExpressionFull.size(), 1);
+	events().notifyDatasetDataChanged(_meanExpressionScalars);
 }
 
 QString DualViewPlugin::getCurrentEmebeddingDataSetID(mv::Dataset<Points> dataset) const
 {
-    if (dataset.isValid())
-        return dataset->getId();
-    else
-        return QString{};
+	if (dataset.isValid())
+		return dataset->getId();
+	else
+		return QString{};
 }
 
 void DualViewPlugin::updateThresholdLines()
 {
-    _thresholdLines = _settingsAction.getThresholdLinesAction().getValue();
+	_thresholdLines = _settingsAction.getThresholdLinesAction().getValue();
 
-    updateLineConnections();
-    
-    if (_isEmbeddingASelected)
-    { 
-        highlightSelectedLines(_embeddingDatasetA);
-        highlightSelectedEmbeddings(_embeddingWidgetA, _embeddingDatasetA);
-    }
+	updateLineConnections();
+
+	if (_isEmbeddingASelected)
+	{
+		highlightSelectedLines(_embeddingDatasetA);
+		highlightSelectedEmbeddings(_embeddingWidgetA, _embeddingDatasetA);
+	}
 	else
-    { 
-        highlightSelectedLines(_embeddingDatasetB);
+	{
+		highlightSelectedLines(_embeddingDatasetB);
 		highlightSelectedEmbeddings(_embeddingWidgetB, _embeddingDatasetB);
-    }
+	}
 }
 
 void DualViewPlugin::computeTopCellForEachGene()
 {
-    if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid() || !_metaDatasetB.isValid())
-    {
-        //qDebug() << "DualViewPlugin: embeddingDatasetA or embeddingDatasetB or metaDatasetB is not valid";
-        return;
-    }
+	if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid() || !_metaDatasetB.isValid())
+	{
+		//qDebug() << "DualViewPlugin: embeddingDatasetA or embeddingDatasetB or metaDatasetB is not valid";
+		return;
+	}
 
-    qDebug() << "computeTopCellForEachGene(): _metaDatasetB is " << _metaDatasetB->getGuiName();
+	qDebug() << "computeTopCellForEachGene(): _metaDatasetB is " << _metaDatasetB->getGuiName();
 
-    int numGene = _embeddingDatasetA->getNumPoints(); // number of genes in the current gene embedding  
+	int numGene = _embeddingDatasetA->getNumPoints(); // number of genes in the current gene embedding  
 
-    // TEST 2: use the cell type with max avg expression for each gene - START
+	// TEST 2: use the cell type with max avg expression for each gene - START
 
-    auto fullDatasetB = _embeddingDatasetB->getSourceDataset<Points>()->getFullDataset<Points>();
+	auto fullDatasetB = _embeddingDatasetB->getSourceDataset<Points>()->getFullDataset<Points>();
 
-    std::vector<std::vector<float>> avgExpressionForEachGeneForEachCluster; // cluster is stored in the same order as in the meta dataset
+	std::vector<std::vector<float>> avgExpressionForEachGeneForEachCluster; // cluster is stored in the same order as in the meta dataset
 
-    auto start1 = std::chrono::high_resolution_clock::now();
-    // FIXME: this would return if embedding B is the overview scale of HSNE, do we want this?
-    if (_embeddingDatasetB->getNumPoints() != _embeddingDatasetA->getSourceDataset<Points>()->getNumDimensions())
-    {
-        //qDebug() << "computeTopCellForEachGene(): num of pt in embeddingDatasetB is different from num of dimensions in embedding A source dataset";
-        //qDebug() << "embeddingDatasetB->getNumPoints() = " << _embeddingDatasetB->getNumPoints() << "sourceDatasetA->getNumDimensions() = " << _embeddingDatasetA->getSourceDataset<Points>()->getNumDimensions();
-        qDebug() << "WARNING: embedding A and embedding B is not corresponded, use the full expression matrix to compute top cell type";
+	auto start1 = std::chrono::high_resolution_clock::now();
+	// FIXME: this would return if embedding B is the overview scale of HSNE, do we want this?
+	if (_embeddingDatasetB->getNumPoints() != _embeddingDatasetA->getSourceDataset<Points>()->getNumDimensions())
+	{
+		//qDebug() << "computeTopCellForEachGene(): num of pt in embeddingDatasetB is different from num of dimensions in embedding A source dataset";
+		//qDebug() << "embeddingDatasetB->getNumPoints() = " << _embeddingDatasetB->getNumPoints() << "sourceDatasetA->getNumDimensions() = " << _embeddingDatasetA->getSourceDataset<Points>()->getNumDimensions();
+		qDebug() << "WARNING: embedding A and embedding B is not corresponded, use the full expression matrix to compute top cell type";
 
-    // if not correspond, use the full expression matrix + give a warning      
+		// if not correspond, use the full expression matrix + give a warning      
 
-        for (const auto& cluster : _metaDatasetB.get<Clusters>()->getClusters())
-        {
-            // for this cluster, compute the avg expression for each gene
-            std::vector<float> avgExpressionForEachGene(numGene, 0.0f);
-            int count = 0;
-            for (const auto& index : cluster.getIndices()) // index is the global index of the cell in embedding B
-            {
+		for (const auto& cluster : _metaDatasetB.get<Clusters>()->getClusters())
+		{
+			// for this cluster, compute the avg expression for each gene
+			std::vector<float> avgExpressionForEachGene(numGene, 0.0f);
+			int count = 0;
+			for (const auto& index : cluster.getIndices()) // index is the global index of the cell in embedding B
+			{
 
-                int offset = index * numGene;
-                for (int i = 0; i < numGene; i++)
-                {
-                    avgExpressionForEachGene[i] += fullDatasetB->getValueAt(offset + i);
-                }
-                count++;
-            }
+				int offset = index * numGene;
+				for (int i = 0; i < numGene; i++)
+				{
+					avgExpressionForEachGene[i] += fullDatasetB->getValueAt(offset + i);
+				}
+				count++;
+			}
 
-            if (count == 0)
-            {
-                qDebug() << "No valid indices in cluster " << cluster.getName();
-                //continue;
-                for (int i = 0; i < numGene; i++) {
-                    avgExpressionForEachGene[i] = -100.0f; // TODO: this cluster is actually invalid, FIXME: Keep a separate boolean vector to indicate invalid clusters when choosing top cluster
-                }
-            }
-            else
-            {
-                for (int i = 0; i < numGene; i++)
-                {
-                    avgExpressionForEachGene[i] /= static_cast<float>(count); // better use static_cast<float>(count) ?
-                }
-            }
+			if (count == 0)
+			{
+				qDebug() << "No valid indices in cluster " << cluster.getName();
+				//continue;
+				for (int i = 0; i < numGene; i++) {
+					avgExpressionForEachGene[i] = -100.0f; // TODO: this cluster is actually invalid, FIXME: Keep a separate boolean vector to indicate invalid clusters when choosing top cluster
+				}
+			}
+			else
+			{
+				for (int i = 0; i < numGene; i++)
+				{
+					avgExpressionForEachGene[i] /= static_cast<float>(count); // better use static_cast<float>(count) ?
+				}
+			}
 
-            avgExpressionForEachGeneForEachCluster.push_back(avgExpressionForEachGene);
-        }
-    }
-    else // if correspond
-    {
-        // map global indices to local indices in embedding B
-        std::vector<std::uint32_t> localGlobalIndicesB;
-        _embeddingDatasetB->getGlobalIndices(localGlobalIndicesB);
-        //qDebug() << "localGlobalIndicesB.size() = " << localGlobalIndicesB.size();
+			avgExpressionForEachGeneForEachCluster.push_back(avgExpressionForEachGene);
+		}
+	}
+	else // if correspond
+	{
+		// map global indices to local indices in embedding B
+		std::vector<std::uint32_t> localGlobalIndicesB;
+		_embeddingDatasetB->getGlobalIndices(localGlobalIndicesB);
+		//qDebug() << "localGlobalIndicesB.size() = " << localGlobalIndicesB.size();
 
-        // Build a map from global indices to local indices
-        std::unordered_map<std::uint32_t, std::uint32_t> globalToLocalIndexMapB;
-        for (std::uint32_t localIndexB = 0; localIndexB < localGlobalIndicesB.size(); ++localIndexB) {
-            globalToLocalIndexMapB[localGlobalIndicesB[localIndexB]] = localIndexB;
-        }
-        //qDebug() << "globalToLocalIndexMapB.size() = " << globalToLocalIndexMapB.size();
+		// Build a map from global indices to local indices
+		std::unordered_map<std::uint32_t, std::uint32_t> globalToLocalIndexMapB;
+		for (std::uint32_t localIndexB = 0; localIndexB < localGlobalIndicesB.size(); ++localIndexB) {
+			globalToLocalIndexMapB[localGlobalIndicesB[localIndexB]] = localIndexB;
+		}
+		//qDebug() << "globalToLocalIndexMapB.size() = " << globalToLocalIndexMapB.size();
 
-        // compute the avg expression of each gene for each cell type
-       
-        for (const auto& cluster : _metaDatasetB.get<Clusters>()->getClusters())
-        {
-            // for this cluster, compute the avg expression for each gene
-            std::vector<float> avgExpressionForEachGene(numGene, 0.0f);
-            int count = 0;
+		// compute the avg expression of each gene for each cell type
 
-            for (const auto& globalCellIndex : cluster.getIndices()) // global cell index in embedding B
-            {
-                // Check if this global index exists in the local embedding B
-                auto it = globalToLocalIndexMapB.find(globalCellIndex);
-                if (it == globalToLocalIndexMapB.end()) {
-                    // Global index not found in local embedding, skip
-                    continue;
-                }
+		for (const auto& cluster : _metaDatasetB.get<Clusters>()->getClusters())
+		{
+			// for this cluster, compute the avg expression for each gene
+			std::vector<float> avgExpressionForEachGene(numGene, 0.0f);
+			int count = 0;
 
-                // Extract gene expression for this cell from fullDatasetB using global indices
-                //std::vector<float> geneExpression(numGene, 0.0f);
-                //for (int i = 0; i < numGene; i++)
-                //{
-                //    // and getValueAt(row * numGene + col) retrieves the value:
-                //    geneExpression[i] = fullDatasetB->getValueAt((globalCellIndex * numGene) + i);
-                //}
+			for (const auto& globalCellIndex : cluster.getIndices()) // global cell index in embedding B
+			{
+				// Check if this global index exists in the local embedding B
+				auto it = globalToLocalIndexMapB.find(globalCellIndex);
+				if (it == globalToLocalIndexMapB.end()) {
+					// Global index not found in local embedding, skip
+					continue;
+				}
 
-                //qDebug() << "extracted from fullDataA geneExpression.size() = " << geneExpression.size();
+				// Extract gene expression for this cell from fullDatasetB using global indices
+				//std::vector<float> geneExpression(numGene, 0.0f);
+				//for (int i = 0; i < numGene; i++)
+				//{
+				//    // and getValueAt(row * numGene + col) retrieves the value:
+				//    geneExpression[i] = fullDatasetB->getValueAt((globalCellIndex * numGene) + i);
+				//}
 
-                int offset = globalCellIndex * numGene;
-                for (int i = 0; i < numGene; i++)
-                {
-                    //avgExpressionForEachGene[i] += geneExpression[i];
-                    avgExpressionForEachGene[i] += fullDatasetB->getValueAt(offset + i);
-                }
-                count++;
-            }
+				//qDebug() << "extracted from fullDataA geneExpression.size() = " << geneExpression.size();
+
+				int offset = globalCellIndex * numGene;
+				for (int i = 0; i < numGene; i++)
+				{
+					//avgExpressionForEachGene[i] += geneExpression[i];
+					avgExpressionForEachGene[i] += fullDatasetB->getValueAt(offset + i);
+				}
+				count++;
+			}
 
 			if (count == 0)
 			{
@@ -1794,67 +1829,67 @@ void DualViewPlugin::computeTopCellForEachGene()
 					avgExpressionForEachGene[i] /= static_cast<float>(count);
 				}
 			}
-            //qDebug() << "avgExpressionForEachGene.size() = " << avgExpressionForEachGene.size();
+			//qDebug() << "avgExpressionForEachGene.size() = " << avgExpressionForEachGene.size();
 
-            avgExpressionForEachGeneForEachCluster.push_back(avgExpressionForEachGene);
-            qDebug() << "In this subset: " << cluster.getName() << " count = " << count;
-        }
-    }
+			avgExpressionForEachGeneForEachCluster.push_back(avgExpressionForEachGene);
+			qDebug() << "In this subset: " << cluster.getName() << " count = " << count;
+		}
+	}
 
-    auto end1 = std::chrono::high_resolution_clock::now();
-    auto duration1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1 - start1);
-    qDebug() << "compute avg expression for each gene for each cell type took " << duration1.count() << " ms";
+	auto end1 = std::chrono::high_resolution_clock::now();
+	auto duration1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1 - start1);
+	qDebug() << "compute avg expression for each gene for each cell type took " << duration1.count() << " ms";
 
-    
-    // find the cell type with max avg expression for each gene
-    std::vector<int> topCellTypeForEachLocalGene(numGene, -1);
 
-    for (int i = 0; i < numGene; i++)
-    {
+	// find the cell type with max avg expression for each gene
+	std::vector<int> topCellTypeForEachLocalGene(numGene, -1);
+
+	for (int i = 0; i < numGene; i++)
+	{
 		float maxAvgExpression = avgExpressionForEachGeneForEachCluster[0][i];
-		int maxAvgExpressionIndex = 0; 
-        for (int j = 0; j < avgExpressionForEachGeneForEachCluster.size(); j++)
-        {
-            if (avgExpressionForEachGeneForEachCluster[j][i] > maxAvgExpression)
-            {
+		int maxAvgExpressionIndex = 0;
+		for (int j = 0; j < avgExpressionForEachGeneForEachCluster.size(); j++)
+		{
+			if (avgExpressionForEachGeneForEachCluster[j][i] > maxAvgExpression)
+			{
 				maxAvgExpression = avgExpressionForEachGeneForEachCluster[j][i];
 				maxAvgExpressionIndex = j;
 			}
 		}
-        topCellTypeForEachLocalGene[i] = maxAvgExpressionIndex;
+		topCellTypeForEachLocalGene[i] = maxAvgExpressionIndex;
 	}
-    //qDebug() << "topCellTypeForEachLocalGene.size() = " << topCellTypeForEachLocalGene.size();
+	//qDebug() << "topCellTypeForEachLocalGene.size() = " << topCellTypeForEachLocalGene.size();
 
 
-    // extract the colors and cluster names for each cell type
-    auto start3 = std::chrono::high_resolution_clock::now();
-    std::vector<Vector3f> cellTypeColors(_metaDatasetB.get<Clusters>()->getClusters().size());
-    std::vector<QString> cellTypeNames(_metaDatasetB.get<Clusters>()->getClusters().size());
+	// extract the colors and cluster names for each cell type
+	auto start3 = std::chrono::high_resolution_clock::now();
+	std::vector<Vector3f> cellTypeColors(_metaDatasetB.get<Clusters>()->getClusters().size());
+	std::vector<QString> cellTypeNames(_metaDatasetB.get<Clusters>()->getClusters().size());
 
-    int i = 0;
-    for (const auto& cluster : _metaDatasetB.get<Clusters>()->getClusters())
-    { 
-        cellTypeColors[i] = Vector3f(cluster.getColor().redF(), cluster.getColor().greenF(), cluster.getColor().blueF());
+	int i = 0;
+	for (const auto& cluster : _metaDatasetB.get<Clusters>()->getClusters())
+	{
+		cellTypeColors[i] = Vector3f(cluster.getColor().redF(), cluster.getColor().greenF(), cluster.getColor().blueF());
 		cellTypeNames[i] = cluster.getName();
 		i++;
-    }
-    qDebug() << "cellTypeColors.size() = " << cellTypeColors.size();
+	}
+	qDebug() << "cellTypeColors.size() = " << cellTypeColors.size();
 
-   
-    // create a dataset to store the top cell for each gene, if not exist
-    if (!_topCellForEachGeneDataset.isValid())
-    {
+
+	// create a dataset to store the top cell for each gene, if not exist
+	if (!_topCellForEachGeneDataset.isValid())
+	{
 		_topCellForEachGeneDataset = mv::data().createDataset<Clusters>("Cluster", "TopCellForGene");
 		events().notifyDatasetAdded(_topCellForEachGeneDataset);
 	}
-    else
-    {
+	else
+	{
 		_topCellForEachGeneDataset->getClusters().clear();
 	}
 
-    // assign the top cell for each gene to a cluster
-    for (unsigned int i = 0; i < numGene; i++)
-    {
+	// assign the top cell for each gene to a cluster
+	for (unsigned int i = 0; i < numGene; i++)
+	{
 		const QString clusterName = cellTypeNames[topCellTypeForEachLocalGene[i]];
 		Vector3f clusterColor = cellTypeColors[topCellTypeForEachLocalGene[i]];
 		std::vector<unsigned int> indices = { i };
@@ -1867,65 +1902,65 @@ void DualViewPlugin::computeTopCellForEachGene()
 		_topCellForEachGeneDataset->addCluster(cluster);
 	}
 
-    events().notifyDatasetDataChanged(_topCellForEachGeneDataset);
-    // TEST 2: use the cell type with max avg expression for each gene - END 
+	events().notifyDatasetDataChanged(_topCellForEachGeneDataset);
+	// TEST 2: use the cell type with max avg expression for each gene - END 
 
-    qDebug() << "DualViewPlugin: computeTopCellForEachGene() done";
+	qDebug() << "DualViewPlugin: computeTopCellForEachGene() done";
 
 }
 
 void DualViewPlugin::getEnrichmentAnalysis()
 {
-   //TODO: some genes end with _dup+number, should deal with this
+	//TODO: some genes end with _dup+number, should deal with this
 
-    //// output _simplifiedToIndexGeneMapping if not empty
-    //if (!_simplifiedToIndexGeneMapping.empty()) {
-    //    for (auto it = _simplifiedToIndexGeneMapping.constBegin(); it != _simplifiedToIndexGeneMapping.constEnd(); ++it) {
-    //        qDebug() << it.key() << ":";
-    //        for (const QString& value : it.value()) {
-    //            qDebug() << value;
-    //        }
-    //    }
-    //}
+	 //// output _simplifiedToIndexGeneMapping if not empty
+	 //if (!_simplifiedToIndexGeneMapping.empty()) {
+	 //    for (auto it = _simplifiedToIndexGeneMapping.constBegin(); it != _simplifiedToIndexGeneMapping.constEnd(); ++it) {
+	 //        qDebug() << it.key() << ":";
+	 //        for (const QString& value : it.value()) {
+	 //            qDebug() << value;
+	 //        }
+	 //    }
+	 //}
 
-    if (!_currentGeneSymbols.isEmpty()) 
-    {      
-        qDebug() << "DualViewPlugin: getEnrichmentAnalysis()";
-            _client->postGeneGprofiler(_currentGeneSymbols, _backgroundGeneNames, _currentEnrichmentSpecies, _currentSignificanceThresholdMethod);
-    }
-    else
-    {
-        qDebug() << "DualViewPlugin: getEnrichmentAnalysis() - no gene selected";
-    }
+	if (!_currentGeneSymbols.isEmpty())
+	{
+		qDebug() << "DualViewPlugin: getEnrichmentAnalysis()";
+		_client->postGeneGprofiler(_currentGeneSymbols, _backgroundGeneNames, _currentEnrichmentSpecies, _currentSignificanceThresholdMethod);
+	}
+	else
+	{
+		qDebug() << "DualViewPlugin: getEnrichmentAnalysis() - no gene selected";
+	}
 }
 
-void DualViewPlugin::updateEnrichmentTable(const QVariantList& data) 
+void DualViewPlugin::updateEnrichmentTable(const QVariantList& data)
 {
-    QString tableHtml = buildHtmlForEnrichmentResults(data);
+	QString tableHtml = buildHtmlForEnrichmentResults(data);
 
-    getSamplerAction().setSampleContext({
-        { "GeneInfo", _currentHtmlGeneInfo },
-        { "EnrichmentTable", tableHtml }
-        });
+	getSamplerAction().setSampleContext({
+		{ "GeneInfo", _currentHtmlGeneInfo },
+		{ "EnrichmentTable", tableHtml }
+		});
 
 	qDebug() << "updateEnrichmentTable(): Table sent to Sample Scope.";
 }
 
-void DualViewPlugin::noDataEnrichmentTable() 
+void DualViewPlugin::noDataEnrichmentTable()
 {
-    QString tableHtml = buildHtmlForEmpty();
+	QString tableHtml = buildHtmlForEmpty();
 
-    getSamplerAction().setSampleContext({
+	getSamplerAction().setSampleContext({
 		{ "GeneInfo", _currentHtmlGeneInfo },
-		{ "EnrichmentTable", tableHtml } 
+		{ "EnrichmentTable", tableHtml }
 		});
 }
 
 void DualViewPlugin::retrieveGOtermGenes(const QString& GOTermId)
 {
-    qDebug() << "DualViewPlugin::retrieveGOtermGeneSet()" << GOTermId << "species" << _currentEnrichmentSpecies;
+	qDebug() << "DualViewPlugin::retrieveGOtermGeneSet()" << GOTermId << "species" << _currentEnrichmentSpecies;
 
-    _client->postGOtermGprofiler(GOTermId, _currentEnrichmentSpecies);
+	_client->postGOtermGprofiler(GOTermId, _currentEnrichmentSpecies);
 
 }
 
@@ -1933,31 +1968,31 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QStringList& geneSymb
 {
 	qDebug() << "DualViewPlugin::highlightGOTermGenesInEmbedding()";
 
-    QList<int> indices;
-    identifyGeneSymbolsInDataset(_embeddingSourceDatasetB, geneSymbols, indices);
+	QList<int> indices;
+	identifyGeneSymbolsInDataset(_embeddingSourceDatasetB, geneSymbols, indices);
 
-    if (indices.isEmpty())
-        return;
+	if (indices.isEmpty())
+		return;
 
-    // set the selected indices to 1 in highlights
-    std::vector<char> highlights(_embeddingPositionsA.size(), 0);
-    for (int i = 0; i < indices.size(); i++)
-    {
-        highlights[indices[i]] = 1;
-    }
+	// set the selected indices to 1 in highlights
+	std::vector<char> highlights(_embeddingPositionsA.size(), 0);
+	for (int i = 0; i < indices.size(); i++)
+	{
+		highlights[indices[i]] = 1;
+	}
 
-    _embeddingWidgetA->setHighlights(highlights, 1);
+	_embeddingWidgetA->setHighlights(highlights, 1);
 
-    // use a seperate dataset for gene subset - Attention: linking to the original embedding is 1-directional, from subset to original embedding
-    bool createNewDataset = false;
-    if (!_associatedGenes.isValid())
-    {
-        _associatedGenes = mv::data().createDataset("Points", "AssociatedGenes");
-        createNewDataset = true;
-        qDebug() << "Create new dataset";
-    }
+	// use a seperate dataset for gene subset - Attention: linking to the original embedding is 1-directional, from subset to original embedding
+	bool createNewDataset = false;
+	if (!_associatedGenes.isValid())
+	{
+		_associatedGenes = mv::data().createDataset("Points", "AssociatedGenes");
+		createNewDataset = true;
+		qDebug() << "Create new dataset";
+	}
 
-    auto numAssociatedGenes = indices.size();
+	auto numAssociatedGenes = indices.size();
 
 	QVector<float> associatedGeneCoor(2 * numAssociatedGenes);
 
@@ -1967,74 +2002,74 @@ void DualViewPlugin::highlightGOTermGenesInEmbedding(const QStringList& geneSymb
 		associatedGeneCoor[2 * i] = _embeddingPositionsA[geneIndice].x;
 		associatedGeneCoor[2 * i + 1] = _embeddingPositionsA[geneIndice].y;
 	}
-    //qDebug() << "associatedGeneCoor.size() = " << associatedGeneCoor.size();
+	//qDebug() << "associatedGeneCoor.size() = " << associatedGeneCoor.size();
 
-    // first cancel the selection on this dataset, to avoid selection indices conflict after data changed
-    _associatedGenes->setSelectionIndices({});
+	// first cancel the selection on this dataset, to avoid selection indices conflict after data changed
+	_associatedGenes->setSelectionIndices({});
 
 	_associatedGenes->setData(associatedGeneCoor.data(), numAssociatedGenes, 2);
 	events().notifyDatasetDataChanged(_associatedGenes);
 
-    // link the associated genes to the original embedding
-    mv::SelectionMap mapping;
-    auto& selectionMap = mapping.getMap();
+	// link the associated genes to the original embedding
+	mv::SelectionMap mapping;
+	auto& selectionMap = mapping.getMap();
 
-    std::vector<unsigned int> globalIndices;
-    _embeddingDatasetA->getGlobalIndices(globalIndices);
-    //qDebug() << "globalIndices.size() = " << globalIndices.size();
+	std::vector<unsigned int> globalIndices;
+	_embeddingDatasetA->getGlobalIndices(globalIndices);
+	//qDebug() << "globalIndices.size() = " << globalIndices.size();
 
-    for (size_t i = 0; i < indices.size(); i++) {
-        int indexOriginal = indices[i]; // Local index in _embeddingDatasetA
-        std::vector<unsigned int> indexOriginalVector = { static_cast<uint32_t>(indexOriginal) };
-        selectionMap[i] = indexOriginalVector; // i: index in _associatedGenes, indexOriginal: index in _embeddingDatasetA
-    }
+	for (size_t i = 0; i < indices.size(); i++) {
+		int indexOriginal = indices[i]; // Local index in _embeddingDatasetA
+		std::vector<unsigned int> indexOriginalVector = { static_cast<uint32_t>(indexOriginal) };
+		selectionMap[i] = indexOriginalVector; // i: index in _associatedGenes, indexOriginal: index in _embeddingDatasetA
+	}
 
-    //qDebug() << "selectionMap.size() = " << selectionMap.size();
+	//qDebug() << "selectionMap.size() = " << selectionMap.size();
 
 	if (createNewDataset)
 	{
-        qDebug() << "Add linked data";
+		qDebug() << "Add linked data";
 		_associatedGenes->addLinkedData(_embeddingDatasetA, mapping);
 	}
 	else
 	{
-        qDebug() << "Update linked data";
-        //qDebug() << "linkedData size = " << _associatedGenes->getLinkedData().size();
-        mv::LinkedData& linkedData = _associatedGenes->getLinkedData().back();
-        //auto test = linkedData.getSourceDataSet();
-        //qDebug() << "highlightGOTermGenesInEmbedding - source dataset name = " << test->getGuiName();
+		qDebug() << "Update linked data";
+		//qDebug() << "linkedData size = " << _associatedGenes->getLinkedData().size();
+		mv::LinkedData& linkedData = _associatedGenes->getLinkedData().back();
+		//auto test = linkedData.getSourceDataSet();
+		//qDebug() << "highlightGOTermGenesInEmbedding - source dataset name = " << test->getGuiName();
 
-        linkedData.setMapping(mapping);
-       // qDebug() << " finished setMapping";
+		linkedData.setMapping(mapping);
+		// qDebug() << " finished setMapping";
 	}
 
 }
 
 void DualViewPlugin::updateEnrichmentOrganism()
 {
-    QString selectedSpecies = _settingsAction.getEnrichmentSettingsAction().getOrganismPickerAction().getCurrentText();
+	QString selectedSpecies = _settingsAction.getEnrichmentSettingsAction().getOrganismPickerAction().getCurrentText();
 
-    if (selectedSpecies == "Mus musculus")
-    {
-        _currentEnrichmentSpecies = "mmusculus";
-        qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
-        getEnrichmentAnalysis();
-    }
-    else if (selectedSpecies == "Homo sapiens")
-    {
-        _currentEnrichmentSpecies = "hsapiens";
-        qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
-        getEnrichmentAnalysis();
-    }
+	if (selectedSpecies == "Mus musculus")
+	{
+		_currentEnrichmentSpecies = "mmusculus";
+		qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
+		getEnrichmentAnalysis();
+	}
+	else if (selectedSpecies == "Homo sapiens")
+	{
+		_currentEnrichmentSpecies = "hsapiens";
+		qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
+		getEnrichmentAnalysis();
+	}
 }
 
 void DualViewPlugin::updateEnrichmentSignificanceThresholdMethod()
 {
-    QString selectedMethod = _settingsAction.getEnrichmentSettingsAction().getSignificanceThresholdMethodAction().getCurrentText();
+	QString selectedMethod = _settingsAction.getEnrichmentSettingsAction().getSignificanceThresholdMethodAction().getCurrentText();
 
-    _currentSignificanceThresholdMethod = selectedMethod;
-    qDebug() << "Enrichment method changed to: " << _currentSignificanceThresholdMethod;
-    getEnrichmentAnalysis();
+	_currentSignificanceThresholdMethod = selectedMethod;
+	qDebug() << "Enrichment method changed to: " << _currentSignificanceThresholdMethod;
+	getEnrichmentAnalysis();
 }
 
 
@@ -2044,108 +2079,108 @@ void DualViewPlugin::updateEnrichmentSignificanceThresholdMethod()
 
 void DualViewPlugin::fromVariantMap(const QVariantMap& variantMap)
 {
-    _loadingFromProject = true;
+	_loadingFromProject = true;
 
-    ViewPlugin::fromVariantMap(variantMap);
+	ViewPlugin::fromVariantMap(variantMap);
 
-    qDebug() << "DualViewPlugin: fromVariantMap start";
+	qDebug() << "DualViewPlugin: fromVariantMap start";
 
-    variantMapMustContain(variantMap, "SettingsAction");
+	variantMapMustContain(variantMap, "SettingsAction");
 
-    _settingsAction.fromVariantMap(variantMap["SettingsAction"].toMap());
-    qDebug() << "DualViewPlugin: fromVariantMap SettingsAction done";
+	_settingsAction.fromVariantMap(variantMap["SettingsAction"].toMap());
+	qDebug() << "DualViewPlugin: fromVariantMap SettingsAction done";
 
-    _embeddingAToolbarAction.fromVariantMap(variantMap["Toolbar A"].toMap());
- 
-    _embeddingBToolbarAction.fromVariantMap(variantMap["Toolbar B"].toMap());
+	_embeddingAToolbarAction.fromVariantMap(variantMap["Toolbar A"].toMap());
 
-    _linesToolbarAction.fromVariantMap(variantMap["Lines Toolbar"].toMap());
+	_embeddingBToolbarAction.fromVariantMap(variantMap["Toolbar B"].toMap());
 
-    qDebug() << "DualViewPlugin: fromVariantMap Toolbars done";
+	_linesToolbarAction.fromVariantMap(variantMap["Lines Toolbar"].toMap());
 
-    if (variantMap.contains("topCellForEachGeneDataset"))
-    {
+	qDebug() << "DualViewPlugin: fromVariantMap Toolbars done";
+
+	if (variantMap.contains("topCellForEachGeneDataset"))
+	{
 		QString topCellId = variantMap["topCellForEachGeneDataset"].toString();
 		_topCellForEachGeneDataset = mv::data().getDataset<Points>(topCellId);
-        qDebug() << "DualViewPlugin: fromVariantMap topCellForEachGeneDataset done";
+		qDebug() << "DualViewPlugin: fromVariantMap topCellForEachGeneDataset done";
 	}
 
-    if (variantMap.contains("meanExpressionScalars"))
-    {
-        QString meanExpressionId = variantMap["meanExpressionScalars"].toString();
-        _meanExpressionScalars = mv::data().getDataset<Points>(meanExpressionId);
-        qDebug() << "DualViewPlugin: fromVariantMap meanExpressionScalars done";
-    }
+	if (variantMap.contains("meanExpressionScalars"))
+	{
+		QString meanExpressionId = variantMap["meanExpressionScalars"].toString();
+		_meanExpressionScalars = mv::data().getDataset<Points>(meanExpressionId);
+		qDebug() << "DualViewPlugin: fromVariantMap meanExpressionScalars done";
+	}
 
-    if (_metaDatasetA.isValid())
-        qDebug() << "DualViewPlugin: fromVariantMap _metaDatasetA = " << _metaDatasetA->getGuiName();
-    else
-        qDebug() << "DualViewPlugin: fromVariantMap _metaDatasetA is not valid";
-    if (_metaDatasetB.isValid())
-        qDebug() << "DualViewPlugin: fromVariantMap _metaDatasetB = " << _metaDatasetB->getGuiName();
-    else
-        qDebug() << "DualViewPlugin: fromVariantMap _metaDatasetB is not valid";
+	if (_metaDatasetA.isValid())
+		qDebug() << "DualViewPlugin: fromVariantMap _metaDatasetA = " << _metaDatasetA->getGuiName();
+	else
+		qDebug() << "DualViewPlugin: fromVariantMap _metaDatasetA is not valid";
+	if (_metaDatasetB.isValid())
+		qDebug() << "DualViewPlugin: fromVariantMap _metaDatasetB = " << _metaDatasetB->getGuiName();
+	else
+		qDebug() << "DualViewPlugin: fromVariantMap _metaDatasetB is not valid";
 
-    // TODO: T. Kroes
-    //if (variantMap.contains("NavigationA")) //FIXME: temp during development for loading old projects, remove later
-    //    _embeddingWidgetA->getNavigationAction().fromVariantMap(variantMap["NavigationA"].toMap());
-    //if (variantMap.contains("NavigationB")) //FIXME: temp during development for loading old projects, remove later
-    //    _embeddingWidgetB->getNavigationAction().fromVariantMap(variantMap["NavigationB"].toMap());
+	// TODO: T. Kroes
+	//if (variantMap.contains("NavigationA")) //FIXME: temp during development for loading old projects, remove later
+	//    _embeddingWidgetA->getNavigationAction().fromVariantMap(variantMap["NavigationA"].toMap());
+	//if (variantMap.contains("NavigationB")) //FIXME: temp during development for loading old projects, remove later
+	//    _embeddingWidgetB->getNavigationAction().fromVariantMap(variantMap["NavigationB"].toMap());
 
-    // FIXME: temp during development, decide whether to keep or not later
-    if (variantMap.contains("customisedGenes"))
-    {
-        QString customisedGenesId = variantMap["customisedGenes"].toString();
-        _customisedGenes = mv::data().getDataset<Points>(customisedGenesId);
-    }
-    if (variantMap.contains("associatedGenes"))
-    {
-        QString associatedGenesId = variantMap["associatedGenes"].toString();
-        _associatedGenes = mv::data().getDataset<Points>(associatedGenesId);
-    }
+	// FIXME: temp during development, decide whether to keep or not later
+	if (variantMap.contains("customisedGenes"))
+	{
+		QString customisedGenesId = variantMap["customisedGenes"].toString();
+		_customisedGenes = mv::data().getDataset<Points>(customisedGenesId);
+	}
+	if (variantMap.contains("associatedGenes"))
+	{
+		QString associatedGenesId = variantMap["associatedGenes"].toString();
+		_associatedGenes = mv::data().getDataset<Points>(associatedGenesId);
+	}
 
-    _loadingFromProject = false;
+	_loadingFromProject = false;
 
-    getLearningCenterAction().getToolbarVisibleAction().setChecked(false);
-    getLearningCenterAction().setAlignment(Qt::AlignmentFlag::AlignBottom | Qt::AlignmentFlag::AlignRight);
+	getLearningCenterAction().getToolbarVisibleAction().setChecked(false);
+	getLearningCenterAction().setAlignment(Qt::AlignmentFlag::AlignBottom | Qt::AlignmentFlag::AlignRight);
 }
 
 QVariantMap DualViewPlugin::toVariantMap() const
 {
-    QVariantMap variantMap = ViewPlugin::toVariantMap();
+	QVariantMap variantMap = ViewPlugin::toVariantMap();
 
-    _settingsAction.insertIntoVariantMap(variantMap);
+	_settingsAction.insertIntoVariantMap(variantMap);
 
-    _embeddingAToolbarAction.insertIntoVariantMap(variantMap);
+	_embeddingAToolbarAction.insertIntoVariantMap(variantMap);
 
-    _embeddingBToolbarAction.insertIntoVariantMap(variantMap);
+	_embeddingBToolbarAction.insertIntoVariantMap(variantMap);
 
-    _linesToolbarAction.insertIntoVariantMap(variantMap);
+	_linesToolbarAction.insertIntoVariantMap(variantMap);
 
-    if (_topCellForEachGeneDataset.isValid())
-    {
-        variantMap.insert("topCellForEachGeneDataset", _topCellForEachGeneDataset.getDatasetId());
-    }
+	if (_topCellForEachGeneDataset.isValid())
+	{
+		variantMap.insert("topCellForEachGeneDataset", _topCellForEachGeneDataset.getDatasetId());
+	}
 
-    if (_meanExpressionScalars.isValid())
-    {
-        variantMap.insert("meanExpressionScalars", _meanExpressionScalars.getDatasetId());
-    }
+	if (_meanExpressionScalars.isValid())
+	{
+		variantMap.insert("meanExpressionScalars", _meanExpressionScalars.getDatasetId());
+	}
 
-    // TODO: T. Kroes
-    //insertIntoVariantMap(_embeddingWidgetA->getNavigationAction(), variantMap, "NavigationA");
+	// TODO: T. Kroes
+	//insertIntoVariantMap(_embeddingWidgetA->getNavigationAction(), variantMap, "NavigationA");
 
-    //insertIntoVariantMap(_embeddingWidgetB->getNavigationAction(), variantMap, "NavigationB"); //FIXME: is this correct?
+	//insertIntoVariantMap(_embeddingWidgetB->getNavigationAction(), variantMap, "NavigationB"); //FIXME: is this correct?
 
-    // FIXME: temp during development
-    if (_customisedGenes.isValid())
-    {
-        variantMap.insert("customisedGenes", _customisedGenes.getDatasetId());
-    }
-    if (_associatedGenes.isValid())
-    {
-        variantMap.insert("_associatedGenes", _associatedGenes.getDatasetId());
-    }
+	// FIXME: temp during development
+	if (_customisedGenes.isValid())
+	{
+		variantMap.insert("customisedGenes", _customisedGenes.getDatasetId());
+	}
+	if (_associatedGenes.isValid())
+	{
+		variantMap.insert("_associatedGenes", _associatedGenes.getDatasetId());
+	}
 
 
 	return variantMap;
@@ -2160,36 +2195,36 @@ QVariantMap DualViewPlugin::toVariantMap() const
 
 ViewPlugin* DualViewPluginFactory::produce()
 {
-    return new DualViewPlugin(this);
+	return new DualViewPlugin(this);
 }
 
 mv::DataTypes DualViewPluginFactory::supportedDataTypes() const
 {
-    // This example analysis plugin is compatible with points datasets
-    DataTypes supportedTypes;
-    supportedTypes.append(PointType);
-    return supportedTypes;
+	// This example analysis plugin is compatible with points datasets
+	DataTypes supportedTypes;
+	supportedTypes.append(PointType);
+	return supportedTypes;
 }
 
 mv::gui::PluginTriggerActions DualViewPluginFactory::getPluginTriggerActions(const mv::Datasets& datasets) const
 {
-    PluginTriggerActions pluginTriggerActions;
+	PluginTriggerActions pluginTriggerActions;
 
-    const auto getPluginInstance = [this]() -> DualViewPlugin* {
-        return dynamic_cast<DualViewPlugin*>(Application::core()->getPluginManager().requestViewPlugin(getKind()));
-    };
+	const auto getPluginInstance = [this]() -> DualViewPlugin* {
+		return dynamic_cast<DualViewPlugin*>(Application::core()->getPluginManager().requestViewPlugin(getKind()));
+		};
 
-    const auto numberOfDatasets = datasets.count();
+	const auto numberOfDatasets = datasets.count();
 
-    if (numberOfDatasets >= 1 && PluginFactory::areAllDatasetsOfTheSameType(datasets, PointType)) {
-        auto pluginTriggerAction = new PluginTriggerAction(const_cast<DualViewPluginFactory*>(this), this, "Dual View", "Dual view visualization", StyledIcon("braille"), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
-            for (auto dataset : datasets)
-                getPluginInstance()->loadData(Datasets({ dataset }));
+	if (numberOfDatasets >= 1 && PluginFactory::areAllDatasetsOfTheSameType(datasets, PointType)) {
+		auto pluginTriggerAction = new PluginTriggerAction(const_cast<DualViewPluginFactory*>(this), this, "Dual View", "Dual view visualization", StyledIcon("braille"), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
+			for (auto dataset : datasets)
+				getPluginInstance()->loadData(Datasets({ dataset }));
 
-        });
+			});
 
-        pluginTriggerActions << pluginTriggerAction;
-    }
+		pluginTriggerActions << pluginTriggerAction;
+	}
 
-    return pluginTriggerActions;
+	return pluginTriggerActions;
 }
