@@ -87,6 +87,11 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
 
 
     //_embeddingASecondaryToolbarAction.addAction(&_embeddingWidgetA->getNavigationAction());
+    // TODO FIXME: this is a hack to add the navigation action to the secondary toolbar
+    auto test = _embeddingWidgetA->getPointRendererNavigator().getNavigationAction().getActions();
+    auto testAction = test[4];
+    testAction->setParent(&_settingsAction);
+    _embeddingASecondaryToolbarAction.addAction(testAction);
 
     auto focusSelectionActionA = new ToggleAction(this, "Focus selection A");
     focusSelectionActionA->setIconByName("mouse-pointer");
@@ -104,6 +109,11 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingBToolbarAction.addAction(&_settingsAction.getReversePointSizeBAction());
 
     //_embeddingBSecondaryToolbarAction.addAction(&_embeddingWidgetB->getNavigationAction());
+    // TODO FIXME: this is a hack to add the navigation action to the secondary toolbar
+    auto testB = _embeddingWidgetB->getPointRendererNavigator().getNavigationAction().getActions();
+    auto testActionB = testB[4];
+    testActionB->setParent(&_settingsAction);
+    _embeddingBSecondaryToolbarAction.addAction(testActionB);
 
     auto focusSelectionActionB = new ToggleAction(this, "Focus selection B");
     focusSelectionActionA->setIconByName("mouse-pointer");
@@ -427,6 +437,8 @@ void DualViewPlugin::init()
     embeddinglayoutA->addWidget(embeddingAToolbarWidget);
     embeddinglayoutA->addWidget(_embeddingWidgetA, 1);
     embeddinglayoutA->addWidget(_embeddingASecondaryToolbarAction.createWidget(&getWidget()));
+
+
     layout->addLayout(embeddinglayoutA, 1);
 
     auto lineslayout = new QVBoxLayout();
@@ -623,6 +635,12 @@ void DualViewPlugin::init()
         });
 
     connect(&getSamplerAction(), &ViewPluginSamplerAction::sampleContextRequested, this, &DualViewPlugin::samplePoints);
+
+    // FIXME: add selection bouderies also for B, switch the bouderies updating in selectPoints
+    connect(&_embeddingWidgetA->getPointRendererNavigator().getNavigationAction().getZoomSelectionAction(), &TriggerAction::triggered, this, [this]() -> void {
+        if (_selectionBoundariesA.isValid())
+            _embeddingWidgetA->getPointRendererNavigator().setZoomRectangleWorld(_selectionBoundariesA);
+        });
 
     // Enrichment analysis
     _client = new EnrichmentAnalysis(this);
@@ -1492,7 +1510,8 @@ void DualViewPlugin::selectPoints(ScatterplotWidget* widget, mv::Dataset<Points>
         }
     }
 
-    //_selectionBoundaries = QRectF(boundaries[0], boundaries[2], boundaries[1] - boundaries[0], boundaries[3] - boundaries[2]);
+    // FIXME: switch between A and B
+    //_selectionBoundariesA = QRectF(boundaries[0], boundaries[2], boundaries[1] - boundaries[0], boundaries[3] - boundaries[2]);
 
     switch (const auto selectionModifier = pixelSelectionTool.isAborted() ? PixelSelectionModifierType::Subtract : pixelSelectionTool.getModifier())
     {

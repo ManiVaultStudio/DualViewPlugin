@@ -225,6 +225,9 @@ protected:
 
     HorizontalToolbarAction   _linesToolbarAction;   // Horizontal toolbar for lines
 
+    QRectF                    _selectionBoundariesA;       /** Boundaries of the selection for A*/
+
+
 
 public:
     /** Get smart pointer to points dataset for point position */

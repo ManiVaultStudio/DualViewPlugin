@@ -130,6 +130,23 @@ ScatterplotWidget::ScatterplotWidget(mv::plugin::ViewPlugin* parentPlugin) :
     });
 
     _pointRenderer.getNavigator().setZoomMarginScreen(25.f);
+
+    connect(&_pointRenderer.getNavigator(), &Navigator2D::isNavigatingChanged, this, [this](bool isNavigating) -> void {
+        _pixelSelectionTool.setEnabled(!isNavigating);
+
+        if (isNavigating) {
+            _samplerPixelSelectionTool.setEnabled(false);
+        }
+        else if (_parentPlugin) {
+            _samplerPixelSelectionTool.setEnabled(_parentPlugin->getSamplerAction().getEnabledAction().isChecked());
+        }
+        });
+
+    connect(&getPointRendererNavigator(), &Navigator2D::zoomRectangleWorldChanged, this, [this]() -> void { update(); });
+    connect(&getDensityRendererNavigator(), &Navigator2D::zoomRectangleWorldChanged, this, [this]() -> void { update(); });
+
+    getPointRendererNavigator().setEnabled(true);
+    _densityRenderer.setCustomNavigator(&getPointRendererNavigator());
 }
 
 bool ScatterplotWidget::event(QEvent* event)

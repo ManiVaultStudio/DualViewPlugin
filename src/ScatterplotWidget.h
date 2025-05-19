@@ -269,6 +269,20 @@ public:
     /** Assign a color map image to the point and density renderers */
     void setColorMap(const QImage& colorMapImage);
 
+public: // Navigators
+
+    /**
+     * Get the navigator for the point renderer
+     * @return Reference to the navigator
+     */
+    mv::Navigator2D& getPointRendererNavigator() { return _pointRenderer.getNavigator(); }
+
+    /**
+     * Get the navigator for the density renderer
+     * @return Reference to the navigator
+     */
+    mv::Navigator2D& getDensityRendererNavigator() { return _densityRenderer.getNavigator(); }
+
 signals:
     void initialized();
     void created();
