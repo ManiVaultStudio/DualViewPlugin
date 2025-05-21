@@ -1394,7 +1394,7 @@ void DualViewPlugin::updateEmbeddingASize()
 
     std::vector<float> scaledConnectedCellsPerGene;
     float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue();
-    scaleDataRange(_connectedCellsPerGene, scaledConnectedCellsPerGene, false, ptSize * 3); // TODO: 3 is the hard coded factor
+    scaleDataRangeExperiment(_connectedCellsPerGene, scaledConnectedCellsPerGene, false, ptSize * 3); // TODO: 3 is the hard coded factor
     _embeddingWidgetA->setPointSizeScalars(scaledConnectedCellsPerGene);
 
     // output the gene symbols with highest diffSelectionvsAll
