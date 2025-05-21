@@ -1301,13 +1301,13 @@ void DualViewPlugin::updateEmbeddingASize()
     if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
         return;
 
-    int numPointsA = _embeddingDatasetA->getNumPoints();
-    auto selection = _embeddingDatasetB->getSelection<Points>();
+    //int numPointsA = _embeddingDatasetA->getNumPoints();
+    //auto selection = _embeddingDatasetB->getSelection<Points>();
 
-    std::vector<bool> selected; // bool of selected in the current scale
-    std::vector<char> highlights;
-    _embeddingDatasetB->selectedLocalIndices(selection->indices, selected);
-    qDebug() << "DualViewPlugin: " << selection->indices.size() << " points in B selected";
+    //std::vector<bool> selected; // bool of selected in the current scale
+    //std::vector<char> highlights;
+    //_embeddingDatasetB->selectedLocalIndices(selection->indices, selected);
+    //qDebug() << "DualViewPlugin: " << selection->indices.size() << " points in B selected";
 
     // get how many connected points in B per point in A
 //    _connectedCellsPerGene.clear();
@@ -1381,6 +1381,7 @@ void DualViewPlugin::updateEmbeddingASize()
 
     // selection vs all
     std::vector<float> diffSelectionvsAll(selectedCellMeanExpression.size(), 0.0f);
+#pragma omp parallel for
     for (int i = 0; i < selectedCellMeanExpression.size(); i++)
     {
         diffSelectionvsAll[i] = selectedCellMeanExpression[i] - _meanExpressionForAllCells[i];
@@ -1388,7 +1389,7 @@ void DualViewPlugin::updateEmbeddingASize()
     qDebug() << "diffSelectionvsAll size" << diffSelectionvsAll.size();
 
     // test to set connectedcellspergene using diffSelectionvsAll
-    _connectedCellsPerGene.clear();
+    //_connectedCellsPerGene.clear();
     _connectedCellsPerGene = diffSelectionvsAll;
 
     std::vector<float> scaledConnectedCellsPerGene;
@@ -1403,13 +1404,14 @@ void DualViewPlugin::updateEmbeddingASize()
     {
         rankedGenesDiff.emplace_back(diffSelectionvsAll[i], i);
     }
-    int number = 50;
+    int number = 100;
     auto nth = rankedGenesDiff.begin() + number;
     std::nth_element(rankedGenesDiff.begin(), nth, rankedGenesDiff.end(), std::greater<std::pair<float, int>>());
     std::sort(rankedGenesDiff.begin(), nth, std::greater<std::pair<float, int>>()); // sort
 
     // get the gene and store in _currentGeneSymbols
     _currentGeneSymbols.clear();
+    _currentGeneSymbols.reserve(number);
     for (int i = 0; i < number; i++)
     {
         int geneIndex = rankedGenesDiff[i].second;

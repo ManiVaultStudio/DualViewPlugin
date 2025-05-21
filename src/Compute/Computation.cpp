@@ -220,14 +220,14 @@ void computeSelectedCellMeanExpression(const mv::Dataset<Points> sourceDataset, 
     std::vector<bool> selected;
     fullDataset->selectedLocalIndices(selection->indices, selected);
 
-    float numSelected = 0.0f;
-    for (int i = 0; i < selected.size(); i++)
+    std::vector<int> selectedIndices;
+    for (int i = 0; i < selected.size(); ++i)
     {
-        if (selected[i])
-        {
-            numSelected++;
-        }
+        if (selected[i]) 
+            selectedIndices.push_back(i);
     }
+
+    int numSelected = static_cast<int>(selectedIndices.size());
     qDebug() << "computeSelectedCellMeanExpression: " << numSelected << " selected cells";
 
     if (numSelected == 0)
@@ -235,15 +235,13 @@ void computeSelectedCellMeanExpression(const mv::Dataset<Points> sourceDataset, 
         return;
     }
 
-    for (int i = 0; i < numDimensions; i++)
+#pragma omp parallel for
+    for (int i = 0; i < numDimensions; ++i)
     {
         float sum = 0.0f;
-        for (int j = 0; j < selected.size(); j++)
+        for (int idx : selectedIndices)
         {
-            if (selected[j])
-            {
-                sum += fullDataset->getValueAt(j * numDimensions + i); 
-            }
+            sum += fullDataset->getValueAt(idx * numDimensions + i);
         }
         meanExpressionFull[i] = sum / numSelected;
     }
