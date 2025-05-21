@@ -878,8 +878,23 @@ void DualViewPlugin::embeddingDatasetBChanged()
     _metaDatasetB = nullptr;
     qDebug() << "embeddingDatasetBChanged(): metaDatasetB removed";
 
+    // if HSNE, _embeddingSourceDatasetB is a helper (subset of whole data)
+    mv::Dataset<Points> fullDatasetB;
+    if (_embeddingSourceDatasetB->isDerivedData())
+    {
+        qDebug() << "_embeddingSourceDatasetB is derived data";
+        fullDatasetB = _embeddingSourceDatasetB->getSourceDataset<Points>()->getFullDataset<Points>();
+    }
+    else
+    {
+        qDebug() << "_embeddingSourceDatasetB is not derived data";
+        fullDatasetB = _embeddingSourceDatasetB->getFullDataset<Points>();
+    }
+    qDebug() << "fullDatasetB gui name" << fullDatasetB->getGuiName();
+
     // precompute the data range
-    computeDataRange(_embeddingSourceDatasetB, _columnMins, _columnRanges);
+    //computeDataRange(_embeddingSourceDatasetB, _columnMins, _columnRanges);
+    computeDataRange(fullDatasetB, _columnMins, _columnRanges);
     qDebug() << "Data range computed" << _columnMins.size() << _columnRanges.size() << _columnMins[0] << _columnRanges[0];
 
     // set the background gene names for the enrichment analysis
