@@ -21,13 +21,16 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     _reversePointSizeBAction(this, "Reverse Point Size B"),
     _dimensionSelectionAction(this, "Gene search"),
     _enrichmentAction(this, "Enrich"),
-    _enrichmentSettingsAction(this, "Enrichment settings")
+    _enrichmentSettingsAction(this, "Enrichment settings"),
+    _selectionActionB(this, "Selection B")
 {
     setConnectionPermissionsToForceNone();
 
     _currentDatasetsAction.initialize(_dualViewPlugin);
 
     _selectionAction.initialize(_dualViewPlugin);
+
+    _selectionActionB.initialize(_dualViewPlugin);
 
     _thresholdLinesAction.setToolTip("Threshold lines");
 
@@ -66,6 +69,8 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     _coloringActionA.fromParentVariantMap(variantMap);
     _selectionAction.fromParentVariantMap(variantMap);
     _enrichmentSettingsAction.fromParentVariantMap(variantMap);
+
+    // TODO: serialize selectionActionB
 }
 
 QVariantMap SettingsAction::toVariantMap() const

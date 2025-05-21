@@ -20,6 +20,8 @@
 #include "EnrichmentAction.h"
 #include "EnrichmentSettingsAction.h"
 
+#include "SelectionActionB.h"
+
 using namespace mv::gui;
 
 class DualViewPlugin;
@@ -71,6 +73,8 @@ public: // Action getters
     ColoringActionA& getColoringActionA() { return _coloringActionA; }
     SelectionAction& getSelectionAction() { return _selectionAction; }
 
+    SelectionActionB& getSelectionActionB() { return _selectionActionB; }
+
     // experimental actions
     ToggleAction& getReversePointSizeBAction() { return _reversePointSizeBAction; }
     DimensionSelectionAction& getDimensionSelectionAction() { return _dimensionSelectionAction; }
@@ -96,4 +100,7 @@ protected:
 
     EnrichmentAction                  _enrichmentAction;          /** Action for triggering enrichment analysis */
     EnrichmentSettingsAction		  _enrichmentSettingsAction;  /** Action for configuring enrichment settings */
+
+    // FIXME: should be moved into the SelectionAction class - this is a temp fix
+    SelectionActionB                  _selectionActionB;          /** Action for configuring selection - for embedding B*/
 };
