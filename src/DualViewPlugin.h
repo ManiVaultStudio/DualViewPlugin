@@ -207,6 +207,9 @@ private:
     mv::Dataset<Points>                _associatedGenes; // pt coordinates of associated genes for a GO term
     mv::Dataset<Points>                _customisedGenes; // pt coordinates of the input gene list (that exist in the dataset)
 
+    // experiment about selection vs all compute
+    std::vector<float>                 _meanExpressionForAllCells; // mean expression of all cells for each gene
+
 protected:
 
     ScatterplotWidget*        _embeddingWidgetA;

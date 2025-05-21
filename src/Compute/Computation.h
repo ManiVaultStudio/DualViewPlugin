@@ -23,3 +23,11 @@ void computeSelectedGeneMeanExpression(const mv::Dataset<Points> sourceDataset, 
 void extractSelectedGeneMeanExpression(const mv::Dataset<Points> sourceDataset, const std::vector<float>& meanExpressionFull, std::vector<float>& meanExpressionLocal);
 
 void identifyGeneSymbolsInDataset(const mv::Dataset<Points> sourceDataset, const QStringList& geneSymbols, QList<int>& foundGeneIndices);
+
+// compute the mean expression of the selected cells across all genes
+void computeSelectedCellMeanExpression(const mv::Dataset<Points> sourceDataset, std::vector<float>& meanExpressionFull);
+
+// pre-compute the mean expression of each gene across all cells
+void computeMeanExpressionForAllCells(const mv::Dataset<Points> sourceDataset, std::vector<float>& meanExpressionFull);
+
+

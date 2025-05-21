@@ -897,6 +897,11 @@ void DualViewPlugin::embeddingDatasetBChanged()
     computeDataRange(fullDatasetB, _columnMins, _columnRanges);
     qDebug() << "Data range computed" << _columnMins.size() << _columnRanges.size() << _columnMins[0] << _columnRanges[0];
 
+    // precompute the mean expression for each gene // TODO: check if recompute is needed
+    //computeMeanExpressionForAllCells(_embeddingSourceDatasetB, _meanExpressionForAllCells);
+    computeMeanExpressionForAllCells(fullDatasetB, _meanExpressionForAllCells);
+    qDebug() << "Mean expression for all cells computed" << _meanExpressionForAllCells.size();
+
     // set the background gene names for the enrichment analysis
     if (_embeddingSourceDatasetB->getDimensionNames().size() < 19000) // FIXME: hard code the threshold for the number of genes
     {
@@ -1317,10 +1322,10 @@ void DualViewPlugin::updateEmbeddingASize()
         }
     }
 
-    std::vector<float> scaledConnectedCellsPerGene;
-    float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue();
-    scaleDataRange(_connectedCellsPerGene, scaledConnectedCellsPerGene, false, ptSize * 3); // TODO: 3 is the hard coded factor
-    _embeddingWidgetA->setPointSizeScalars(scaledConnectedCellsPerGene);
+    //std::vector<float> scaledConnectedCellsPerGene;
+    //float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue();
+    //scaleDataRange(_connectedCellsPerGene, scaledConnectedCellsPerGene, false, ptSize * 3); // TODO: 3 is the hard coded factor
+    //_embeddingWidgetA->setPointSizeScalars(scaledConnectedCellsPerGene);
 
     // test2 - use average expression of selected cells in B for the point size in A
 //    std::vector<std::uint32_t> localGlobalIndicesB;
@@ -1366,6 +1371,49 @@ void DualViewPlugin::updateEmbeddingASize()
 //    _embeddingWidgetA->setPointSizeScalars(selectedMeanExpression);
 
     // test2 - end
+
+    // test 3 compute genes of cell selection vs all - start
+    std::vector<float> selectedCellMeanExpression;
+    computeSelectedCellMeanExpression(_embeddingSourceDatasetB, selectedCellMeanExpression);
+    qDebug() << "selectedCellMeanExpression size" << selectedCellMeanExpression.size();
+
+    // selection vs all
+    std::vector<float> diffSelectionvsAll(selectedCellMeanExpression.size(), 0.0f);
+    for (int i = 0; i < selectedCellMeanExpression.size(); i++)
+    {
+        diffSelectionvsAll[i] = selectedCellMeanExpression[i] - _meanExpressionForAllCells[i];
+    }
+    qDebug() << "diffSelectionvsAll size" << diffSelectionvsAll.size();
+
+    // test to set connectedcellspergene using diffSelectionvsAll
+    _connectedCellsPerGene.clear();
+    _connectedCellsPerGene = diffSelectionvsAll;
+
+    std::vector<float> scaledConnectedCellsPerGene;
+    float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue();
+    scaleDataRange(_connectedCellsPerGene, scaledConnectedCellsPerGene, false, ptSize * 3); // TODO: 3 is the hard coded factor
+    _embeddingWidgetA->setPointSizeScalars(scaledConnectedCellsPerGene);
+
+    // output the gene symbols with highest diffSelectionvsAll
+    std::vector<std::pair<float, int>> rankedGenes;
+    rankedGenes.reserve(diffSelectionvsAll.size());
+    for (int i = 0; i < diffSelectionvsAll.size(); i++)
+    {
+        rankedGenes.emplace_back(diffSelectionvsAll[i], i);
+    }
+    int number = 10;
+    auto nth = rankedGenes.begin() + number;
+    std::nth_element(rankedGenes.begin(), nth, rankedGenes.end(), std::greater<std::pair<float, int>>());
+
+    qDebug() << "Top genes with highest diffSelectionvsAll";
+    for (int i = 0; i < number; i++)
+    {
+        int geneIndex = rankedGenes[i].second;
+        QString geneSymbol = _embeddingSourceDatasetB->getDimensionNames()[geneIndex];
+        qDebug() << "gene symbol" << geneSymbol << "diffSelectionvsAll" << rankedGenes[i].first << "mean selection" << selectedCellMeanExpression[geneIndex] << "mean all" << _meanExpressionForAllCells[geneIndex];
+    }
+
+    // test 3 -end
 
 }
 

@@ -16,7 +16,7 @@ void normalizeYValues(std::vector<mv::Vector2f>& embedding)
     }
 }
 
-void projectToVerticalAxis(std::vector<mv::Vector2f>& embeddings, float x_value) 
+void projectToVerticalAxis(std::vector<mv::Vector2f>& embeddings, float x_value)
 {
     for (auto& point : embeddings) {
         point.x = x_value;  // Set x-coordinate to the specified value
@@ -104,13 +104,15 @@ void computeDataRange(const mv::Dataset<Points> dataset, std::vector<float>& col
         columnRanges[dimIdx] = maxValue - minValue;
     }
 
+    qDebug() << "Data range computed for " << numDimensions << " dimensions, " << numPoints << " points in dataset B";
+
     qDebug() << "Data range computed";
 
 }
 
 void computeSelectedGeneMeanExpression(const mv::Dataset<Points> sourceDataset, const mv::Dataset<Points> selectedDataset, std::vector<float>& meanExpressionFull)
 {   // sourceDataset should be embeddingSourceDatasetB, selectedDataset should be embeddingDatasetA
-    
+
     auto geneSelection = selectedDataset->getSelection<Points>();
 
     if (geneSelection->indices.size() == 0)
@@ -178,32 +180,94 @@ void extractSelectedGeneMeanExpression(const mv::Dataset<Points> sourceDataset, 
 
 void identifyGeneSymbolsInDataset(const mv::Dataset<Points> sourceDataset, const QStringList& geneSymbols, QList<int>& foundGeneIndices)
 {
-	//check which genes exist in the dataset
+    //check which genes exist in the dataset
    //find the gene index in the current embedding B source dataset dimensions
-	const std::vector<QString> allDimensionNames = sourceDataset->getDimensionNames();
+    const std::vector<QString> allDimensionNames = sourceDataset->getDimensionNames();
 
     foundGeneIndices.clear();
 
-	int numNotFoundGenes = 0;
-	for (int i = 0; i < geneSymbols.size(); i++)
-	{
-		QString gene = geneSymbols[i];
-		bool found = false;
-		for (int j = 0; j < allDimensionNames.size(); j++)
-		{
-			if (allDimensionNames[j] == gene)
-			{
+    int numNotFoundGenes = 0;
+    for (int i = 0; i < geneSymbols.size(); i++)
+    {
+        QString gene = geneSymbols[i];
+        bool found = false;
+        for (int j = 0; j < allDimensionNames.size(); j++)
+        {
+            if (allDimensionNames[j] == gene)
+            {
                 foundGeneIndices.append(j);
-				found = true;
-				break;
-			}
-		}
-		if (!found)
-		{
-			//qDebug() << "highlightInputGenes: Gene not found: " << gene;
-			numNotFoundGenes++;
-		}
-	}
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            //qDebug() << "highlightInputGenes: Gene not found: " << gene;
+            numNotFoundGenes++;
+        }
+    }
 
-	qDebug() << "identifyGeneSymbolsInDataset: " << geneSymbols.size() << " genes, " << numNotFoundGenes << " not found";
+    qDebug() << "identifyGeneSymbolsInDataset: " << geneSymbols.size() << " genes, " << numNotFoundGenes << " not found";
+}
+
+void computeSelectedCellMeanExpression(const mv::Dataset<Points> sourceDataset, std::vector<float>& meanExpressionFull)
+{
+    int numDimensions = sourceDataset->getNumDimensions();
+    meanExpressionFull.resize(numDimensions, 0.0f);
+
+    auto fullDataset = sourceDataset->getFullDataset<Points>();
+    auto selection = fullDataset->getSelection<Points>();
+    std::vector<bool> selected;
+    fullDataset->selectedLocalIndices(selection->indices, selected);
+
+    float numSelected = 0.0f;
+    for (int i = 0; i < selected.size(); i++)
+    {
+        if (selected[i])
+        {
+            numSelected++;
+        }
+    }
+    qDebug() << "computeSelectedCellMeanExpression: " << numSelected << " selected cells";
+
+    if (numSelected == 0)
+    {
+        return;
+    }
+
+    for (int i = 0; i < numDimensions; i++)
+    {
+        float sum = 0.0f;
+        for (int j = 0; j < selected.size(); j++)
+        {
+            if (selected[j])
+            {
+                sum += fullDataset->getValueAt(j * numDimensions + i); 
+            }
+        }
+        meanExpressionFull[i] = sum / numSelected;
+    }
+
+}
+
+void computeMeanExpressionForAllCells(const mv::Dataset<Points> sourceDataset, std::vector<float>& meanExpressionFull)
+{
+    // compute the mean expression of each gene across all cells
+    int numPoints = sourceDataset->getNumPoints();
+    int numDimensions = sourceDataset->getNumDimensions();
+    qDebug() << "computeMeanExpressionForAllCells: numPoints: " << numPoints << " numDimensions: " << numDimensions;
+
+    meanExpressionFull.resize(numDimensions, 0.0f);
+
+#pragma omp parallel for
+    for (int i = 0; i < numDimensions; i++)
+    {
+        float sum = 0.0f;
+        for (int j = 0; j < numPoints; j++)
+        {
+            sum += sourceDataset->getValueAt(j * numDimensions + i);
+        }
+        meanExpressionFull[i] = sum / numPoints;
+    }
+
 }
