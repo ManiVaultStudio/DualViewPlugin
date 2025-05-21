@@ -1188,14 +1188,15 @@ void DualViewPlugin::sendDataToSampleScope()
     {
         // B selected, send cell types to samplerAction
 
+        // TODO: disabled, temporarily updated in updateEmbeddingASize
         // send genes that are connected to selected cells (use _connectedCellsPerGene)
-        for (int i = 0; i < _connectedCellsPerGene.size(); i++)
-        {
-            if (_connectedCellsPerGene[i] > 0)
-            {
-                globalPointIndices << i;// gene index
-            }
-        }
+        //for (int i = 0; i < _connectedCellsPerGene.size(); i++)
+        //{
+        //    if (_connectedCellsPerGene[i] > 0)
+        //    {
+        //        globalPointIndices << i;// gene index
+        //    }
+        //}
 
         if (_metaDatasetB.isValid())
         {
@@ -1223,14 +1224,15 @@ void DualViewPlugin::sendDataToSampleScope()
     assert(_embeddingDatasetA->getNumPoints() == _embeddingSourceDatasetB->getNumDimensions());
     std::vector<QString> dimensionNames = _embeddingSourceDatasetB->getDimensionNames(); // TODO: hardcode, assume embedding A is gene map and embedding B stores all the genes in A
 
-    _currentGeneSymbols.clear();
-    // assign gene symbols corresponding to globalPointIndices
-    for (int i = 0; i < globalPointIndices.size(); i++)
-    {
-        int globalIndex = globalPointIndices[i].toInt();
-        QString geneSymbol = dimensionNames[globalIndex];
-        _currentGeneSymbols.append(geneSymbol);
-    }
+    // TODO: disabled, temporarily updated in updateEmbeddingASize
+    //_currentGeneSymbols.clear();
+    //// assign gene symbols corresponding to globalPointIndices
+    //for (int i = 0; i < globalPointIndices.size(); i++)
+    //{
+    //    int globalIndex = globalPointIndices[i].toInt();
+    //    QString geneSymbol = dimensionNames[globalIndex];
+    //    _currentGeneSymbols.append(geneSymbol);
+    //}
 
     QString colorDatasetID = _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId();
     QString colorDatasetName;
@@ -1308,24 +1310,24 @@ void DualViewPlugin::updateEmbeddingASize()
     qDebug() << "DualViewPlugin: " << selection->indices.size() << " points in B selected";
 
     // get how many connected points in B per point in A
-    _connectedCellsPerGene.clear();
-    _connectedCellsPerGene.resize(numPointsA, 0.0f);
-
-#pragma omp parallel for
-    for (int i = 0; i < _lines.size(); i++)
-    {
-        int pointB = _lines[i].second;
-        if (pointB < selected.size() && selected[pointB])
-        {
-#pragma omp atomic
-            _connectedCellsPerGene[_lines[i].first] += 1.0f;
-        }
-    }
-
-    //std::vector<float> scaledConnectedCellsPerGene;
-    //float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue();
-    //scaleDataRange(_connectedCellsPerGene, scaledConnectedCellsPerGene, false, ptSize * 3); // TODO: 3 is the hard coded factor
-    //_embeddingWidgetA->setPointSizeScalars(scaledConnectedCellsPerGene);
+//    _connectedCellsPerGene.clear();
+//    _connectedCellsPerGene.resize(numPointsA, 0.0f);
+//
+//#pragma omp parallel for
+//    for (int i = 0; i < _lines.size(); i++)
+//    {
+//        int pointB = _lines[i].second;
+//        if (pointB < selected.size() && selected[pointB])
+//        {
+//#pragma omp atomic
+//            _connectedCellsPerGene[_lines[i].first] += 1.0f;
+//        }
+//    }
+//
+//    std::vector<float> scaledConnectedCellsPerGene;
+//    float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue();
+//    scaleDataRange(_connectedCellsPerGene, scaledConnectedCellsPerGene, false, ptSize * 3); // TODO: 3 is the hard coded factor
+//    _embeddingWidgetA->setPointSizeScalars(scaledConnectedCellsPerGene);
 
     // test2 - use average expression of selected cells in B for the point size in A
 //    std::vector<std::uint32_t> localGlobalIndicesB;
@@ -1395,23 +1397,34 @@ void DualViewPlugin::updateEmbeddingASize()
     _embeddingWidgetA->setPointSizeScalars(scaledConnectedCellsPerGene);
 
     // output the gene symbols with highest diffSelectionvsAll
-    std::vector<std::pair<float, int>> rankedGenes;
-    rankedGenes.reserve(diffSelectionvsAll.size());
+    std::vector<std::pair<float, int>> rankedGenesDiff;
+    rankedGenesDiff.reserve(diffSelectionvsAll.size());
     for (int i = 0; i < diffSelectionvsAll.size(); i++)
     {
-        rankedGenes.emplace_back(diffSelectionvsAll[i], i);
+        rankedGenesDiff.emplace_back(diffSelectionvsAll[i], i);
     }
-    int number = 10;
-    auto nth = rankedGenes.begin() + number;
-    std::nth_element(rankedGenes.begin(), nth, rankedGenes.end(), std::greater<std::pair<float, int>>());
+    int number = 50;
+    auto nth = rankedGenesDiff.begin() + number;
+    std::nth_element(rankedGenesDiff.begin(), nth, rankedGenesDiff.end(), std::greater<std::pair<float, int>>());
+    std::sort(rankedGenesDiff.begin(), nth, std::greater<std::pair<float, int>>()); // sort
 
-    qDebug() << "Top genes with highest diffSelectionvsAll";
+    // get the gene and store in _currentGeneSymbols
+    _currentGeneSymbols.clear();
+    for (int i = 0; i < number; i++)
+    {
+        int geneIndex = rankedGenesDiff[i].second;
+        QString geneSymbol = _embeddingSourceDatasetB->getDimensionNames()[geneIndex];
+        _currentGeneSymbols.append(geneSymbol);
+    }
+
+
+   /* qDebug() << "Top genes with highest diffSelectionvsAll";
     for (int i = 0; i < number; i++)
     {
         int geneIndex = rankedGenes[i].second;
         QString geneSymbol = _embeddingSourceDatasetB->getDimensionNames()[geneIndex];
         qDebug() << "gene symbol" << geneSymbol << "diffSelectionvsAll" << rankedGenes[i].first << "mean selection" << selectedCellMeanExpression[geneIndex] << "mean all" << _meanExpressionForAllCells[geneIndex];
-    }
+    }*/
 
     // test 3 -end
 
