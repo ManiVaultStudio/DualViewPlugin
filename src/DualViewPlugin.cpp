@@ -1384,7 +1384,17 @@ void DualViewPlugin::updateEmbeddingASize()
 #pragma omp parallel for
     for (int i = 0; i < selectedCellMeanExpression.size(); i++)
     {
-        diffSelectionvsAll[i] = selectedCellMeanExpression[i] - _meanExpressionForAllCells[i];
+        //diffSelectionvsAll[i] = selectedCellMeanExpression[i] - _meanExpressionForAllCells[i]; // difference between selected cells and all cells
+        
+        // log2 ratio 
+        float log2FC = std::log2((selectedCellMeanExpression[i] + 0.05) / (_meanExpressionForAllCells[i] + 0.05)); // log2 ratio between selected cells and all cells
+        //diffSelectionvsAll[i] = std::log2((selectedCellMeanExpression[i]+0.05) / (_meanExpressionForAllCells[i] + 0.05)); // log2 ratio between selected cells and all cells
+
+        diffSelectionvsAll[i] = std::max(0.0f, log2FC);  // suppress downregulated
+
+        if (selectedCellMeanExpression[i] < 0.1f && _meanExpressionForAllCells[i] < 0.1f)
+            diffSelectionvsAll[i] = 0.0f;
+
     }
     qDebug() << "diffSelectionvsAll size" << diffSelectionvsAll.size();
 
