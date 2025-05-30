@@ -15,7 +15,7 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     _embeddingAPointPlotAction(this, "Point Plot A"),
     _embeddingBPointPlotAction(this, "Point Plot B"),
     _thresholdLinesAction(this, "Threshold Lines", 0.f, 1.f, 0.f, 5),
-    _2FCThreshold(this, "log2FC Threshold", 0.f, 4.f, 1.5f, 2),
+    _2FCThreshold(this, "log2FC Threshold", 0.f, 5.f, 1.5f, 2),
     _coloringActionB(this, "Coloring B"),
     _coloringActionA(this, "Coloring A"),
     _selectionAction(this, "Selection"),
