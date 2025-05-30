@@ -38,7 +38,9 @@ public:
     void setColor(const QColor& color);
     void setColor(int r, int g, int b);
     void setAlpha(float alpha);
-    void setHighlights(const std::vector<int>& indices, bool highlightSource);
+    void setHighlights(const std::vector<int>& indices, bool highlightSource);// highlight by indices (source or destination)
+
+    void setHighlightsByPair(const std::vector<std::pair<int, int>>& highlightedLines, const std::vector<int>& indices, bool highlightSource); // highlight by pair of indices
 
     void setPointColorA(const std::vector<Vector3f>& pointColors);
     void setPointColorB(const std::vector<Vector3f>& pointColors);   

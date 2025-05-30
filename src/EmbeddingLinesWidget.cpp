@@ -207,6 +207,7 @@ void EmbeddingLinesWidget::setAlpha(float alpha) {
 
 void EmbeddingLinesWidget::setHighlights(const std::vector<int>& indices, bool highlightSource)
 {
+    // set highlights by one side (embedding_src or embedding_dst)
     _highlightIndices = indices;
     _highlightSource = highlightSource;
 
@@ -267,6 +268,33 @@ void EmbeddingLinesWidget::setHighlights(const std::vector<int>& indices, bool h
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, highlightedIndices.size() * sizeof(GLuint), highlightedIndices.data(), GL_STATIC_DRAW);
 
 
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    update();
+}
+
+void EmbeddingLinesWidget::setHighlightsByPair(const std::vector<std::pair<int, int>>& highlightedLines, const std::vector<int>& indices, bool highlightSource)
+{
+    // set highlights by pairs of indices
+    _highlightIndices = indices;
+    _highlightSource = highlightSource;
+
+    size_t srcCount = _embedding_src.size();
+
+    std::vector<GLuint> highlightedIndices;
+    highlightedIndices.reserve(highlightedLines.size() * 2);
+
+    for (const auto& line : highlightedLines) {
+        GLuint srcIdx = static_cast<GLuint>(line.first);              // gene
+        GLuint dstIdx = static_cast<GLuint>(srcCount + line.second); // cell
+        highlightedIndices.push_back(srcIdx);
+        highlightedIndices.push_back(dstIdx);
+    }
+
+    _highlightedLineCount = static_cast<GLsizei>(highlightedIndices.size());
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _highlightedLineConnections);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, highlightedIndices.size() * sizeof(GLuint), highlightedIndices.data(), GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     update();

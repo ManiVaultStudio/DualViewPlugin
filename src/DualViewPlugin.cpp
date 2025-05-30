@@ -505,15 +505,15 @@ void DualViewPlugin::init()
         if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
             return;
 
-        _isEmbeddingASelected = false;
-        highlightSelectedLines(_embeddingDatasetB);
-        highlightSelectedEmbeddings(_embeddingWidgetB, _embeddingDatasetB);
-
         if (_embeddingDatasetB->getSelection<Points>()->indices.size() != 0)
         {
             updateEmbeddingASize();//if selected in embedding B and coloring/sizing embedding A by the number of connected cells
             sendDataToSampleScope();
         }
+
+        _isEmbeddingASelected = false;
+        highlightSelectedLines(_embeddingDatasetB); // need to be put after updateEmbeddingASize if use diffselectionvsall for highlighting
+        highlightSelectedEmbeddings(_embeddingWidgetB, _embeddingDatasetB);
         });
 
     // TEMP: hard code the isNotifyDuringSelection to false
@@ -975,7 +975,36 @@ void DualViewPlugin::highlightSelectedLines(mv::Dataset<Points> dataset)
     }
     else
     {
-        _embeddingLinesWidget->setHighlights(localSelectionIndices, false); //true: A, false: B
+        // highlight all lines from selected points in embedding B
+        //_embeddingLinesWidget->setHighlights(localSelectionIndices, false); //true: A, false: B
+
+
+        // Experiment selectionvsAll: highlight lines based on diff AND the global defined connected lines
+        const float log2FC_threshold = 4.0f;
+        std::vector<bool> enrichedGenes(_diffSelectionvsAll.size(), false);
+        for (int i = 0; i < _diffSelectionvsAll.size(); ++i) {
+            if (_diffSelectionvsAll[i] > log2FC_threshold)
+                enrichedGenes[i] = true;
+        }
+
+        std::vector<std::pair<int, int>> enrichedHighlightedLines;
+        std::unordered_set<int> highlightedCellSet;
+
+        for (const auto& line : _lines) {
+            int geneIdx = line.first;
+            int cellIdx = line.second;
+
+            if (cellIdx >= 0 && cellIdx < selected.size() &&
+                selected[cellIdx] && enrichedGenes[geneIdx])
+            {
+                enrichedHighlightedLines.emplace_back(geneIdx, cellIdx);
+                highlightedCellSet.insert(cellIdx);
+            }
+        }
+
+        std::vector<int> filteredSelection(highlightedCellSet.begin(), highlightedCellSet.end());
+
+        _embeddingLinesWidget->setHighlightsByPair(enrichedHighlightedLines, filteredSelection, false);
     }
 }
 
@@ -1301,6 +1330,7 @@ void DualViewPlugin::updateEmbeddingASize()
     if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
         return;
 
+    // reascale point size embedding A using the number of connected cells in B per point in A (based on expression value and user-defined threshold)
     //int numPointsA = _embeddingDatasetA->getNumPoints();
     //auto selection = _embeddingDatasetB->getSelection<Points>();
 
@@ -1374,7 +1404,8 @@ void DualViewPlugin::updateEmbeddingASize()
 
     // test2 - end
 
-    // test 3 compute genes of cell selection vs all - start
+    // test 3 rescale point size of embedding A using the diff between selected cells in B and all cells in B
+    // compute genes of cell selection vs all - start
     std::vector<float> selectedCellMeanExpression;
     computeSelectedCellMeanExpression(_embeddingSourceDatasetB, selectedCellMeanExpression);
     qDebug() << "selectedCellMeanExpression size" << selectedCellMeanExpression.size();
@@ -1392,7 +1423,7 @@ void DualViewPlugin::updateEmbeddingASize()
 
         diffSelectionvsAll[i] = std::max(0.0f, log2FC);  // suppress downregulated
 
-        if (selectedCellMeanExpression[i] < 0.1f && _meanExpressionForAllCells[i] < 0.1f)
+        if (selectedCellMeanExpression[i] < 0.1f && _meanExpressionForAllCells[i] < 0.1f) // suppress genes with low expression in both selected and all cells
             diffSelectionvsAll[i] = 0.0f;
 
     }
@@ -1401,6 +1432,7 @@ void DualViewPlugin::updateEmbeddingASize()
     // test to set connectedcellspergene using diffSelectionvsAll
     //_connectedCellsPerGene.clear();
     _connectedCellsPerGene = diffSelectionvsAll;
+    _diffSelectionvsAll = diffSelectionvsAll; // FIXME: store for later use, remove later, only keep one or _connectedCellsPerGene
 
     std::vector<float> scaledConnectedCellsPerGene;
     float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue();
