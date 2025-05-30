@@ -67,6 +67,7 @@ public: // Action getters
     EmbeddingAPointPlotAction& getEmbeddingAPointPlotAction() { return _embeddingAPointPlotAction; }
     EmbeddingBPointPlotAction& getEmbeddingBPointPlotAction() { return _embeddingBPointPlotAction; }
     DecimalAction& getThresholdLinesAction() { return _thresholdLinesAction; }
+    DecimalAction& getlog2FCThresholdAction() { return _2FCThreshold; };
     ColoringActionB& getColoringActionB() { return _coloringActionB; }
     ColoringActionA& getColoringActionA() { return _coloringActionA; }
     SelectionAction& getSelectionAction() { return _selectionAction; }
@@ -85,7 +86,8 @@ protected:
     LoadedDatasetsAction			  _currentDatasetsAction;    /** Action for managing loaded datasets */
     EmbeddingAPointPlotAction         _embeddingAPointPlotAction;           /** Action for configuring point plots */
     EmbeddingBPointPlotAction         _embeddingBPointPlotAction;           /** Action for configuring point plots */
-    DecimalAction                     _thresholdLinesAction;      
+    DecimalAction                     _thresholdLinesAction;      /** Action for expression value threshold for lines */
+    DecimalAction                     _2FCThreshold;              /** Action for log2FC threshold for lines */
     ColoringActionB                   _coloringActionB;            /** Action for configuring point coloring - for embedding B*/
     ColoringActionA                   _coloringActionA;           /** Action for configuring point coloring - for embedding A*/
     SelectionAction                   _selectionAction;           /** Action for configuring selection */

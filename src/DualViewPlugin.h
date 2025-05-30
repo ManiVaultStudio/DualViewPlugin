@@ -68,6 +68,8 @@ public:
 
     void updateEnrichmentSignificanceThresholdMethod();
 
+    void updateLog2FCThreshold();
+
 
 private:
     QString getCurrentEmebeddingDataSetID(mv::Dataset<Points> dataset) const;
@@ -210,6 +212,7 @@ private:
     // experiment about selection vs all compute
     std::vector<float>                 _meanExpressionForAllCells; // mean expression of all cells for each gene
     std::vector<float>                 _diffSelectionvsAll; // difference between selection in B and all cells in B for each gene - FIXME: temperary for testing
+    float                              _log2FCThreshold = 1.5f; // log2FC threshold for lines
 
 protected:
 

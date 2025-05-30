@@ -128,6 +128,7 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
 
     // toolbar line widget
     _linesToolbarAction.addAction(&_settingsAction.getThresholdLinesAction());
+    _linesToolbarAction.addAction(&_settingsAction.getlog2FCThresholdAction());
 
     // context menu
     connect(_embeddingWidgetA, &ScatterplotWidget::customContextMenuRequested, this, [this](const QPoint& point) {
@@ -980,10 +981,10 @@ void DualViewPlugin::highlightSelectedLines(mv::Dataset<Points> dataset)
 
 
         // Experiment selectionvsAll: highlight lines based on diff AND the global defined connected lines
-        const float log2FC_threshold = 1.0f;
+        //const float log2FC_threshold = 1.0f;
         std::vector<bool> enrichedGenes(_diffSelectionvsAll.size(), false);
         for (int i = 0; i < _diffSelectionvsAll.size(); ++i) {
-            if (_diffSelectionvsAll[i] > log2FC_threshold)
+            if (_diffSelectionvsAll[i] > _log2FCThreshold)
                 enrichedGenes[i] = true;
         }
 
@@ -1284,11 +1285,11 @@ void DualViewPlugin::sendDataToSampleScope()
     //}
 
     // Experiment: output genes based on fold change threshold
-    const float log2FC_threshold = 1.0f;
+    //const float log2FC_threshold = 1.0f;
     std::vector<std::pair<float, int>> filteredGenes;
 
     for (int i = 0; i < _diffSelectionvsAll.size(); ++i) {
-        if (_diffSelectionvsAll[i] > log2FC_threshold) {
+        if (_diffSelectionvsAll[i] > _log2FCThreshold) {
             filteredGenes.emplace_back(_diffSelectionvsAll[i], i);
         }
     }
@@ -1860,6 +1861,20 @@ void DualViewPlugin::updateThresholdLines()
         highlightSelectedLines(_embeddingDatasetB);
         highlightSelectedEmbeddings(_embeddingWidgetB, _embeddingDatasetB);
     }
+}
+
+void DualViewPlugin::updateLog2FCThreshold()
+{
+    _log2FCThreshold = _settingsAction.getlog2FCThresholdAction().getValue();
+
+    // update the diffSelectionvsAll based on the new threshold
+    if (!_isEmbeddingASelected)
+    {
+        highlightSelectedLines(_embeddingDatasetB);
+        sendDataToSampleScope();
+
+    }
+
 }
 
 void DualViewPlugin::computeTopCellForEachGene()
