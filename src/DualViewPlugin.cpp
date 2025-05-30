@@ -980,7 +980,7 @@ void DualViewPlugin::highlightSelectedLines(mv::Dataset<Points> dataset)
 
 
         // Experiment selectionvsAll: highlight lines based on diff AND the global defined connected lines
-        const float log2FC_threshold = 4.0f;
+        const float log2FC_threshold = 1.0f;
         std::vector<bool> enrichedGenes(_diffSelectionvsAll.size(), false);
         for (int i = 0; i < _diffSelectionvsAll.size(); ++i) {
             if (_diffSelectionvsAll[i] > log2FC_threshold)
@@ -1263,10 +1263,53 @@ void DualViewPlugin::sendDataToSampleScope()
     //    _currentGeneSymbols.append(geneSymbol);
     //}
 
+    // Experiment: output the gene symbols with highest diffSelectionvsAll with a fixed number
+    //std::vector<std::pair<float, int>> rankedGenesDiff;
+    //rankedGenesDiff.reserve(_diffSelectionvsAll.size());
+    //for (int i = 0; i < _diffSelectionvsAll.size(); i++)
+    //{
+    //    rankedGenesDiff.emplace_back(_diffSelectionvsAll[i], i);
+    //}
+    //int number = 10;
+    //auto nth = rankedGenesDiff.begin() + number;
+    //std::nth_element(rankedGenesDiff.begin(), nth, rankedGenesDiff.end(), std::greater<std::pair<float, int>>());
+    //std::sort(rankedGenesDiff.begin(), nth, std::greater<std::pair<float, int>>()); // sort
+    //_currentGeneSymbols.clear();
+    //_currentGeneSymbols.reserve(number);
+    //for (int i = 0; i < number; i++)
+    //{
+    //    int geneIndex = rankedGenesDiff[i].second;
+    //    QString geneSymbol = _embeddingSourceDatasetB->getDimensionNames()[geneIndex];
+    //    _currentGeneSymbols.append(geneSymbol);
+    //}
+
+    // Experiment: output genes based on fold change threshold
+    const float log2FC_threshold = 1.0f;
+    std::vector<std::pair<float, int>> filteredGenes;
+
+    for (int i = 0; i < _diffSelectionvsAll.size(); ++i) {
+        if (_diffSelectionvsAll[i] > log2FC_threshold) {
+            filteredGenes.emplace_back(_diffSelectionvsAll[i], i);
+        }
+    }
+    // Sort by descending log2FC - TODO: if needed?
+    std::sort(filteredGenes.begin(), filteredGenes.end(), std::greater<std::pair<float, int>>());
+
+    _currentGeneSymbols.clear();
+    _currentGeneSymbols.reserve(filteredGenes.size());
+
+    for (int i = 0; i < filteredGenes.size(); ++i) {
+        int geneIndex = filteredGenes[i].second;
+        QString geneSymbol = _embeddingSourceDatasetB->getDimensionNames()[geneIndex];
+        _currentGeneSymbols.append(geneSymbol);
+    }
+
+
     QString colorDatasetID = _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId();
     QString colorDatasetName;
     if (!colorDatasetID.isEmpty())
         colorDatasetName = mv::data().getDataset(colorDatasetID)->getGuiName();
+
 
     QString html = buildHtmlForSelection(_isEmbeddingASelected, colorDatasetName, _currentGeneSymbols, labels, data, backgroundColors);
 
@@ -1438,29 +1481,6 @@ void DualViewPlugin::updateEmbeddingASize()
     float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue();
     scaleDataRangeExperiment(_connectedCellsPerGene, scaledConnectedCellsPerGene, false, ptSize * 3); // TODO: 3 is the hard coded factor
     _embeddingWidgetA->setPointSizeScalars(scaledConnectedCellsPerGene);
-
-    // output the gene symbols with highest diffSelectionvsAll
-    std::vector<std::pair<float, int>> rankedGenesDiff;
-    rankedGenesDiff.reserve(diffSelectionvsAll.size());
-    for (int i = 0; i < diffSelectionvsAll.size(); i++)
-    {
-        rankedGenesDiff.emplace_back(diffSelectionvsAll[i], i);
-    }
-    int number = 100;
-    auto nth = rankedGenesDiff.begin() + number;
-    std::nth_element(rankedGenesDiff.begin(), nth, rankedGenesDiff.end(), std::greater<std::pair<float, int>>());
-    std::sort(rankedGenesDiff.begin(), nth, std::greater<std::pair<float, int>>()); // sort
-
-    // get the gene and store in _currentGeneSymbols
-    _currentGeneSymbols.clear();
-    _currentGeneSymbols.reserve(number);
-    for (int i = 0; i < number; i++)
-    {
-        int geneIndex = rankedGenesDiff[i].second;
-        QString geneSymbol = _embeddingSourceDatasetB->getDimensionNames()[geneIndex];
-        _currentGeneSymbols.append(geneSymbol);
-    }
-
 
    /* qDebug() << "Top genes with highest diffSelectionvsAll";
     for (int i = 0; i < number; i++)
