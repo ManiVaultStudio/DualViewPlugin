@@ -1166,6 +1166,15 @@ void DualViewPlugin::sendDataToSampleScope()
 
             numberOfPoints++;
         }
+        std::vector<QString> dimensionNames = _embeddingSourceDatasetB->getDimensionNames();
+        _currentGeneSymbols.clear();
+        // assign gene symbols corresponding to globalPointIndices
+        for (int i = 0; i < globalPointIndices.size(); i++)
+        {
+            int globalIndex = globalPointIndices[i].toInt();
+            QString geneSymbol = dimensionNames[globalIndex];
+            _currentGeneSymbols.append(geneSymbol);
+        }
 
         // if no metadata B avaliable, only send gene ids
         if (_metaDatasetB.isValid())
@@ -1248,11 +1257,53 @@ void DualViewPlugin::sendDataToSampleScope()
 
             std::tie(labels, data, backgroundColors) = computeMetadataCounts(metadata, sampledPoints);
         }
+
+
+        // Experiment: output the gene symbols with highest diffSelectionvsAll with a fixed number
+        //std::vector<std::pair<float, int>> rankedGenesDiff;
+        //rankedGenesDiff.reserve(_diffSelectionvsAll.size());
+        //for (int i = 0; i < _diffSelectionvsAll.size(); i++)
+        //{
+        //    rankedGenesDiff.emplace_back(_diffSelectionvsAll[i], i);
+        //}
+        //int number = 10;
+        //auto nth = rankedGenesDiff.begin() + number;
+        //std::nth_element(rankedGenesDiff.begin(), nth, rankedGenesDiff.end(), std::greater<std::pair<float, int>>());
+        //std::sort(rankedGenesDiff.begin(), nth, std::greater<std::pair<float, int>>()); // sort
+        //_currentGeneSymbols.clear();
+        //_currentGeneSymbols.reserve(number);
+        //for (int i = 0; i < number; i++)
+        //{
+        //    int geneIndex = rankedGenesDiff[i].second;
+        //    QString geneSymbol = _embeddingSourceDatasetB->getDimensionNames()[geneIndex];
+        //    _currentGeneSymbols.append(geneSymbol);
+        //}
+
+        // Experiment: output genes based on fold change threshold
+        //const float log2FC_threshold = 1.0f;
+        std::vector<std::pair<float, int>> filteredGenes;
+
+        for (int i = 0; i < _diffSelectionvsAll.size(); ++i) {
+            if (_diffSelectionvsAll[i] > _log2FCThreshold) {
+                filteredGenes.emplace_back(_diffSelectionvsAll[i], i);
+            }
+        }
+        // Sort by descending log2FC - TODO: if needed?
+        std::sort(filteredGenes.begin(), filteredGenes.end(), std::greater<std::pair<float, int>>());
+
+        _currentGeneSymbols.clear();
+        _currentGeneSymbols.reserve(filteredGenes.size());
+
+        for (int i = 0; i < filteredGenes.size(); ++i) {
+            int geneIndex = filteredGenes[i].second;
+            QString geneSymbol = _embeddingSourceDatasetB->getDimensionNames()[geneIndex];
+            _currentGeneSymbols.append(geneSymbol);
+        }
     }
 
     // --------- prepare the data for the sampler action ------------------------------- 
     assert(_embeddingDatasetA->getNumPoints() == _embeddingSourceDatasetB->getNumDimensions());
-    std::vector<QString> dimensionNames = _embeddingSourceDatasetB->getDimensionNames(); // TODO: hardcode, assume embedding A is gene map and embedding B stores all the genes in A
+    //std::vector<QString> dimensionNames = _embeddingSourceDatasetB->getDimensionNames(); // TODO: hardcode, assume embedding A is gene map and embedding B stores all the genes in A
 
     // TODO: disabled, temporarily updated in updateEmbeddingASize
     //_currentGeneSymbols.clear();
@@ -1264,46 +1315,6 @@ void DualViewPlugin::sendDataToSampleScope()
     //    _currentGeneSymbols.append(geneSymbol);
     //}
 
-    // Experiment: output the gene symbols with highest diffSelectionvsAll with a fixed number
-    //std::vector<std::pair<float, int>> rankedGenesDiff;
-    //rankedGenesDiff.reserve(_diffSelectionvsAll.size());
-    //for (int i = 0; i < _diffSelectionvsAll.size(); i++)
-    //{
-    //    rankedGenesDiff.emplace_back(_diffSelectionvsAll[i], i);
-    //}
-    //int number = 10;
-    //auto nth = rankedGenesDiff.begin() + number;
-    //std::nth_element(rankedGenesDiff.begin(), nth, rankedGenesDiff.end(), std::greater<std::pair<float, int>>());
-    //std::sort(rankedGenesDiff.begin(), nth, std::greater<std::pair<float, int>>()); // sort
-    //_currentGeneSymbols.clear();
-    //_currentGeneSymbols.reserve(number);
-    //for (int i = 0; i < number; i++)
-    //{
-    //    int geneIndex = rankedGenesDiff[i].second;
-    //    QString geneSymbol = _embeddingSourceDatasetB->getDimensionNames()[geneIndex];
-    //    _currentGeneSymbols.append(geneSymbol);
-    //}
-
-    // Experiment: output genes based on fold change threshold
-    //const float log2FC_threshold = 1.0f;
-    std::vector<std::pair<float, int>> filteredGenes;
-
-    for (int i = 0; i < _diffSelectionvsAll.size(); ++i) {
-        if (_diffSelectionvsAll[i] > _log2FCThreshold) {
-            filteredGenes.emplace_back(_diffSelectionvsAll[i], i);
-        }
-    }
-    // Sort by descending log2FC - TODO: if needed?
-    std::sort(filteredGenes.begin(), filteredGenes.end(), std::greater<std::pair<float, int>>());
-
-    _currentGeneSymbols.clear();
-    _currentGeneSymbols.reserve(filteredGenes.size());
-
-    for (int i = 0; i < filteredGenes.size(); ++i) {
-        int geneIndex = filteredGenes[i].second;
-        QString geneSymbol = _embeddingSourceDatasetB->getDimensionNames()[geneIndex];
-        _currentGeneSymbols.append(geneSymbol);
-    }
 
 
     QString colorDatasetID = _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId();
