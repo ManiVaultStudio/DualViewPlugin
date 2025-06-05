@@ -28,6 +28,8 @@
 #include <QStyledItemDelegate>
 //#include <QWebChannel>
 
+#include <fstream>  // for file operations
+
 
 Q_PLUGIN_METADATA(IID "studio.manivault.DualViewPlugin")
 
@@ -828,6 +830,16 @@ void DualViewPlugin::embeddingDatasetAChanged()
     _embeddingWidgetA->setData(&_embeddingPositionsA);
 
     _embeddingSourceDatasetA = _embeddingDatasetA->getSourceDataset<Points>();
+
+    // TODO: remove this - save the embedding and gene symbols 
+    /*std::vector<QString> geneNames = _embeddingSourceDatasetB->getDimensionNames();
+    qDebug() << _embeddingPositionsA.size() << geneNames.size() << geneNames[0];
+    std::ofstream out("gene_embedding.csv");
+    out << "x,y,gene\n";
+    for (size_t i = 0; i < _embeddingPositionsA.size(); ++i) {
+        out << _embeddingPositionsA[i].x << "," << _embeddingPositionsA[i].y << "," << geneNames[i].toStdString() << "\n";
+    }
+    out.close();*/
 
     // TODO: hard code to clear _metaDatasetA, when the embedding A is changed - check if better way to do this
     _metaDatasetA = nullptr;
