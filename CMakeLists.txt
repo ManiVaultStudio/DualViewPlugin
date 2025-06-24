@@ -28,7 +28,7 @@ find_package(Qt6 COMPONENTS Widgets WebEngineWidgets OpenGL OpenGLWidgets REQUIR
 
 find_package(ManiVault COMPONENTS Core PointData ClusterData CONFIG)
 
-find_package(OpenMP)Add commentMore actions
+find_package(OpenMP)
 
 if(OpenMP_CXX_FOUND)
     message(STATUS "Found OpenMP")
