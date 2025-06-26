@@ -745,7 +745,7 @@ void DualViewPlugin::update1DEmbeddingColors(bool isA)
     }
 
 #pragma omp parallel for
-    for (std::size_t i = 0; i < globalIndices.size(); i++)
+    for (int i = 0; i < globalIndices.size(); i++)
     {
         localColors[i] = globalColors[globalIndices[i]];
     }

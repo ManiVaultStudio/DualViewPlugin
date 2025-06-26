@@ -153,7 +153,7 @@ void EmbeddingLinesWidget::setLines(const std::vector<std::pair<uint32_t, uint32
     indices.resize(_lines.size() * 2);
 
 #pragma omp parallel for
-    for (size_t idx = 0; idx < _lines.size(); ++idx) {
+    for (int idx = 0; idx < _lines.size(); ++idx) {
         const auto& line = _lines[idx];
         // line.first = index in src
         // line.second = index in dst
