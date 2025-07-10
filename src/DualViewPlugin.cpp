@@ -764,8 +764,12 @@ void DualViewPlugin::updateLineConnections()
         return;
     }
 
+    //FIX ME: WIP to generalize embedding A can be HSNE
     // define lines - assume embedding A is dimension embedding, embedding B is observation embedding
-    int numDimensions = _embeddingSourceDatasetB->getNumDimensions(); // Assume the number of points in A is the same as the number of dimensions in B
+    //int numDimensions = _embeddingSourceDatasetB->getNumDimensions(); // Assume the number of points in A is the same as the number of dimensions in B
+    int numDimensionsLocal = _embeddingDatasetA->getNumPoints(); // for HSNE
+    
+    
     int numDimensionsFull = _embeddingSourceDatasetB->getNumDimensions();
     int numPoints = _embeddingSourceDatasetB->getNumPoints(); // num of points in source dataset B
     int numPointsLocal = _embeddingDatasetB->getNumPoints(); // num of points in the embedding B
@@ -773,18 +777,32 @@ void DualViewPlugin::updateLineConnections()
     std::vector<std::uint32_t> localGlobalIndicesB;
     _embeddingSourceDatasetB->getGlobalIndices(localGlobalIndicesB);
 
+    std::vector<std::uint32_t> localGlobalIndicesA;
+    _embeddingSourceDatasetA->getGlobalIndices(localGlobalIndicesA);
+
     _lines.clear();
 
     // Iterate over each row and column in the subset to generate lines
     auto start2 = std::chrono::high_resolution_clock::now();
     for (int cellLocalIndex = 0; cellLocalIndex < numPointsLocal; cellLocalIndex++) {
-        for (int dimIdx = 0; dimIdx < numDimensions; dimIdx++) {
+        //for (int dimIdx = 0; dimIdx < numDimensions; dimIdx++) {
+
+        //    int cellGlobalIdx = static_cast<int>(localGlobalIndicesB[cellLocalIndex]);
+        //    float expression = _embeddingSourceDatasetB->getValueAt(cellGlobalIdx * numDimensionsFull + dimIdx);
+
+        //    //if (expression != columnMins[dimLocalIdx]) { // only draw lines for cells whose expression are not at the minimum
+        //    if (expression > (_columnMins[dimIdx] + _thresholdLines * _columnRanges[dimIdx])) { // draw lines for cells whose expression are above the thresholdvalue
+        //        _lines.emplace_back(dimIdx, cellLocalIndex);
+        //    }
+        //}
+
+        for (int dimIdx = 0; dimIdx < numDimensionsLocal; dimIdx++) {
 
             int cellGlobalIdx = static_cast<int>(localGlobalIndicesB[cellLocalIndex]);
             float expression = _embeddingSourceDatasetB->getValueAt(cellGlobalIdx * numDimensionsFull + dimIdx);
 
-            //if (expression != columnMins[dimLocalIdx]) { // only draw lines for cells whose expression are not at the minimum
-            if (expression > (_columnMins[dimIdx] + _thresholdLines * _columnRanges[dimIdx])) { // draw lines for cells whose expression are above the thresholdvalue
+            int dimIdxGlobal = static_cast<int>(localGlobalIndicesA[dimIdx]); // dimIdx is the local index in the embedding A
+            if (expression > (_columnMins[dimIdx] + _thresholdLines * _columnRanges[dimIdxGlobal])) { // draw lines for cells whose expression are above the thresholdvalue
                 _lines.emplace_back(dimIdx, cellLocalIndex);
             }
         }
@@ -1957,6 +1975,7 @@ void DualViewPlugin::computeTopCellForEachGene()
         //qDebug() << "DualViewPlugin: embeddingDatasetA or embeddingDatasetB or metaDatasetB is not valid";
         return;
     }
+    // TODO: clean up this function
 
     qDebug() << "computeTopCellForEachGene(): _metaDatasetB is " << _metaDatasetB->getGuiName();
 
