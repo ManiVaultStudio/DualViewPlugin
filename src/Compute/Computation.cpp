@@ -109,7 +109,7 @@ void computeDataRange(const mv::Dataset<Points> dataset, std::vector<float>& col
         return;
     }
 
-    // Assume gene embedding is t-SNE
+    // Assume gene embedding is t-SNE, so columnRanges is for all global dimensions
     // FIXME: should check if the number of points in A is the same as the number of dimensions in B
 
     // define lines - assume embedding A is dimension embedding, embedding B is observation embedding

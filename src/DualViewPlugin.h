@@ -182,7 +182,7 @@ private:
     std::vector<std::pair<uint32_t, uint32_t>>   _lines; // first: embedding A feature map, second: embedding B point map - both local indices?
 
     std::vector<float>         _columnMins; // cached for updateLineConnections when threshold changes
-    std::vector<float>         _columnRanges; // cached for updateLineConnections when threshold changes
+    std::vector<float>         _columnRanges; // cached for updateLineConnections when threshold changes, for all global dimensions
 
 
     bool                       _isEmbeddingASelected = false; // if the latest selection is on embedding A
