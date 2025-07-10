@@ -184,6 +184,10 @@ void ColoringActionA::updateScatterPlotWidgetColors()
     for (const auto& globalIndex : globalIndices)
         localColors[localColorIndex++] = globalColors[globalIndex];
 
+    qDebug() << "ColoringActionA: globalColors size: " << globalColors.size() 
+             << ", localColors size: " << localColors.size() 
+             << ", positionDataset size: " << positionDataset->getNumPoints();
+
     // Apply colors to scatter plot widget without modification
     _dualViewPlugin->getEmbeddingWidgetA().setColors(localColors);
 

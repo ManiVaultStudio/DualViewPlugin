@@ -1160,30 +1160,61 @@ void DualViewPlugin::sendDataToSampleScope()
         std::vector<std::uint32_t> sampledPoints;
         sampledPoints.reserve(_embeddingPositionsA.size());
 
+        // FIXME: selection->indices are global indices ?????
         for (auto selectionIndex : selection->indices)
-            sampledPoints.push_back(selectionIndex);
+            sampledPoints.push_back(selectionIndex); // global gene index???
+
+        qDebug() << "sampledPoints size" << sampledPoints.size();
+        /*for (const auto& sampledPoint : sampledPoints)
+        {
+           qDebug() << sampledPoint;
+        }*/
+
 
         std::int32_t numberOfPoints = 0;
 
         const auto numberOfSelectedPoints = selection->indices.size();
 
-        globalPointIndices.reserve(static_cast<std::int32_t>(numberOfSelectedPoints));
+        //globalPointIndices.reserve(static_cast<std::int32_t>(numberOfSelectedPoints));
 
-        for (const auto& sampledPoint : sampledPoints) {
-            if (getSamplerAction().getRestrictNumberOfElementsAction().isChecked() && numberOfPoints >= getSamplerAction().getMaximumNumberOfElementsAction().getValue())
-                break;
+        //// FIXME: sampledPoints is global indices already, why use localGlobalIndices???
+        //for (const auto& sampledPoint : sampledPoints) {
+        //    if (getSamplerAction().getRestrictNumberOfElementsAction().isChecked() && numberOfPoints >= getSamplerAction().getMaximumNumberOfElementsAction().getValue())
+        //        break;
 
-            const auto& globalPointIndex = localGlobalIndices[sampledPoint];
-            globalPointIndices << globalPointIndex;
+        //    const auto& globalPointIndex = localGlobalIndices[sampledPoint];
+        //    globalPointIndices << globalPointIndex;
 
-            numberOfPoints++;
-        }
+        //    numberOfPoints++;
+        //}
+
         std::vector<QString> dimensionNames = _embeddingSourceDatasetB->getDimensionNames();
+        qDebug() << "dimensionNames size" << dimensionNames.size();
+
+        //_currentGeneSymbols.clear();
+        //// assign gene symbols corresponding to globalPointIndices
+        //for (int i = 0; i < globalPointIndices.size(); i++)
+        //{
+        //    int globalIndex = globalPointIndices[i].toInt();
+        //    if (globalIndex < 0 || globalIndex >= dimensionNames.size())
+        //    {
+        //        qDebug() << "<<<<<<<<<<<<<<<<<<<<<<<<<<<Invalid global index:" << globalIndex << "for dimension names size:" << dimensionNames.size();
+        //        continue;
+        //    }
+        //    QString geneSymbol = dimensionNames[globalIndex];
+        //    _currentGeneSymbols.append(geneSymbol);
+        //}
+
         _currentGeneSymbols.clear();
         // assign gene symbols corresponding to globalPointIndices
-        for (int i = 0; i < globalPointIndices.size(); i++)
+        for (int i = 0; i < sampledPoints.size(); i++)
         {
-            int globalIndex = globalPointIndices[i].toInt();
+            int globalIndex = sampledPoints[i];
+            if (globalIndex < 0 || globalIndex >= dimensionNames.size())
+            {
+                qDebug() << "<<<<<<<<<<<<<<<<<<<<<<<<<<<Invalid global index:" << globalIndex << "for dimension names size:" << dimensionNames.size();
+                continue;
+            }
             QString geneSymbol = dimensionNames[globalIndex];
             _currentGeneSymbols.append(geneSymbol);
         }
