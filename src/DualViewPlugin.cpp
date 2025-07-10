@@ -1027,7 +1027,11 @@ void DualViewPlugin::highlightInputGenes(const QStringList& dimensionNames)
         return;
 
     QList<int> indices;
-    identifyGeneSymbolsInDataset(_embeddingSourceDatasetB, dimensionNames, indices);
+    identifyGeneSymbolsInDataset(_embeddingSourceDatasetB, dimensionNames, indices);// indices are global indices 
+
+    // FIXME: to work with HSNE
+    // but what if the one is not a landmark, but a child of a landmark?
+    qWarning() << "highlightInputGenes: for now only works with tsne for dimensions";
 
     if (indices.isEmpty())
         return;
