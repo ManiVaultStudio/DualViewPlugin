@@ -2210,7 +2210,7 @@ void DualViewPlugin::computeTopCellForEachGene()
         const QString clusterName = cellTypeNames[topCellTypeForEachGlobalGene[i]];
         Vector3f clusterColor = cellTypeColors[topCellTypeForEachGlobalGene[i]];
         std::vector<unsigned int> indices = { i };
-        qDebug() << "Top cell for gene " << i << ": " << clusterName;
+        //qDebug() << "Top cell for gene " << i << ": " << clusterName;
 
         Cluster cluster;
         cluster.setName(clusterName);
@@ -2219,7 +2219,6 @@ void DualViewPlugin::computeTopCellForEachGene()
 
         _topCellForEachGeneDataset->addCluster(cluster);
     }
-    qDebug() << "test";
 
     events().notifyDatasetDataChanged(_topCellForEachGeneDataset);
     // TEST 2: use the cell type with max avg expression for each gene - END 
