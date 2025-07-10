@@ -113,10 +113,14 @@ void computeDataRange(const mv::Dataset<Points> dataset, std::vector<float>& col
     // FIXME: should check if the number of points in A is the same as the number of dimensions in B
 
     // define lines - assume embedding A is dimension embedding, embedding B is observation embedding
-    int numDimensions = dataset->getNumDimensions(); // Assume the number of points in A is the same as the number of dimensions in B
-    int numDimensionsFull = dataset->getNumDimensions();
-    int numPoints = dataset->getNumPoints(); // num of points in source dataset B
-    int numPointsLocal = dataset->getNumPoints(); // num of points in the embedding B
+    //int numDimensions = dataset->getNumDimensions(); // Assume the number of points in A is the same as the number of dimensions in B
+    //int numDimensionsFull = dataset->getNumDimensions();
+    //int numPoints = dataset->getNumPoints(); // num of points in source dataset B
+    //int numPointsLocal = dataset->getNumPoints(); // num of points in the embedding B
+
+    size_t numDimensions = dataset->getNumDimensions();
+    size_t numDimensionsFull = dataset->getNumDimensions();
+    size_t numPoints = dataset->getNumPoints(); // num of points in source dataset B
 
     std::vector<std::uint32_t> localGlobalIndicesB;
     dataset->getGlobalIndices(localGlobalIndicesB);
@@ -125,14 +129,16 @@ void computeDataRange(const mv::Dataset<Points> dataset, std::vector<float>& col
     columnRanges.resize(numDimensions);
 
     // Find the minimum value in each column - attention! this is the minimum of the subset (if HSNE)
-#pragma omp parallel for
-    for (int dimIdx = 0; dimIdx < numDimensions; dimIdx++)
+//#pragma omp parallel for
+    //for (int dimIdx = 0; dimIdx < numDimensions; dimIdx++)
+    for (size_t dimIdx = 0; dimIdx < numDimensions; dimIdx++)
     {
 
         float minValue = std::numeric_limits<float>::max();
         float maxValue = std::numeric_limits<float>::lowest();
 
-        for (int i = 0; i < numPoints; i++)
+        //for (int i = 0; i < numPoints; i++)
+        for (size_t i = 0; i < numPoints; i++)       
         {
             float val = dataset->getValueAt(i * numDimensionsFull + dimIdx);
             if (val < minValue)
@@ -168,9 +174,13 @@ void computeSelectedGeneMeanExpression(const mv::Dataset<Points> sourceDataset, 
         return;
     }
 
-    int numPointsB = sourceDataset->getNumPoints();
+   /* int numPointsB = sourceDataset->getNumPoints();
     int numDimensionsB = sourceDataset->getNumDimensions();
-    int numSelectedGenes = geneSelection->indices.size();
+    int numSelectedGenes = geneSelection->indices.size();*/
+
+    size_t numPointsB = sourceDataset->getNumPoints();
+    size_t numDimensionsB = sourceDataset->getNumDimensions();
+    size_t numSelectedGenes = geneSelection->indices.size();
 
     qDebug() << "DualViewPlugin: computeSelectedGeneMeanExpression: numPointsB: " << numPointsB 
              << " numDimensionsB: " << numDimensionsB 
@@ -191,13 +201,16 @@ void computeSelectedGeneMeanExpression(const mv::Dataset<Points> sourceDataset, 
 
     meanExpressionFull.resize(totalNumPoints, 0.0f);
 
-#pragma omp parallel for  
-    for (int j = 0; j < totalNumPoints; j++)
+//#pragma omp parallel for  
+    //for (int j = 0; j < totalNumPoints; j++)
+    for (size_t j = 0; j < totalNumPoints; j++)
     {
         float sum = 0.0f;
-        for (int i = 0; i < numSelectedGenes; i++)
+        //for (int i = 0; i < numSelectedGenes; i++)
+        for (size_t i = 0; i < numSelectedGenes; i++)
         {
-            int geneIndex = geneSelection->indices[i];
+            //int geneIndex = geneSelection->indices[i];
+            size_t geneIndex = geneSelection->indices[i];
             sum += fullDatasetB->getValueAt(j * numDimensionsB + geneIndex);
         }
         meanExpressionFull[j] = sum / numSelectedGenes;
@@ -280,11 +293,21 @@ void computeSelectedCellMeanExpression(const mv::Dataset<Points> sourceDataset, 
         return;
     }
 
-#pragma omp parallel for
-    for (int i = 0; i < numDimensions; ++i)
+//#pragma omp parallel for
+//    for (int i = 0; i < numDimensions; ++i)
+//    {
+//        float sum = 0.0f;
+//        for (int idx : selectedIndices)
+//        {
+//            sum += fullDataset->getValueAt(idx * numDimensions + i);
+//        }
+//        meanExpressionFull[i] = sum / numSelected;
+//    }
+
+    for (size_t i = 0; i < numDimensions; ++i)
     {
         float sum = 0.0f;
-        for (int idx : selectedIndices)
+        for (size_t idx : selectedIndices)
         {
             sum += fullDataset->getValueAt(idx * numDimensions + i);
         }
@@ -296,21 +319,35 @@ void computeSelectedCellMeanExpression(const mv::Dataset<Points> sourceDataset, 
 void computeMeanExpressionForAllCells(const mv::Dataset<Points> sourceDataset, std::vector<float>& meanExpressionFull)
 {
     // compute the mean expression of each gene across all cells
-    int numPoints = sourceDataset->getNumPoints();
-    int numDimensions = sourceDataset->getNumDimensions();
+    /*int numPoints = sourceDataset->getNumPoints();
+    int numDimensions = sourceDataset->getNumDimensions();*/
+
+    size_t numPoints = sourceDataset->getNumPoints();
+    size_t numDimensions = sourceDataset->getNumDimensions();
     qDebug() << "computeMeanExpressionForAllCells: numPoints: " << numPoints << " numDimensions: " << numDimensions;
 
     meanExpressionFull.resize(numDimensions, 0.0f);
 
-#pragma omp parallel for
-    for (int i = 0; i < numDimensions; i++)
+//#pragma omp parallel for
+//    for (int i = 0; i < numDimensions; i++)
+//    {
+//        float sum = 0.0f;
+//        for (int j = 0; j < numPoints; j++)
+//        {
+//            sum += sourceDataset->getValueAt(j * numDimensions + i);
+//        }
+//        meanExpressionFull[i] = sum / numPoints;
+//    }
+
+    for (size_t i = 0; i < numDimensions; i++)
     {
         float sum = 0.0f;
-        for (int j = 0; j < numPoints; j++)
+        for (size_t j = 0; j < numPoints; j++)
         {
             sum += sourceDataset->getValueAt(j * numDimensions + i);
         }
         meanExpressionFull[i] = sum / numPoints;
     }
+
 
 }

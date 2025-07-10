@@ -784,7 +784,7 @@ void DualViewPlugin::updateLineConnections()
 
     // Iterate over each row and column in the subset to generate lines
     auto start2 = std::chrono::high_resolution_clock::now();
-    for (int cellLocalIndex = 0; cellLocalIndex < numPointsLocal; cellLocalIndex++) {
+    for (size_t cellLocalIndex = 0; cellLocalIndex < numPointsLocal; cellLocalIndex++) {
         //for (int dimIdx = 0; dimIdx < numDimensions; dimIdx++) {
 
         //    int cellGlobalIdx = static_cast<int>(localGlobalIndicesB[cellLocalIndex]);
@@ -796,12 +796,12 @@ void DualViewPlugin::updateLineConnections()
         //    }
         //}
 
-        for (int dimIdx = 0; dimIdx < numDimensionsLocal; dimIdx++) {
+        for (size_t dimIdx = 0; dimIdx < numDimensionsLocal; dimIdx++) {
 
-            int cellGlobalIdx = static_cast<int>(localGlobalIndicesB[cellLocalIndex]);
+            size_t cellGlobalIdx = static_cast<int>(localGlobalIndicesB[cellLocalIndex]);
             float expression = _embeddingSourceDatasetB->getValueAt(cellGlobalIdx * numDimensionsFull + dimIdx);
 
-            int dimIdxGlobal = static_cast<int>(localGlobalIndicesA[dimIdx]); // dimIdx is the local index in the embedding A
+            size_t dimIdxGlobal = static_cast<int>(localGlobalIndicesA[dimIdx]); // dimIdx is the local index in the embedding A
             if (expression > (_columnMins[dimIdx] + _thresholdLines * _columnRanges[dimIdxGlobal])) { // draw lines for cells whose expression are above the thresholdvalue
                 _lines.emplace_back(dimIdx, cellLocalIndex);
             }
@@ -1982,13 +1982,12 @@ void DualViewPlugin::computeTopCellForEachGene()
     int numLocalGenes = _embeddingDatasetA->getNumPoints(); // number of genes in the current gene embedding  
     qDebug() << "computeTopCellForEachGene(): numLocalGenes is " << numLocalGenes;
     // FIXME: numGene is the local genes shown in the embedding A, not same as the number of dimensions in source dataset B
-    // TODO: map the local gene index to the global gene index in the source dataset B
     std::vector<std::uint32_t> localGlobalIndicesA;
     _embeddingDatasetA->getGlobalIndices(localGlobalIndicesA);
     qDebug() << "computeTopCellForEachGene(): localGlobalIndicesA.size() is " << localGlobalIndicesA.size();
     // int globalIndexA = localGlobalIndicesA[localIndexA];
 
-    int numGlobalGenes = _embeddingSourceDatasetB->getNumDimensions(); // number of genes in the source dataset B
+    size_t numGlobalGenes = _embeddingSourceDatasetB->getNumDimensions(); // number of genes in the source dataset B
     qDebug() << "computeTopCellForEachGene(): numGlobalGenes is " << numGlobalGenes;
 
 
@@ -2021,12 +2020,12 @@ void DualViewPlugin::computeTopCellForEachGene()
             for (const auto& index : cluster.getIndices()) // index is the global index of the cell in embedding B
             {
 
-                int offset = index * numGlobalGenes;
+                size_t offset = index * numGlobalGenes;
                 //for (int i = 0; i < numLocalGenes; i++)
-                for (int i = 0; i < numGlobalGenes; i++)
+                for (size_t i = 0; i < numGlobalGenes; i++)
                 {
                     //int globalIndexA = localGlobalIndicesA[i];// i = local gene index in embedding A
-                    int globalIndexA = i; // i is the global gene index in the source dataset B
+                    size_t globalIndexA = i; // i is the global gene index in the source dataset B
                     avgExpressionForEachGene[i] += fullDatasetB->getValueAt(offset + globalIndexA);
                 }
                 count++;
@@ -2037,14 +2036,14 @@ void DualViewPlugin::computeTopCellForEachGene()
                 qDebug() << "No valid indices in cluster " << cluster.getName();
                 //continue;
                 //for (int i = 0; i < numLocalGenes; i++) {
-                for (int i = 0; i < numGlobalGenes; i++) {
+                for (size_t i = 0; i < numGlobalGenes; i++) {
                     avgExpressionForEachGene[i] = -100.0f; // TODO: this cluster is actually invalid, FIXME: Keep a separate boolean vector to indicate invalid clusters when choosing top cluster
                 }
             }
             else
             {
                 //for (int i = 0; i < numLocalGenes; i++)
-                for (int i = 0; i < numGlobalGenes; i++)
+                for (size_t i = 0; i < numGlobalGenes; i++)
                 {
                     avgExpressionForEachGene[i] /= static_cast<float>(count); // better use static_cast<float>(count) ?
                 }
@@ -2097,13 +2096,13 @@ void DualViewPlugin::computeTopCellForEachGene()
 
                 //qDebug() << "extracted from fullDataA geneExpression.size() = " << geneExpression.size();
 
-                int offset = globalCellIndex * numGlobalGenes;
+                size_t offset = globalCellIndex * numGlobalGenes;
                 //for (int i = 0; i < numLocalGenes; i++)
-                for (int i = 0; i < numGlobalGenes; i++)
+                for (size_t i = 0; i < numGlobalGenes; i++)
                 {
                     //avgExpressionForEachGene[i] += geneExpression[i];
                     //int globalIndexA= localGlobalIndicesA[i]; // i = local gene index in embedding A
-                    int globalIndexA = i;
+                    size_t globalIndexA = i;
                     avgExpressionForEachGene[i] += fullDatasetB->getValueAt(offset + globalIndexA);
                 }
                 count++;
@@ -2114,7 +2113,7 @@ void DualViewPlugin::computeTopCellForEachGene()
                 qDebug() << "No valid indices in cluster " << cluster.getName();
                 //continue;
                 //for (int i = 0; i < numLocalGenes; i++)
-                for (int i = 0; i < numGlobalGenes; i++)
+                for (size_t i = 0; i < numGlobalGenes; i++)
                 {
                     avgExpressionForEachGene[i] = -100.0f; // TODO: this cluster is actually invalid, FIXME: Keep a separate boolean vector to indicate invalid clusters when choosing top cluster
                 }
@@ -2122,7 +2121,7 @@ void DualViewPlugin::computeTopCellForEachGene()
             else
             {
                 //for (int i = 0; i < numLocalGenes; i++)
-                for (int i = 0; i < numGlobalGenes; i++)
+                for (size_t i = 0; i < numGlobalGenes; i++)
                 {
                     avgExpressionForEachGene[i] /= static_cast<float>(count);
                 }
