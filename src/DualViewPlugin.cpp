@@ -1925,7 +1925,18 @@ void DualViewPlugin::computeTopCellForEachGene()
 
     qDebug() << "computeTopCellForEachGene(): _metaDatasetB is " << _metaDatasetB->getGuiName();
 
-    int numGene = _embeddingDatasetA->getNumPoints(); // number of genes in the current gene embedding  
+    int numLocalGenes = _embeddingDatasetA->getNumPoints(); // number of genes in the current gene embedding  
+    qDebug() << "computeTopCellForEachGene(): numLocalGenes is " << numLocalGenes;
+    // FIXME: numGene is the local genes shown in the embedding A, not same as the number of dimensions in source dataset B
+    // TODO: map the local gene index to the global gene index in the source dataset B
+    std::vector<std::uint32_t> localGlobalIndicesA;
+    _embeddingDatasetA->getGlobalIndices(localGlobalIndicesA);
+    qDebug() << "computeTopCellForEachGene(): localGlobalIndicesA.size() is " << localGlobalIndicesA.size();
+    // int globalIndexA = localGlobalIndicesA[localIndexA];
+
+    int numGlobalGenes = _embeddingSourceDatasetB->getNumDimensions(); // number of genes in the source dataset B
+    qDebug() << "computeTopCellForEachGene(): numGlobalGenes is " << numGlobalGenes;
+
 
     // TEST 2: use the cell type with max avg expression for each gene - START
 
@@ -1933,6 +1944,9 @@ void DualViewPlugin::computeTopCellForEachGene()
     qDebug() << "computeTopCellForEachGene(): fullDatasetB is " << fullDatasetB->getGuiName() << "with num points: " << fullDatasetB->getNumPoints() << "and num dimensions: " << fullDatasetB->getNumDimensions();
 
     std::vector<std::vector<float>> avgExpressionForEachGeneForEachCluster; // cluster is stored in the same order as in the meta dataset
+
+
+    qDebug() << _embeddingDatasetA->getSourceDataset<Points>()->getNumDimensions() << "dimensions in embedding A source dataset" << _embeddingDatasetA->getSourceDataset<Points>()->getGuiName();
 
     auto start1 = std::chrono::high_resolution_clock::now();
     // FIXME: this would return if embedding B is the overview scale of HSNE, do we want this?
@@ -1947,15 +1961,16 @@ void DualViewPlugin::computeTopCellForEachGene()
         for (const auto& cluster : _metaDatasetB.get<Clusters>()->getClusters())
         {
             // for this cluster, compute the avg expression for each gene
-            std::vector<float> avgExpressionForEachGene(numGene, 0.0f);
+            std::vector<float> avgExpressionForEachGene(numLocalGenes, 0.0f);
             int count = 0;
             for (const auto& index : cluster.getIndices()) // index is the global index of the cell in embedding B
             {
 
-                int offset = index * numGene;
-                for (int i = 0; i < numGene; i++)
+                int offset = index * numGlobalGenes;
+                for (int i = 0; i < numLocalGenes; i++)
                 {
-                    avgExpressionForEachGene[i] += fullDatasetB->getValueAt(offset + i);
+                    int globalIndexA = localGlobalIndicesA[i];// i = local gene index in embedding A
+                    avgExpressionForEachGene[i] += fullDatasetB->getValueAt(offset + globalIndexA);
                 }
                 count++;
             }
@@ -1964,20 +1979,22 @@ void DualViewPlugin::computeTopCellForEachGene()
             {
                 qDebug() << "No valid indices in cluster " << cluster.getName();
                 //continue;
-                for (int i = 0; i < numGene; i++) {
+                for (int i = 0; i < numLocalGenes; i++) {
                     avgExpressionForEachGene[i] = -100.0f; // TODO: this cluster is actually invalid, FIXME: Keep a separate boolean vector to indicate invalid clusters when choosing top cluster
                 }
             }
             else
             {
-                for (int i = 0; i < numGene; i++)
+                for (int i = 0; i < numLocalGenes; i++)
                 {
                     avgExpressionForEachGene[i] /= static_cast<float>(count); // better use static_cast<float>(count) ?
                 }
             }
 
             avgExpressionForEachGeneForEachCluster.push_back(avgExpressionForEachGene);
+            
         }
+        qDebug() << "computeTopCellForEachGene(): avgExpressionForEachGeneForEachCluster.size() = " << avgExpressionForEachGeneForEachCluster.size();
     }
     else // if correspond
     {
@@ -1998,7 +2015,7 @@ void DualViewPlugin::computeTopCellForEachGene()
         for (const auto& cluster : _metaDatasetB.get<Clusters>()->getClusters())
         {
             // for this cluster, compute the avg expression for each gene
-            std::vector<float> avgExpressionForEachGene(numGene, 0.0f);
+            std::vector<float> avgExpressionForEachGene(numLocalGenes, 0.0f);
             int count = 0;
 
             for (const auto& globalCellIndex : cluster.getIndices()) // global cell index in embedding B
@@ -2020,11 +2037,12 @@ void DualViewPlugin::computeTopCellForEachGene()
 
                 //qDebug() << "extracted from fullDataA geneExpression.size() = " << geneExpression.size();
 
-                int offset = globalCellIndex * numGene;
-                for (int i = 0; i < numGene; i++)
+                int offset = globalCellIndex * numGlobalGenes;
+                for (int i = 0; i < numLocalGenes; i++)
                 {
                     //avgExpressionForEachGene[i] += geneExpression[i];
-                    avgExpressionForEachGene[i] += fullDatasetB->getValueAt(offset + i);
+                    int globalIndexA= localGlobalIndicesA[i]; // i = local gene index in embedding A
+                    avgExpressionForEachGene[i] += fullDatasetB->getValueAt(offset + globalIndexA);
                 }
                 count++;
             }
@@ -2033,13 +2051,13 @@ void DualViewPlugin::computeTopCellForEachGene()
             {
                 qDebug() << "No valid indices in cluster " << cluster.getName();
                 //continue;
-                for (int i = 0; i < numGene; i++) {
+                for (int i = 0; i < numLocalGenes; i++) {
                     avgExpressionForEachGene[i] = -100.0f; // TODO: this cluster is actually invalid, FIXME: Keep a separate boolean vector to indicate invalid clusters when choosing top cluster
                 }
             }
             else
             {
-                for (int i = 0; i < numGene; i++)
+                for (int i = 0; i < numLocalGenes; i++)
                 {
                     avgExpressionForEachGene[i] /= static_cast<float>(count);
                 }
@@ -2049,6 +2067,7 @@ void DualViewPlugin::computeTopCellForEachGene()
             avgExpressionForEachGeneForEachCluster.push_back(avgExpressionForEachGene);
             qDebug() << "In this subset: " << cluster.getName() << " count = " << count;
         }
+        qDebug() << "computeTopCellForEachGene(): avgExpressionForEachGeneForEachCluster.size() = " << avgExpressionForEachGeneForEachCluster.size();
     }
 
     auto end1 = std::chrono::high_resolution_clock::now();
@@ -2057,9 +2076,9 @@ void DualViewPlugin::computeTopCellForEachGene()
 
 
     // find the cell type with max avg expression for each gene
-    std::vector<int> topCellTypeForEachLocalGene(numGene, -1);
+    std::vector<int> topCellTypeForEachLocalGene(numLocalGenes, -1);
 
-    for (int i = 0; i < numGene; i++)
+    for (int i = 0; i < numLocalGenes; i++)
     {
         float maxAvgExpression = avgExpressionForEachGeneForEachCluster[0][i];
         int maxAvgExpressionIndex = 0;
@@ -2073,7 +2092,7 @@ void DualViewPlugin::computeTopCellForEachGene()
         }
         topCellTypeForEachLocalGene[i] = maxAvgExpressionIndex;
     }
-    //qDebug() << "topCellTypeForEachLocalGene.size() = " << topCellTypeForEachLocalGene.size();
+    qDebug() << "topCellTypeForEachLocalGene.size() = " << topCellTypeForEachLocalGene.size();
 
 
     // extract the colors and cluster names for each cell type
@@ -2103,7 +2122,7 @@ void DualViewPlugin::computeTopCellForEachGene()
     }
 
     // assign the top cell for each gene to a cluster
-    for (unsigned int i = 0; i < numGene; i++)
+    for (unsigned int i = 0; i < numLocalGenes; i++)
     {
         const QString clusterName = cellTypeNames[topCellTypeForEachLocalGene[i]];
         Vector3f clusterColor = cellTypeColors[topCellTypeForEachLocalGene[i]];
