@@ -1848,7 +1848,22 @@ void DualViewPlugin::updateSelectedGeneMeanExpression()
     std::vector<float> selectedGeneMeanExpressionFull;
     computeSelectedGeneMeanExpression(_embeddingSourceDatasetB, _embeddingDatasetA, selectedGeneMeanExpressionFull);
 
+    // debug
+   /* qDebug() << "DualViewPlugin: updateSelectedGeneMeanExpression() - selectedGeneMeanExpressionFull size: " << selectedGeneMeanExpressionFull.size();
+    auto test = mv::data().createDataset<Points>("Points", "Test");
+    events().notifyDatasetAdded(test);
+    test->setData<float>(selectedGeneMeanExpressionFull.data(), selectedGeneMeanExpressionFull.size(), 1);
+    events().notifyDatasetDataChanged(test);*/
+
+
     extractSelectedGeneMeanExpression(_embeddingSourceDatasetB, selectedGeneMeanExpressionFull, _selectedGeneMeanExpression);
+
+    // debug
+    /*qDebug() << "DualViewPlugin: updateSelectedGeneMeanExpression() - _selectedGeneMeanExpression size: " << _selectedGeneMeanExpression.size();
+    auto test2 = mv::data().createDataset<Points>("Points", "Test2");
+    events().notifyDatasetAdded(test2);
+    test2->setData<float>(_selectedGeneMeanExpression.data(), _selectedGeneMeanExpression.size(), 1);
+    events().notifyDatasetDataChanged(test2);*/
 
     if (!_meanExpressionScalars.isValid())
     {
@@ -1915,6 +1930,7 @@ void DualViewPlugin::computeTopCellForEachGene()
     // TEST 2: use the cell type with max avg expression for each gene - START
 
     auto fullDatasetB = _embeddingDatasetB->getSourceDataset<Points>()->getFullDataset<Points>();
+    qDebug() << "computeTopCellForEachGene(): fullDatasetB is " << fullDatasetB->getGuiName() << "with num points: " << fullDatasetB->getNumPoints() << "and num dimensions: " << fullDatasetB->getNumDimensions();
 
     std::vector<std::vector<float>> avgExpressionForEachGeneForEachCluster; // cluster is stored in the same order as in the meta dataset
 

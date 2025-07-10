@@ -172,6 +172,10 @@ void computeSelectedGeneMeanExpression(const mv::Dataset<Points> sourceDataset, 
     int numDimensionsB = sourceDataset->getNumDimensions();
     int numSelectedGenes = geneSelection->indices.size();
 
+    qDebug() << "DualViewPlugin: computeSelectedGeneMeanExpression: numPointsB: " << numPointsB 
+             << " numDimensionsB: " << numDimensionsB 
+             << " numSelectedGenes: " << numSelectedGenes;
+
     // Output a dataset to color the spatial map by the selected gene avg. expression - always the same size as the full dataset
     mv::Dataset<Points> fullDatasetB;
     if (sourceDataset->isDerivedData())
@@ -183,7 +187,7 @@ void computeSelectedGeneMeanExpression(const mv::Dataset<Points> sourceDataset, 
         fullDatasetB = sourceDataset->getFullDataset<Points>();
     }
     int totalNumPoints = fullDatasetB->getNumPoints();
-    //qDebug() << "totalNumPoints" << totalNumPoints << "fullDatasetB" << fullDatasetB->getGuiName();
+    qDebug() << "totalNumPoints" << totalNumPoints << "fullDatasetB" << fullDatasetB->getGuiName();
 
     meanExpressionFull.resize(totalNumPoints, 0.0f);
 
