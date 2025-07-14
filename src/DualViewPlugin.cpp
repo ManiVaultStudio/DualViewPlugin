@@ -1277,11 +1277,15 @@ void DualViewPlugin::sendDataToSampleScope()
             // count the number of cells that have expression more than the lowest value
             int countMin = 0;
             float minExpression = *std::min_element(_columnMins.begin(), _columnMins.end());
+            qDebug() << "minExpression" << minExpression;
+
             for (int i = 0; i < numPointsB; i++)
             {
                 if (_selectedGeneMeanExpression[i] > minExpression)
                     countMin++;
             }
+            qDebug() << "_selectedGeneMeanExpression.size() " << _selectedGeneMeanExpression.size() << "countMin " << countMin << "top10 " << top10;
+
             // if the number of cells with expression more than min is less than 10%, use that number
             int numCellsCounted = (countMin > top10) ? top10 : countMin;
 
@@ -1373,11 +1377,25 @@ void DualViewPlugin::sendDataToSampleScope()
 
         // FIXME: currently filteredGenes is all genes with log2FC > _log2FCThreshold in all genes in dataset B
         // FIXME: how to handle the case of HSNE, where the embedding A is a subset of the whole dimensions in B?
-        for (int i = 0; i < _diffSelectionvsAll.size(); ++i) {
+
+        /*for (int i = 0; i < _diffSelectionvsAll.size(); ++i) {// filteredGenes stores all the global filtered genes by their global index
             if (_diffSelectionvsAll[i] > _log2FCThreshold) {
                 filteredGenes.emplace_back(_diffSelectionvsAll[i], i);
             }
+        }*/
+
+        std::vector<std::uint32_t> localGlobalIndicesA;
+        _embeddingDatasetA->getGlobalIndices(localGlobalIndicesA);
+
+        for (int i = 0; i < _embeddingDatasetA->getNumPoints(); ++i)
+        {
+            int globalGeneIdx = static_cast<int>(localGlobalIndicesA[i]);
+            if (_diffSelectionvsAll[globalGeneIdx] > _log2FCThreshold)
+            {
+                filteredGenes.emplace_back(_diffSelectionvsAll[globalGeneIdx], globalGeneIdx); // filteredGenes stores the local filtered genes by their global index
+            }
         }
+
         // Sort by descending log2FC - TODO: if needed?
         std::sort(filteredGenes.begin(), filteredGenes.end(), std::greater<std::pair<float, int>>());
 
@@ -1385,8 +1403,8 @@ void DualViewPlugin::sendDataToSampleScope()
         _currentGeneSymbols.reserve(filteredGenes.size());
 
         for (int i = 0; i < filteredGenes.size(); ++i) {
-            int geneIndex = filteredGenes[i].second;
-            QString geneSymbol = _embeddingSourceDatasetB->getDimensionNames()[geneIndex];
+            int geneIndex = filteredGenes[i].second;// geneIndex is the global dimension index in source dataset B
+            QString geneSymbol = _embeddingSourceDatasetB->getDimensionNames()[geneIndex]; 
             _currentGeneSymbols.append(geneSymbol);
         }
     }
