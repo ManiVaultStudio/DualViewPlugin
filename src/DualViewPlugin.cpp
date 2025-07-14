@@ -1554,9 +1554,24 @@ void DualViewPlugin::updateEmbeddingASize()
     _connectedCellsPerGene = diffSelectionvsAll;
     _diffSelectionvsAll = diffSelectionvsAll; // FIXME: store for later use, remove later, only keep one or _connectedCellsPerGene
 
+    // FIXME: accomadate to hierarchical embedding A
+    // extract corresponding dimensions from local embedding A
+    std::vector<std::uint32_t> localGlobalIndicesA;
+    _embeddingDatasetA->getGlobalIndices(localGlobalIndicesA);
+
+    std::vector<float> connectedCellsPerGeneLocal(_embeddingDatasetA->getNumPoints(), 0.0f);
+    for (int i = 0; i < _embeddingDatasetA->getNumPoints(); i++)
+    {
+        connectedCellsPerGeneLocal[i] = _connectedCellsPerGene[localGlobalIndicesA[i]];
+    }
+    qDebug() << "connectedCellsPerGeneLocal size" << connectedCellsPerGeneLocal.size();
+
     std::vector<float> scaledConnectedCellsPerGene;
     float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue();
-    scaleDataRangeExperiment(_connectedCellsPerGene, scaledConnectedCellsPerGene, false, ptSize * 3); // TODO: 3 is the hard coded factor
+    //scaleDataRangeExperiment(_connectedCellsPerGene, scaledConnectedCellsPerGene, false, ptSize * 3); // TODO: 3 is the hard coded factor
+    scaleDataRangeExperiment(connectedCellsPerGeneLocal, scaledConnectedCellsPerGene, false, ptSize * 3); // FIXME: test for hierarchy in embedding A
+
+    qDebug() << "scaledConnectedCellsPerGene size" << scaledConnectedCellsPerGene.size();
     _embeddingWidgetA->setPointSizeScalars(scaledConnectedCellsPerGene);
 
    /* qDebug() << "Top genes with highest diffSelectionvsAll";
