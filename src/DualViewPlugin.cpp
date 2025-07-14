@@ -986,6 +986,13 @@ void DualViewPlugin::highlightSelectedLines(mv::Dataset<Points> dataset)
 
     auto selection = dataset->getSelection<Points>();
 
+    if (selection->indices.size() < 1)
+    {
+        qDebug() << "highlightSelectedLines aborted, due to selected indices < 1";
+        return;
+    }
+        
+
     std::vector<bool> selected; // bool of selected in the current scale
     std::vector<char> highlights;
 
@@ -1012,11 +1019,27 @@ void DualViewPlugin::highlightSelectedLines(mv::Dataset<Points> dataset)
 
         // Experiment selectionvsAll: highlight lines based on diff AND the global defined connected lines
         //const float log2FC_threshold = 1.0f;
-        std::vector<bool> enrichedGenes(_diffSelectionvsAll.size(), false);
+
+        // FIXME: handle with hierarchy in embedding A, _diffSelectionvsAll contains all the dimensions in sourcedataset B -done
+        std::vector<std::uint32_t> localGlobalIndicesA;
+        _embeddingDatasetA->getGlobalIndices(localGlobalIndicesA);
+
+        /*std::vector<bool> enrichedGenes(_diffSelectionvsAll.size(), false);
         for (int i = 0; i < _diffSelectionvsAll.size(); ++i) {
             if (_diffSelectionvsAll[i] > _log2FCThreshold)
                 enrichedGenes[i] = true;
+        }*/
+
+        //qDebug() << "_diffSelectionvsAll.size " << _diffSelectionvsAll.size();
+        std::vector<bool> enrichedGenes(_embeddingDatasetA->getNumPoints(), false);
+
+        for (int i = 0; i < _embeddingDatasetA->getNumPoints(); ++i)
+        {
+            int globalGeneIdx = static_cast<int>(localGlobalIndicesA[i]);
+            if (_diffSelectionvsAll[globalGeneIdx] > _log2FCThreshold)
+                enrichedGenes[i] = true;
         }
+
 
         std::vector<std::pair<int, int>> enrichedHighlightedLines;
         std::unordered_set<int> highlightedCellSet;
@@ -1348,6 +1371,8 @@ void DualViewPlugin::sendDataToSampleScope()
         //const float log2FC_threshold = 1.0f;
         std::vector<std::pair<float, int>> filteredGenes;
 
+        // FIXME: currently filteredGenes is all genes with log2FC > _log2FCThreshold in all genes in dataset B
+        // FIXME: how to handle the case of HSNE, where the embedding A is a subset of the whole dimensions in B?
         for (int i = 0; i < _diffSelectionvsAll.size(); ++i) {
             if (_diffSelectionvsAll[i] > _log2FCThreshold) {
                 filteredGenes.emplace_back(_diffSelectionvsAll[i], i);
@@ -1554,7 +1579,7 @@ void DualViewPlugin::updateEmbeddingASize()
     _connectedCellsPerGene = diffSelectionvsAll;
     _diffSelectionvsAll = diffSelectionvsAll; // FIXME: store for later use, remove later, only keep one or _connectedCellsPerGene
 
-    // FIXME: accomadate to hierarchical embedding A
+    // FIXME: accomadate to hierarchical embedding A -done
     // extract corresponding dimensions from local embedding A
     std::vector<std::uint32_t> localGlobalIndicesA;
     _embeddingDatasetA->getGlobalIndices(localGlobalIndicesA);
@@ -1569,7 +1594,7 @@ void DualViewPlugin::updateEmbeddingASize()
     std::vector<float> scaledConnectedCellsPerGene;
     float ptSize = _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getSizeAction().getMagnitudeAction().getValue();
     //scaleDataRangeExperiment(_connectedCellsPerGene, scaledConnectedCellsPerGene, false, ptSize * 3); // TODO: 3 is the hard coded factor
-    scaleDataRangeExperiment(connectedCellsPerGeneLocal, scaledConnectedCellsPerGene, false, ptSize * 3); // FIXME: test for hierarchy in embedding A
+    scaleDataRangeExperiment(connectedCellsPerGeneLocal, scaledConnectedCellsPerGene, false, ptSize * 3); // FIXME: test for hierarchy in embedding A -done
 
     qDebug() << "scaledConnectedCellsPerGene size" << scaledConnectedCellsPerGene.size();
     _embeddingWidgetA->setPointSizeScalars(scaledConnectedCellsPerGene);
