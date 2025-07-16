@@ -1168,6 +1168,8 @@ void DualViewPlugin::highlightSelectedEmbeddings(ScatterplotWidget*& widget, mv:
 
     auto selection = dataset->getSelection<Points>();
 
+    qDebug() << "highlightSelectedEmbeddings: selection size" << selection->indices.size();
+
     std::vector<bool> selected; // bool of selected in the current scale
     std::vector<char> highlights;
 
@@ -1187,6 +1189,7 @@ void DualViewPlugin::sendDataToSampleScope()
     if (getSamplerAction().getEnabledAction().isChecked() == false)
         return;
 
+
     QVariantList globalPointIndices;
     QStringList labels;
     QStringList data;
@@ -1202,8 +1205,9 @@ void DualViewPlugin::sendDataToSampleScope()
         std::vector<std::uint32_t> localGlobalIndices;
         _embeddingDatasetA->getGlobalIndices(localGlobalIndices);
 
+        // FIXME: only show the local selected points (landmarks) on embedding A, if not on data level???or ???
         std::vector<std::uint32_t> sampledPoints;
-        sampledPoints.reserve(_embeddingPositionsA.size());
+        sampledPoints.reserve(_embeddingPositionsA.size()); // FIXME: this is not needed, as  sampledPoints.push_back
 
         // FIXME: selection->indices are global indices ?????
         for (auto selectionIndex : selection->indices)
@@ -1214,6 +1218,8 @@ void DualViewPlugin::sendDataToSampleScope()
         {
            qDebug() << sampledPoint;
         }*/
+
+       
 
 
         std::int32_t numberOfPoints = 0;
@@ -1375,26 +1381,27 @@ void DualViewPlugin::sendDataToSampleScope()
         //const float log2FC_threshold = 1.0f;
         std::vector<std::pair<float, int>> filteredGenes;
 
-        // FIXME: currently filteredGenes is all genes with log2FC > _log2FCThreshold in all genes in dataset B
-        // FIXME: how to handle the case of HSNE, where the embedding A is a subset of the whole dimensions in B?
+        // Currently filteredGenes is all genes with log2FC > _log2FCThreshold in all genes in dataset B 
+        // FIXME: how to handle the case of HSNE, where the embedding A is a subset of the whole dimensions in B? 
 
-        /*for (int i = 0; i < _diffSelectionvsAll.size(); ++i) {// filteredGenes stores all the global filtered genes by their global index
+        for (int i = 0; i < _diffSelectionvsAll.size(); ++i) {// filteredGenes stores all the global filtered genes by their global index
             if (_diffSelectionvsAll[i] > _log2FCThreshold) {
                 filteredGenes.emplace_back(_diffSelectionvsAll[i], i);
             }
-        }*/
-
-        std::vector<std::uint32_t> localGlobalIndicesA;
-        _embeddingDatasetA->getGlobalIndices(localGlobalIndicesA);
-
-        for (int i = 0; i < _embeddingDatasetA->getNumPoints(); ++i)
-        {
-            int globalGeneIdx = static_cast<int>(localGlobalIndicesA[i]);
-            if (_diffSelectionvsAll[globalGeneIdx] > _log2FCThreshold)
-            {
-                filteredGenes.emplace_back(_diffSelectionvsAll[globalGeneIdx], globalGeneIdx); // filteredGenes stores the local filtered genes by their global index
-            }
         }
+
+        // Experiment: output genes that are in the current embedding A only
+        //std::vector<std::uint32_t> localGlobalIndicesA;
+        //_embeddingDatasetA->getGlobalIndices(localGlobalIndicesA);
+
+        //for (int i = 0; i < _embeddingDatasetA->getNumPoints(); ++i)
+        //{
+        //    int globalGeneIdx = static_cast<int>(localGlobalIndicesA[i]);
+        //    if (_diffSelectionvsAll[globalGeneIdx] > _log2FCThreshold)
+        //    {
+        //        filteredGenes.emplace_back(_diffSelectionvsAll[globalGeneIdx], globalGeneIdx); // filteredGenes stores the local filtered genes by their global index
+        //    }
+        //}
 
         // Sort by descending log2FC - TODO: if needed?
         std::sort(filteredGenes.begin(), filteredGenes.end(), std::greater<std::pair<float, int>>());
