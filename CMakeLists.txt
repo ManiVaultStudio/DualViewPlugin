@@ -43,8 +43,8 @@ set(PLUGIN_SOURCES
     src/DualViewPlugin.cpp
     src/ChartWidget.h
     src/ChartWidget.cpp
-	src/ScatterPlotWidget.h
-    src/ScatterPlotWidget.cpp
+	src/ScatterplotWidget.h
+    src/ScatterplotWidget.cpp
 	src/EmbeddingLinesWidget.h
 	src/EmbeddingLinesWidget.cpp
 	src/MyShader.h
