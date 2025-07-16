@@ -887,6 +887,10 @@ void DualViewPlugin::embeddingDatasetAChanged()
         update1DEmbeddingPositions(true);
         updateLineConnections();
     }
+
+    // initialize 
+    // Avoid crash when no selection on A has been made & selection is empty
+    _diffSelectionvsAll.resize(_embeddingSourceDatasetA->getFullDataset<Points>()->getNumPoints(), 0.0f);
 }
 
 void DualViewPlugin::embeddingDatasetBChanged()
@@ -984,14 +988,7 @@ void DualViewPlugin::highlightSelectedLines(mv::Dataset<Points> dataset)
     if (!dataset.isValid())
         return;
 
-    auto selection = dataset->getSelection<Points>();
-
-    if (selection->indices.size() < 1)
-    {
-        qDebug() << "highlightSelectedLines aborted, due to selected indices < 1";
-        return;
-    }
-        
+    auto selection = dataset->getSelection<Points>();      
 
     std::vector<bool> selected; // bool of selected in the current scale
     std::vector<char> highlights;
