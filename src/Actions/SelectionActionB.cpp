@@ -36,6 +36,7 @@ SelectionActionB::SelectionActionB(QObject* parent, const QString& title) :
     //addAction(&getOutlineOpacityAction());
     //addAction(&getOutlineHaloEnabledAction());
 
+    //_pixelSelectiscatterplotWidgetonActionB.setEnabled(false);
     _pixelSelectionActionB.getOverlayColorAction().setText("Color");
 
    // _displayModeAction.setToolTip("The way in which selection is visualized");
@@ -73,10 +74,7 @@ void SelectionActionB::initialize(DualViewPlugin* dualViewPlugin)
         PixelSelectionType::Polygon
     });
 
-    /*getSamplerPixelSelectionAction().initialize(&scatterplotWidget, &scatterplotWidget.getSamplerPixelSelectionTool(), {
-        PixelSelectionType::Sample
-    });*/
-
+    scatterplotWidget.getSamplerPixelSelectionTool().setEnabled(false);
 
     //_displayModeAction.setCurrentIndex(static_cast<std::int32_t>(scatterplotPlugin->getScatterplotWidget().getSelectionDisplayMode()));
     //_outlineScaleAction.setValue(100.0f * scatterplotPlugin->getScatterplotWidget().getSelectionOutlineScale());
