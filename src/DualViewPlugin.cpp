@@ -109,6 +109,7 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     // toolbars B
     _embeddingBToolbarAction.addAction(&_settingsAction.getEmbeddingBPointPlotAction());
     _embeddingBToolbarAction.addAction(&_settingsAction.getReversePointSizeBAction());
+    _embeddingBToolbarAction.addAction(&_settingsAction.getSelectionActionB());
 
     //_embeddingBSecondaryToolbarAction.addAction(&_embeddingWidgetB->getNavigationAction());
     // TODO FIXME: this is a hack to add the navigation action to the secondary toolbar
