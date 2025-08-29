@@ -766,10 +766,10 @@ void DualViewPlugin::updateLineConnections()
     }
 
     // define lines - assume embedding A is dimension embedding, embedding B is observation embedding
-    int numDimensions = _embeddingSourceDatasetB->getNumDimensions(); // Assume the number of points in A is the same as the number of dimensions in B
-    int numDimensionsFull = _embeddingSourceDatasetB->getNumDimensions();
-    int numPoints = _embeddingSourceDatasetB->getNumPoints(); // num of points in source dataset B
-    int numPointsLocal = _embeddingDatasetB->getNumPoints(); // num of points in the embedding B
+    const size_t numDimensions = _embeddingSourceDatasetB->getNumDimensions(); // Assume the number of points in A is the same as the number of dimensions in B
+    const size_t numDimensionsFull = _embeddingSourceDatasetB->getNumDimensions(); // FIXME: is this needed??
+    const size_t numPoints = _embeddingSourceDatasetB->getNumPoints(); // num of points in source dataset B
+    const size_t numPointsLocal = _embeddingDatasetB->getNumPoints(); // num of points in the embedding B
 
     std::vector<std::uint32_t> localGlobalIndicesB;
     _embeddingSourceDatasetB->getGlobalIndices(localGlobalIndicesB);
@@ -778,15 +778,15 @@ void DualViewPlugin::updateLineConnections()
 
     // Iterate over each row and column in the subset to generate lines
     auto start2 = std::chrono::high_resolution_clock::now();
-    for (int cellLocalIndex = 0; cellLocalIndex < numPointsLocal; cellLocalIndex++) {
-        for (int dimIdx = 0; dimIdx < numDimensions; dimIdx++) {
+    for (size_t cellLocalIndex = 0; cellLocalIndex < numPointsLocal; cellLocalIndex++) {
+        for (size_t dimIdx = 0; dimIdx < numDimensions; dimIdx++) {
 
-            int cellGlobalIdx = static_cast<int>(localGlobalIndicesB[cellLocalIndex]);
+            size_t cellGlobalIdx = static_cast<size_t>(localGlobalIndicesB[cellLocalIndex]);
             float expression = _embeddingSourceDatasetB->getValueAt(cellGlobalIdx * numDimensionsFull + dimIdx);
 
             //if (expression != columnMins[dimLocalIdx]) { // only draw lines for cells whose expression are not at the minimum
             if (expression > (_columnMins[dimIdx] + _thresholdLines * _columnRanges[dimIdx])) { // draw lines for cells whose expression are above the thresholdvalue
-                _lines.emplace_back(dimIdx, cellLocalIndex);
+                _lines.emplace_back(static_cast<uint32_t>(dimIdx), static_cast<uint32_t>(cellLocalIndex));
             }
         }
     }
@@ -1545,8 +1545,9 @@ void DualViewPlugin::samplePoints()
 
     _embeddingDatasetA->getGlobalIndices(localGlobalIndices);
 
-    auto& pointRenderer = _embeddingWidgetA->getPointRenderer();
+    auto& pointRenderer = const_cast<PointRenderer&>(_embeddingWidgetA->getPointRenderer());
     auto& navigator = pointRenderer.getNavigator();
+
 
     const auto zoomRectangleWorld = navigator.getZoomRectangleWorld();
     const auto screenRectangle = QRect(QPoint(), pointRenderer.getRenderSize());
@@ -1916,7 +1917,7 @@ void DualViewPlugin::computeTopCellForEachGene()
 
     qDebug() << "computeTopCellForEachGene(): _metaDatasetB is " << _metaDatasetB->getGuiName();
 
-    int numGene = _embeddingDatasetA->getNumPoints(); // number of genes in the current gene embedding  
+    size_t numGene = _embeddingDatasetA->getNumPoints(); // number of genes in the current gene embedding  
 
     // TEST 2: use the cell type with max avg expression for each gene - START
 
@@ -1939,11 +1940,11 @@ void DualViewPlugin::computeTopCellForEachGene()
             // for this cluster, compute the avg expression for each gene
             std::vector<float> avgExpressionForEachGene(numGene, 0.0f);
             int count = 0;
-            for (const auto& index : cluster.getIndices()) // index is the global index of the cell in embedding B
+            for (const size_t& index : cluster.getIndices()) // index is the global index of the cell in embedding B
             {
 
-                int offset = index * numGene;
-                for (int i = 0; i < numGene; i++)
+                size_t offset = index * numGene;
+                for (size_t i = 0; i < numGene; i++)
                 {
                     avgExpressionForEachGene[i] += fullDatasetB->getValueAt(offset + i);
                 }
@@ -1991,7 +1992,7 @@ void DualViewPlugin::computeTopCellForEachGene()
             std::vector<float> avgExpressionForEachGene(numGene, 0.0f);
             int count = 0;
 
-            for (const auto& globalCellIndex : cluster.getIndices()) // global cell index in embedding B
+            for (const size_t& globalCellIndex : cluster.getIndices()) // global cell index in embedding B
             {
                 // Check if this global index exists in the local embedding B
                 auto it = globalToLocalIndexMapB.find(globalCellIndex);
@@ -2010,8 +2011,8 @@ void DualViewPlugin::computeTopCellForEachGene()
 
                 //qDebug() << "extracted from fullDataA geneExpression.size() = " << geneExpression.size();
 
-                int offset = globalCellIndex * numGene;
-                for (int i = 0; i < numGene; i++)
+                size_t offset = globalCellIndex * numGene;
+                for (size_t i = 0; i < numGene; i++)
                 {
                     //avgExpressionForEachGene[i] += geneExpression[i];
                     avgExpressionForEachGene[i] += fullDatasetB->getValueAt(offset + i);
