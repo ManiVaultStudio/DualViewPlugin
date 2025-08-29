@@ -870,6 +870,11 @@ void DualViewPlugin::embeddingDatasetAChanged()
         update1DEmbeddingPositions(true);
         updateLineConnections();
     }
+
+    // initialize 
+    // Avoid crash when no selection on A has been made & selection is empty
+    _diffSelectionvsAll.resize(_embeddingSourceDatasetA->getFullDataset<Points>()->getNumPoints(), 0.0f);
+
 }
 
 void DualViewPlugin::embeddingDatasetBChanged()
@@ -2309,8 +2314,15 @@ void DualViewPlugin::fromVariantMap(const QVariantMap& variantMap)
     {
         QString meanExpressionId = variantMap["meanExpressionScalars"].toString();
         _meanExpressionScalars = mv::data().getDataset<Points>(meanExpressionId);
+
+        // initialize _selectedGeneMeanExpression using mv::Dataset<Points> _meanExpressionScalars; 
+        _meanExpressionScalars->extractDataForDimension(_selectedGeneMeanExpression, 0);
+
         qDebug() << "DualViewPlugin: fromVariantMap meanExpressionScalars done";
     }
+
+    
+  
 
     if (_metaDatasetA.isValid())
         qDebug() << "DualViewPlugin: fromVariantMap _metaDatasetA = " << _metaDatasetA->getGuiName();
