@@ -91,7 +91,7 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     //_embeddingASecondaryToolbarAction.addAction(&_embeddingWidgetA->getNavigationAction());
     // TODO FIXME: this is a hack to add the navigation action to the secondary toolbar
     auto test = _embeddingWidgetA->getPointRendererNavigator().getNavigationAction().getActions();
-    auto testAction = test[4];
+    auto testAction = test[0]; // zoom group
     testAction->setParent(&_settingsAction);
     _embeddingASecondaryToolbarAction.addAction(testAction);
 
@@ -114,7 +114,7 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     //_embeddingBSecondaryToolbarAction.addAction(&_embeddingWidgetB->getNavigationAction());
     // TODO FIXME: this is a hack to add the navigation action to the secondary toolbar
     auto testB = _embeddingWidgetB->getPointRendererNavigator().getNavigationAction().getActions();
-    auto testActionB = testB[4];
+    auto testActionB = testB[0]; // zoom group
     testActionB->setParent(&_settingsAction);
     _embeddingBSecondaryToolbarAction.addAction(testActionB);
 
