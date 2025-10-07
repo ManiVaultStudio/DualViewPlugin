@@ -2123,7 +2123,6 @@ void DualViewPlugin::computeTopCellForEachGene()
 
 void DualViewPlugin::getEnrichmentAnalysis()
 {
-    //TODO: some genes end with _dup+number, should deal with this
 
      //// output _simplifiedToIndexGeneMapping if not empty
      //if (!_simplifiedToIndexGeneMapping.empty()) {
@@ -2135,10 +2134,33 @@ void DualViewPlugin::getEnrichmentAnalysis()
      //    }
      //}
 
+    // remove suffix "_dup+number" in _currentGeneSymbols, if exist
+    QStringList processedGeneSymbols = _currentGeneSymbols;
+
+    for (QString &gene : processedGeneSymbols) {
+        int pos = gene.lastIndexOf("_dup"); // search for the last occurrence of "_dup", -1 if not found
+        if (pos != -1) {
+
+            // Check if what follows _dup is an integer, if yes, remove the suffix
+            //bool ok = false;
+            //gene.mid(pos + 4).toInt(&ok);
+            //if (ok) {
+            //    gene.truncate(pos);  // remove "_dupN"
+            //}
+
+            //qDebug() << "Gene with _dup found:" << gene;
+            gene.truncate(pos);
+            qDebug() << "Removed suffix from gene:" << gene;
+
+        }
+    }
+
+
     if (!_currentGeneSymbols.isEmpty())
     {
         qDebug() << "DualViewPlugin: getEnrichmentAnalysis()";
-        _client->postGeneGprofiler(_currentGeneSymbols, _backgroundGeneNames, _currentEnrichmentSpecies, _currentSignificanceThresholdMethod);
+        //_client->postGeneGprofiler(_currentGeneSymbols, _backgroundGeneNames, _currentEnrichmentSpecies, _currentSignificanceThresholdMethod);
+        _client->postGeneGprofiler(processedGeneSymbols, _backgroundGeneNames, _currentEnrichmentSpecies, _currentSignificanceThresholdMethod);
     }
     else
     {
@@ -2273,6 +2295,7 @@ void DualViewPlugin::updateEnrichmentOrganism()
         qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
         getEnrichmentAnalysis();
     }
+    // TODO: for other species
 }
 
 void DualViewPlugin::updateEnrichmentSignificanceThresholdMethod()
