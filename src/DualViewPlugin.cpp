@@ -1863,6 +1863,12 @@ void DualViewPlugin::updateSelectedGeneMeanExpression()
         events().notifyDatasetAdded(_meanExpressionScalars);
     }
 
+    // log transform for better visualization
+    for (int i = 0; i < selectedGeneMeanExpressionFull.size(); i++)
+    {
+        selectedGeneMeanExpressionFull[i] = std::log2(selectedGeneMeanExpressionFull[i] + 1.0f); // log2(x+1)
+    }
+
     _meanExpressionScalars->setData<float>(selectedGeneMeanExpressionFull.data(), selectedGeneMeanExpressionFull.size(), 1);
     events().notifyDatasetDataChanged(_meanExpressionScalars);
 }
