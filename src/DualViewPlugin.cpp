@@ -1202,7 +1202,7 @@ void DualViewPlugin::sendDataToSampleScope()
 
             int numPointsB = _embeddingSourceDatasetB->getNumPoints();
 
-            int top10 = numPointsB / 10; // top 10% of the cells
+            int top10 = numPointsB / 100; // top 1% of the cells - TODO: make this configurable, hard code for now
 
             // count the number of cells that have expression more than the lowest value
             int countMin = 0;

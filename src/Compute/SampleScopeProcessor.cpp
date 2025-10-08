@@ -105,7 +105,7 @@ QString buildHtmlForSelection(const bool isASelected, const QString colorDataset
 			.arg(geneSymbolsLessThan80.join(", "))
 			.arg(additionalGenesHtml);  // append the expandable section here
 
-		chartTitle = "<b>Connected cell proportion (10% highest expression of avg. selected genes)</b>";
+		chartTitle = "<b>Connected cell proportion (1% highest expression of avg. selected genes)</b>";
 	}
 	else {
 		outputText = QString(
