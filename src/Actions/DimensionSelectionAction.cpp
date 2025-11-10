@@ -8,7 +8,11 @@ DimensionSelectionAction::DimensionSelectionAction(QObject* parent, const QStrin
     _dimensionAction(this, "Gene")
 {
     setIconByName("search");
+    
     setLabelSizingType(LabelSizingType::Auto);
+
+    setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
+
 
     addAction(&_dimensionAction);
 
