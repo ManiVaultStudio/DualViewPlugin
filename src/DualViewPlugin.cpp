@@ -2299,6 +2299,18 @@ void DualViewPlugin::updateEnrichmentOrganism()
         qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
         getEnrichmentAnalysis();
     }
+    else if (selectedSpecies == "Callithrix jacchus")
+    {
+        _currentEnrichmentSpecies = "cjacchus";
+        qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
+        getEnrichmentAnalysis();
+    }
+    else if (selectedSpecies == "Macaca mulatta")
+    {
+        _currentEnrichmentSpecies = "mmulatta";
+        qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
+        getEnrichmentAnalysis();
+    }
     // TODO: for other species
 }
 

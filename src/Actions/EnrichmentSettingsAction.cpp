@@ -14,7 +14,7 @@ EnrichmentSettingsAction::EnrichmentSettingsAction(QObject* parent, const QStrin
 
     _organismPickerAction.setToolTip("Choose organism");
 
-    _organismPickerAction.initialize(QStringList({ "Mus musculus", "Homo sapiens" }), "Mus musculus");
+    _organismPickerAction.initialize(QStringList({ "Mus musculus", "Homo sapiens", "Callithrix jacchus", "Macaca mulatta"}), "Mus musculus");
     addAction(&_organismPickerAction);
 
     _significanceThresholdMethodAction.initialize(QStringList({ "g_SCS", "bonferroni", "fdr"}), "bonferroni");
