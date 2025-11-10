@@ -71,8 +71,6 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _settingsAction(this, "SettingsAction"),
     _embeddingAToolbarAction(this, "Toolbar A"),
     _embeddingBToolbarAction(this, "Toolbar B"),
-    _embeddingASecondaryToolbarAction(this, "Secondary Toolbar A"),
-    _embeddingBSecondaryToolbarAction(this, "Secondary Toolbar B"),
     _linesToolbarAction(this, "Lines Toolbar")
 {
 
@@ -87,47 +85,10 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingAToolbarAction.addAction(&_settingsAction.getSelectionAction());
     _embeddingAToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction());
 
-
-    //_embeddingASecondaryToolbarAction.addAction(&_embeddingWidgetA->getNavigationAction());
-    // TODO FIXME: this is a hack to add the navigation action to the secondary toolbar
-    auto test = _embeddingWidgetA->getPointRendererNavigator().getNavigationAction().getActions();
-    auto testAction = test[0]; // zoom group
-    testAction->setParent(&_settingsAction);
-    _embeddingASecondaryToolbarAction.addAction(testAction);
-
-    auto focusSelectionActionA = new ToggleAction(this, "Focus selection A");
-    focusSelectionActionA->setIconByName("mouse-pointer");
-    connect(focusSelectionActionA, &ToggleAction::toggled, this, [this](bool toggled) -> void {
-        _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getFocusSelection().setChecked(toggled);
-        });
-    connect(&_settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getFocusSelection(), &ToggleAction::toggled, this, [this, focusSelectionActionA](bool toggled) -> void {
-        focusSelectionActionA->setChecked(toggled);
-        });
-
-    _embeddingASecondaryToolbarAction.addAction(focusSelectionActionA);
-
     // toolbars B
     _embeddingBToolbarAction.addAction(&_settingsAction.getEmbeddingBPointPlotAction());
     _embeddingBToolbarAction.addAction(&_settingsAction.getReversePointSizeBAction());
     _embeddingBToolbarAction.addAction(&_settingsAction.getSelectionActionB());
-
-    //_embeddingBSecondaryToolbarAction.addAction(&_embeddingWidgetB->getNavigationAction());
-    // TODO FIXME: this is a hack to add the navigation action to the secondary toolbar
-    auto testB = _embeddingWidgetB->getPointRendererNavigator().getNavigationAction().getActions();
-    auto testActionB = testB[0]; // zoom group
-    testActionB->setParent(&_settingsAction);
-    _embeddingBSecondaryToolbarAction.addAction(testActionB);
-
-    auto focusSelectionActionB = new ToggleAction(this, "Focus selection B");
-    focusSelectionActionA->setIconByName("mouse-pointer");
-    connect(focusSelectionActionB, &ToggleAction::toggled, this, [this](bool toggled) -> void {
-        _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getFocusSelection().setChecked(toggled);
-        });
-    connect(&_settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getFocusSelection(), &ToggleAction::toggled, this, [this, focusSelectionActionB](bool toggled) -> void {
-        focusSelectionActionB->setChecked(toggled);
-        });
-
-    _embeddingBSecondaryToolbarAction.addAction(focusSelectionActionB);
 
     // toolbar line widget
     _linesToolbarAction.addAction(&_settingsAction.getThresholdLinesAction());
@@ -432,6 +393,7 @@ void DualViewPlugin::init()
 
     const auto toolbarHeight = 30;
 
+    // Embedding A layout
     auto embeddinglayoutA = new QVBoxLayout();
 
     auto embeddingAToolbarWidget = _embeddingAToolbarAction.createWidget(&getWidget());
@@ -440,11 +402,23 @@ void DualViewPlugin::init()
 
     embeddinglayoutA->addWidget(embeddingAToolbarWidget);
     embeddinglayoutA->addWidget(_embeddingWidgetA, 1);
-    embeddinglayoutA->addWidget(_embeddingASecondaryToolbarAction.createWidget(&getWidget()));
 
+    // Add navigation widget to embedding A
+    auto& navigationActionA = _embeddingWidgetA->getPointRendererNavigator().getNavigationAction();
+    navigationActionA.getActions()[0]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup); // force collapse each group
+    navigationActionA.getActions()[1]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
+    navigationActionA.getActions()[2]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
+
+    if (auto navigationWidgetA = navigationActionA.createWidget(&getWidget()))
+    {
+        embeddinglayoutA->addWidget(navigationWidgetA);
+        embeddinglayoutA->setAlignment(navigationWidgetA, Qt::AlignCenter);
+    }
+    navigationActionA.setParent(&_settingsAction);
 
     layout->addLayout(embeddinglayoutA, 1);
 
+    // lines layout
     auto lineslayout = new QVBoxLayout();
 
     auto linesToolbarWidget = _linesToolbarAction.createWidget(&getWidget());
@@ -454,21 +428,17 @@ void DualViewPlugin::init()
     lineslayout->addWidget(linesToolbarWidget);
     lineslayout->addWidget(_embeddingLinesWidget, 1);
 
-    auto placeholderWidget = _embeddingASecondaryToolbarAction.createWidget(&getWidget());
-
+    // Add placeholder widget to have a similar size as navigation widgets in other two embedding layouts
+    auto placeholderWidget = navigationActionA.createWidget(&getWidget());
     auto sizePolicy = placeholderWidget->sizePolicy();
-
     sizePolicy.setRetainSizeWhenHidden(true);
-
     placeholderWidget->setSizePolicy(sizePolicy);
-
     placeholderWidget->hide();
-
     lineslayout->addWidget(placeholderWidget);
-
 
     layout->addLayout(lineslayout, 1);
 
+    // Embedding B layout
     auto embeddinglayoutB = new QVBoxLayout();
 
     auto embeddingBToolbarWidget = _embeddingBToolbarAction.createWidget(&getWidget());
@@ -477,7 +447,20 @@ void DualViewPlugin::init()
 
     embeddinglayoutB->addWidget(embeddingBToolbarWidget);
     embeddinglayoutB->addWidget(_embeddingWidgetB, 1);
-    embeddinglayoutB->addWidget(_embeddingBSecondaryToolbarAction.createWidget(&getWidget()));
+
+    // Add navigation widget to embedding B
+    auto& navigationActionB = _embeddingWidgetB->getPointRendererNavigator().getNavigationAction();
+    navigationActionB.getActions()[0]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup); // force collapse each group
+    navigationActionB.getActions()[1]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
+    navigationActionB.getActions()[2]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
+
+    if (auto navigationWidgetB = navigationActionB.createWidget(&getWidget()))
+    {
+        embeddinglayoutB->addWidget(navigationWidgetB);
+        embeddinglayoutB->setAlignment(navigationWidgetB, Qt::AlignCenter);
+    }
+    navigationActionB.setParent(&_settingsAction);
+
     layout->addLayout(embeddinglayoutB, 1);
 
     getWidget().setLayout(layout);

@@ -221,14 +221,9 @@ protected:
     ColorMap1DAction          _colorMapAction;
     EmbeddingLinesWidget*     _embeddingLinesWidget;
 
-
-
     SettingsAction            _settingsAction;
     HorizontalToolbarAction   _embeddingAToolbarAction;   // Horizontal toolbar for embedding A
     HorizontalToolbarAction   _embeddingBToolbarAction;   // Horizontal toolbar for embedding B
-
-    HorizontalToolbarAction   _embeddingASecondaryToolbarAction;   
-    HorizontalToolbarAction   _embeddingBSecondaryToolbarAction;   
 
     HorizontalToolbarAction   _linesToolbarAction;   // Horizontal toolbar for lines
 
