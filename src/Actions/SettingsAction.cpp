@@ -63,6 +63,7 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     _enrichmentSettingsAction.fromParentVariantMap(variantMap);
 
     _lineSettingsAction.fromParentVariantMap(variantMap);
+    _selectionActionB.fromParentVariantMap(variantMap);
 
     // TODO: serialize selectionActionB
 
@@ -81,6 +82,7 @@ QVariantMap SettingsAction::toVariantMap() const
     _enrichmentSettingsAction.insertIntoVariantMap(variantMap);
 
     _lineSettingsAction.insertIntoVariantMap(variantMap);
+    _selectionActionB.insertIntoVariantMap(variantMap);
 
 
     return variantMap;
