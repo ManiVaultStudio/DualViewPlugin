@@ -177,7 +177,7 @@ private:
 
     mv::Dataset<Clusters>      _topCellForEachGeneDataset; // Dragged in to color embedding A
 
-    float				       _thresholdLines = 0.f;
+    float				       _thresholdLines = 0.9f;
 
     std::vector<std::pair<uint32_t, uint32_t>>   _lines; // first: embedding A feature map, second: embedding B point map - both local indices?
 

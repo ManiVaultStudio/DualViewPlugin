@@ -91,8 +91,9 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingBToolbarAction.addAction(&_settingsAction.getSelectionActionB());
 
     // toolbar line widget
-    _linesToolbarAction.addAction(&_settingsAction.getThresholdLinesAction());
-    _linesToolbarAction.addAction(&_settingsAction.getlog2FCThresholdAction());
+    /*_linesToolbarAction.addAction(&_settingsAction.getThresholdLinesAction());
+    _linesToolbarAction.addAction(&_settingsAction.getlog2FCThresholdAction());*/
+    _linesToolbarAction.addAction(&_settingsAction.getLineSettingsAction());
 
     // context menu
     connect(_embeddingWidgetA, &ScatterplotWidget::customContextMenuRequested, this, [this](const QPoint& point) {
@@ -1870,7 +1871,8 @@ QString DualViewPlugin::getCurrentEmebeddingDataSetID(mv::Dataset<Points> datase
 
 void DualViewPlugin::updateThresholdLines()
 {
-    _thresholdLines = _settingsAction.getThresholdLinesAction().getValue();
+    //_thresholdLines = _settingsAction.getThresholdLinesAction().getValue();
+    _thresholdLines = _settingsAction.getLineSettingsAction().getThresholdLinesAction().getValue();
 
     updateLineConnections();
 
@@ -1888,7 +1890,7 @@ void DualViewPlugin::updateThresholdLines()
 
 void DualViewPlugin::updateLog2FCThreshold()
 {
-    _log2FCThreshold = _settingsAction.getlog2FCThresholdAction().getValue();
+    _log2FCThreshold = _settingsAction.getLineSettingsAction().getlog2FCThresholdAction().getValue();
 
     // update the diffSelectionvsAll based on the new threshold
     if (!_isEmbeddingASelected)
