@@ -86,6 +86,10 @@ set(Actions
     src/Actions/EnrichmentAction.cpp
 	src/Actions/EnrichmentSettingsAction.h
     src/Actions/EnrichmentSettingsAction.cpp
+	src/Actions/SelectionActionB.h
+	src/Actions/SelectionActionB.cpp
+	src/Actions/LineSettingsAction.h
+	src/Actions/LineSettingsAction.cpp
 )
 
 set(Models

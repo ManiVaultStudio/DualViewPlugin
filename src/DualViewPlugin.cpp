@@ -71,8 +71,6 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _settingsAction(this, "SettingsAction"),
     _embeddingAToolbarAction(this, "Toolbar A"),
     _embeddingBToolbarAction(this, "Toolbar B"),
-    _embeddingASecondaryToolbarAction(this, "Secondary Toolbar A"),
-    _embeddingBSecondaryToolbarAction(this, "Secondary Toolbar B"),
     _linesToolbarAction(this, "Lines Toolbar")
 {
 
@@ -87,50 +85,13 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingAToolbarAction.addAction(&_settingsAction.getSelectionAction());
     _embeddingAToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction());
 
-
-    //_embeddingASecondaryToolbarAction.addAction(&_embeddingWidgetA->getNavigationAction());
-    // TODO FIXME: this is a hack to add the navigation action to the secondary toolbar
-    auto test = _embeddingWidgetA->getPointRendererNavigator().getNavigationAction().getActions();
-    auto testAction = test[4];
-    testAction->setParent(&_settingsAction);
-    _embeddingASecondaryToolbarAction.addAction(testAction);
-
-    auto focusSelectionActionA = new ToggleAction(this, "Focus selection A");
-    focusSelectionActionA->setIconByName("mouse-pointer");
-    connect(focusSelectionActionA, &ToggleAction::toggled, this, [this](bool toggled) -> void {
-        _settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getFocusSelection().setChecked(toggled);
-        });
-    connect(&_settingsAction.getEmbeddingAPointPlotAction().getPointPlotAction().getFocusSelection(), &ToggleAction::toggled, this, [this, focusSelectionActionA](bool toggled) -> void {
-        focusSelectionActionA->setChecked(toggled);
-        });
-
-    _embeddingASecondaryToolbarAction.addAction(focusSelectionActionA);
-
     // toolbars B
     _embeddingBToolbarAction.addAction(&_settingsAction.getEmbeddingBPointPlotAction());
-    _embeddingBToolbarAction.addAction(&_settingsAction.getReversePointSizeBAction());
-
-    //_embeddingBSecondaryToolbarAction.addAction(&_embeddingWidgetB->getNavigationAction());
-    // TODO FIXME: this is a hack to add the navigation action to the secondary toolbar
-    auto testB = _embeddingWidgetB->getPointRendererNavigator().getNavigationAction().getActions();
-    auto testActionB = testB[4];
-    testActionB->setParent(&_settingsAction);
-    _embeddingBSecondaryToolbarAction.addAction(testActionB);
-
-    auto focusSelectionActionB = new ToggleAction(this, "Focus selection B");
-    focusSelectionActionA->setIconByName("mouse-pointer");
-    connect(focusSelectionActionB, &ToggleAction::toggled, this, [this](bool toggled) -> void {
-        _settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getFocusSelection().setChecked(toggled);
-        });
-    connect(&_settingsAction.getEmbeddingBPointPlotAction().getPointPlotActionB().getFocusSelection(), &ToggleAction::toggled, this, [this, focusSelectionActionB](bool toggled) -> void {
-        focusSelectionActionB->setChecked(toggled);
-        });
-
-    _embeddingBSecondaryToolbarAction.addAction(focusSelectionActionB);
+    //_embeddingBToolbarAction.addAction(&_settingsAction.getReversePointSizeBAction()); // TODO: is this needed? If not, remove action too
+    _embeddingBToolbarAction.addAction(&_settingsAction.getSelectionActionB());
 
     // toolbar line widget
-    _linesToolbarAction.addAction(&_settingsAction.getThresholdLinesAction());
-    _linesToolbarAction.addAction(&_settingsAction.getlog2FCThresholdAction());
+    _linesToolbarAction.addAction(&_settingsAction.getLineSettingsAction());
 
     // context menu
     connect(_embeddingWidgetA, &ScatterplotWidget::customContextMenuRequested, this, [this](const QPoint& point) {
@@ -431,6 +392,7 @@ void DualViewPlugin::init()
 
     const auto toolbarHeight = 30;
 
+    // Embedding A layout
     auto embeddinglayoutA = new QVBoxLayout();
 
     auto embeddingAToolbarWidget = _embeddingAToolbarAction.createWidget(&getWidget());
@@ -439,11 +401,23 @@ void DualViewPlugin::init()
 
     embeddinglayoutA->addWidget(embeddingAToolbarWidget);
     embeddinglayoutA->addWidget(_embeddingWidgetA, 1);
-    embeddinglayoutA->addWidget(_embeddingASecondaryToolbarAction.createWidget(&getWidget()));
 
+    // Add navigation widget to embedding A
+    auto& navigationActionA = _embeddingWidgetA->getPointRendererNavigator().getNavigationAction();
+    navigationActionA.getActions()[0]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup); // force collapse each group
+    navigationActionA.getActions()[1]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
+    navigationActionA.getActions()[2]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
+
+    if (auto navigationWidgetA = navigationActionA.createWidget(&getWidget()))
+    {
+        embeddinglayoutA->addWidget(navigationWidgetA);
+        embeddinglayoutA->setAlignment(navigationWidgetA, Qt::AlignCenter);
+    }
+    navigationActionA.setParent(&_settingsAction);
 
     layout->addLayout(embeddinglayoutA, 1);
 
+    // lines layout
     auto lineslayout = new QVBoxLayout();
 
     auto linesToolbarWidget = _linesToolbarAction.createWidget(&getWidget());
@@ -453,21 +427,17 @@ void DualViewPlugin::init()
     lineslayout->addWidget(linesToolbarWidget);
     lineslayout->addWidget(_embeddingLinesWidget, 1);
 
-    auto placeholderWidget = _embeddingASecondaryToolbarAction.createWidget(&getWidget());
-
+    // Add placeholder widget to have a similar size as navigation widgets in other two embedding layouts
+    auto placeholderWidget = navigationActionA.createWidget(&getWidget());
     auto sizePolicy = placeholderWidget->sizePolicy();
-
     sizePolicy.setRetainSizeWhenHidden(true);
-
     placeholderWidget->setSizePolicy(sizePolicy);
-
     placeholderWidget->hide();
-
     lineslayout->addWidget(placeholderWidget);
-
 
     layout->addLayout(lineslayout, 1);
 
+    // Embedding B layout
     auto embeddinglayoutB = new QVBoxLayout();
 
     auto embeddingBToolbarWidget = _embeddingBToolbarAction.createWidget(&getWidget());
@@ -476,7 +446,20 @@ void DualViewPlugin::init()
 
     embeddinglayoutB->addWidget(embeddingBToolbarWidget);
     embeddinglayoutB->addWidget(_embeddingWidgetB, 1);
-    embeddinglayoutB->addWidget(_embeddingBSecondaryToolbarAction.createWidget(&getWidget()));
+
+    // Add navigation widget to embedding B
+    auto& navigationActionB = _embeddingWidgetB->getPointRendererNavigator().getNavigationAction();
+    navigationActionB.getActions()[0]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup); // force collapse each group
+    navigationActionB.getActions()[1]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
+    navigationActionB.getActions()[2]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
+
+    if (auto navigationWidgetB = navigationActionB.createWidget(&getWidget()))
+    {
+        embeddinglayoutB->addWidget(navigationWidgetB);
+        embeddinglayoutB->setAlignment(navigationWidgetB, Qt::AlignCenter);
+    }
+    navigationActionB.setParent(&_settingsAction);
+
     layout->addLayout(embeddinglayoutB, 1);
 
     getWidget().setLayout(layout);
@@ -489,7 +472,7 @@ void DualViewPlugin::init()
         if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
             return;
 
-        auto test = _embeddingDatasetA->getSelection<Points>()->indices.size();
+        //auto test = _embeddingDatasetA->getSelection<Points>()->indices.size();
         //qDebug() << "embeddingDatasetA dataSelectionChanged" << test;
 
         _isEmbeddingASelected = true;
@@ -507,6 +490,7 @@ void DualViewPlugin::init()
     connect(&_embeddingDatasetB, &Dataset<Points>::dataSelectionChanged, this, [this]() {
         if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
             return;
+        _isEmbeddingASelected = false;
 
         if (_embeddingDatasetB->getSelection<Points>()->indices.size() != 0)
         {
@@ -514,7 +498,6 @@ void DualViewPlugin::init()
             sendDataToSampleScope();
         }
 
-        _isEmbeddingASelected = false;
         highlightSelectedLines(_embeddingDatasetB); // need to be put after updateEmbeddingASize if use diffselectionvsall for highlighting
         highlightSelectedEmbeddings(_embeddingWidgetB, _embeddingDatasetB);
         });
@@ -765,10 +748,10 @@ void DualViewPlugin::updateLineConnections()
     }
 
     // define lines - assume embedding A is dimension embedding, embedding B is observation embedding
-    int numDimensions = _embeddingSourceDatasetB->getNumDimensions(); // Assume the number of points in A is the same as the number of dimensions in B
-    int numDimensionsFull = _embeddingSourceDatasetB->getNumDimensions();
-    int numPoints = _embeddingSourceDatasetB->getNumPoints(); // num of points in source dataset B
-    int numPointsLocal = _embeddingDatasetB->getNumPoints(); // num of points in the embedding B
+    const size_t numDimensions = _embeddingSourceDatasetB->getNumDimensions(); // Assume the number of points in A is the same as the number of dimensions in B
+    const size_t numDimensionsFull = _embeddingSourceDatasetB->getNumDimensions(); // FIXME: is this needed??
+    const size_t numPoints = _embeddingSourceDatasetB->getNumPoints(); // num of points in source dataset B
+    const size_t numPointsLocal = _embeddingDatasetB->getNumPoints(); // num of points in the embedding B
 
     std::vector<std::uint32_t> localGlobalIndicesB;
     _embeddingSourceDatasetB->getGlobalIndices(localGlobalIndicesB);
@@ -777,15 +760,15 @@ void DualViewPlugin::updateLineConnections()
 
     // Iterate over each row and column in the subset to generate lines
     auto start2 = std::chrono::high_resolution_clock::now();
-    for (int cellLocalIndex = 0; cellLocalIndex < numPointsLocal; cellLocalIndex++) {
-        for (int dimIdx = 0; dimIdx < numDimensions; dimIdx++) {
+    for (size_t cellLocalIndex = 0; cellLocalIndex < numPointsLocal; cellLocalIndex++) {
+        for (size_t dimIdx = 0; dimIdx < numDimensions; dimIdx++) {
 
-            int cellGlobalIdx = static_cast<int>(localGlobalIndicesB[cellLocalIndex]);
+            size_t cellGlobalIdx = static_cast<size_t>(localGlobalIndicesB[cellLocalIndex]);
             float expression = _embeddingSourceDatasetB->getValueAt(cellGlobalIdx * numDimensionsFull + dimIdx);
 
             //if (expression != columnMins[dimLocalIdx]) { // only draw lines for cells whose expression are not at the minimum
             if (expression > (_columnMins[dimIdx] + _thresholdLines * _columnRanges[dimIdx])) { // draw lines for cells whose expression are above the thresholdvalue
-                _lines.emplace_back(dimIdx, cellLocalIndex);
+                _lines.emplace_back(static_cast<uint32_t>(dimIdx), static_cast<uint32_t>(cellLocalIndex));
             }
         }
     }
@@ -832,15 +815,19 @@ void DualViewPlugin::embeddingDatasetAChanged()
     _embeddingSourceDatasetA = _embeddingDatasetA->getSourceDataset<Points>();
 
     // TODO: remove this - save the embedding and gene symbols 
-    /*std::vector<QString> geneNames = _embeddingSourceDatasetB->getDimensionNames();
-    qDebug() << _embeddingPositionsA.size() << geneNames.size() << geneNames[0];
-    std::ofstream out("gene_embedding.csv");
-    out << "x,y,gene\n";
-    for (size_t i = 0; i < _embeddingPositionsA.size(); ++i) {
-        out << _embeddingPositionsA[i].x << "," << _embeddingPositionsA[i].y << "," << geneNames[i].toStdString() << "\n";
-    }
-    out.close();*/
-
+    //if (_embeddingDatasetB.isValid())
+    //{
+    //    std::vector<QString> geneNames = _embeddingSourceDatasetB->getDimensionNames();
+    //    qDebug() << _embeddingPositionsA.size() << geneNames.size();
+    //    qDebug() << geneNames[0];
+    //    std::ofstream out("gene_embedding_Xenium5k.csv");
+    //    out << "x,y,gene\n";
+    //    for (size_t i = 0; i < _embeddingPositionsA.size(); ++i) {
+    //        out << _embeddingPositionsA[i].x << "," << _embeddingPositionsA[i].y << "," << geneNames[i].toStdString() << "\n";
+    //    }
+    //    out.close();
+    //}
+       
     // TODO: hard code to clear _metaDatasetA, when the embedding A is changed - check if better way to do this
     _metaDatasetA = nullptr;
     qDebug() << "embeddingDatasetAChanged(): metaDatasetA removed";
@@ -869,6 +856,11 @@ void DualViewPlugin::embeddingDatasetAChanged()
         update1DEmbeddingPositions(true);
         updateLineConnections();
     }
+
+    // initialize 
+    // Avoid crash when no selection on A has been made & selection is empty
+    _diffSelectionvsAll.resize(_embeddingSourceDatasetA->getFullDataset<Points>()->getNumPoints(), 0.0f);
+
 }
 
 void DualViewPlugin::embeddingDatasetBChanged()
@@ -1141,6 +1133,7 @@ void DualViewPlugin::sendDataToSampleScope()
 {
     if (getSamplerAction().getEnabledAction().isChecked() == false)
         return;
+    qDebug() << "DualViewPlugin::sendDataToSampleScope()";
 
     QVariantList globalPointIndices;
     QStringList labels;
@@ -1151,7 +1144,7 @@ void DualViewPlugin::sendDataToSampleScope()
     if (_isEmbeddingASelected)
     {
         // A selected, send gene id and major cell type to samplerAction
-
+        qDebug() << "Embedding A selected, send gene ids and major cell types to samplerAction";
         auto selection = _embeddingDatasetA->getSelection<Points>();
 
         std::vector<std::uint32_t> localGlobalIndices;
@@ -1196,7 +1189,7 @@ void DualViewPlugin::sendDataToSampleScope()
 
             int numPointsB = _embeddingSourceDatasetB->getNumPoints();
 
-            int top10 = numPointsB / 10; // top 10% of the cells
+            int top10 = numPointsB / 100; // top 1% of the cells - TODO: make this configurable, hard code for now
 
             // count the number of cells that have expression more than the lowest value
             int countMin = 0;
@@ -1248,7 +1241,7 @@ void DualViewPlugin::sendDataToSampleScope()
         //        globalPointIndices << i;// gene index
         //    }
         //}
-
+        qDebug() << "Embedding B selected, send major cell types to samplerAction";
         if (_metaDatasetB.isValid())
         {
             QVector<Cluster> metadata = _metaDatasetB->getClusters();
@@ -1326,7 +1319,7 @@ void DualViewPlugin::sendDataToSampleScope()
     //    QString geneSymbol = dimensionNames[globalIndex];
     //    _currentGeneSymbols.append(geneSymbol);
     //}
-
+    qDebug() << "Number of gene symbols to send to SampleScope: " << _currentGeneSymbols.size();
 
 
     QString colorDatasetID = _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId();
@@ -1345,6 +1338,7 @@ void DualViewPlugin::sendDataToSampleScope()
     // cache
     _currentHtmlGeneInfo.clear();
     _currentHtmlGeneInfo = html;
+    qDebug() << "DualViewPlugin::sendDataToSampleScope() finished.";
 }
 
 void DualViewPlugin::updateEmbeddingBSize()
@@ -1539,8 +1533,9 @@ void DualViewPlugin::samplePoints()
 
     _embeddingDatasetA->getGlobalIndices(localGlobalIndices);
 
-    auto& pointRenderer = _embeddingWidgetA->getPointRenderer();
+    auto& pointRenderer = const_cast<PointRenderer&>(_embeddingWidgetA->getPointRenderer());
     auto& navigator = pointRenderer.getNavigator();
+
 
     const auto zoomRectangleWorld = navigator.getZoomRectangleWorld();
     const auto screenRectangle = QRect(QPoint(), pointRenderer.getRenderSize());
@@ -1856,6 +1851,12 @@ void DualViewPlugin::updateSelectedGeneMeanExpression()
         events().notifyDatasetAdded(_meanExpressionScalars);
     }
 
+    // log transform for better visualization
+    for (int i = 0; i < selectedGeneMeanExpressionFull.size(); i++)
+    {
+        selectedGeneMeanExpressionFull[i] = std::log2(selectedGeneMeanExpressionFull[i] + 1.0f); // log2(x+1)
+    }
+
     _meanExpressionScalars->setData<float>(selectedGeneMeanExpressionFull.data(), selectedGeneMeanExpressionFull.size(), 1);
     events().notifyDatasetDataChanged(_meanExpressionScalars);
 }
@@ -1870,7 +1871,8 @@ QString DualViewPlugin::getCurrentEmebeddingDataSetID(mv::Dataset<Points> datase
 
 void DualViewPlugin::updateThresholdLines()
 {
-    _thresholdLines = _settingsAction.getThresholdLinesAction().getValue();
+    //_thresholdLines = _settingsAction.getThresholdLinesAction().getValue();
+    _thresholdLines = _settingsAction.getLineSettingsAction().getThresholdLinesAction().getValue();
 
     updateLineConnections();
 
@@ -1888,7 +1890,7 @@ void DualViewPlugin::updateThresholdLines()
 
 void DualViewPlugin::updateLog2FCThreshold()
 {
-    _log2FCThreshold = _settingsAction.getlog2FCThresholdAction().getValue();
+    _log2FCThreshold = _settingsAction.getLineSettingsAction().getlog2FCThresholdAction().getValue();
 
     // update the diffSelectionvsAll based on the new threshold
     if (!_isEmbeddingASelected)
@@ -1910,7 +1912,7 @@ void DualViewPlugin::computeTopCellForEachGene()
 
     qDebug() << "computeTopCellForEachGene(): _metaDatasetB is " << _metaDatasetB->getGuiName();
 
-    int numGene = _embeddingDatasetA->getNumPoints(); // number of genes in the current gene embedding  
+    size_t numGene = _embeddingDatasetA->getNumPoints(); // number of genes in the current gene embedding  
 
     // TEST 2: use the cell type with max avg expression for each gene - START
 
@@ -1933,11 +1935,11 @@ void DualViewPlugin::computeTopCellForEachGene()
             // for this cluster, compute the avg expression for each gene
             std::vector<float> avgExpressionForEachGene(numGene, 0.0f);
             int count = 0;
-            for (const auto& index : cluster.getIndices()) // index is the global index of the cell in embedding B
+            for (const size_t& index : cluster.getIndices()) // index is the global index of the cell in embedding B
             {
 
-                int offset = index * numGene;
-                for (int i = 0; i < numGene; i++)
+                size_t offset = index * numGene;
+                for (size_t i = 0; i < numGene; i++)
                 {
                     avgExpressionForEachGene[i] += fullDatasetB->getValueAt(offset + i);
                 }
@@ -1985,7 +1987,7 @@ void DualViewPlugin::computeTopCellForEachGene()
             std::vector<float> avgExpressionForEachGene(numGene, 0.0f);
             int count = 0;
 
-            for (const auto& globalCellIndex : cluster.getIndices()) // global cell index in embedding B
+            for (const size_t& globalCellIndex : cluster.getIndices()) // global cell index in embedding B
             {
                 // Check if this global index exists in the local embedding B
                 auto it = globalToLocalIndexMapB.find(globalCellIndex);
@@ -2004,8 +2006,8 @@ void DualViewPlugin::computeTopCellForEachGene()
 
                 //qDebug() << "extracted from fullDataA geneExpression.size() = " << geneExpression.size();
 
-                int offset = globalCellIndex * numGene;
-                for (int i = 0; i < numGene; i++)
+                size_t offset = globalCellIndex * numGene;
+                for (size_t i = 0; i < numGene; i++)
                 {
                     //avgExpressionForEachGene[i] += geneExpression[i];
                     avgExpressionForEachGene[i] += fullDatasetB->getValueAt(offset + i);
@@ -2110,7 +2112,6 @@ void DualViewPlugin::computeTopCellForEachGene()
 
 void DualViewPlugin::getEnrichmentAnalysis()
 {
-    //TODO: some genes end with _dup+number, should deal with this
 
      //// output _simplifiedToIndexGeneMapping if not empty
      //if (!_simplifiedToIndexGeneMapping.empty()) {
@@ -2122,10 +2123,33 @@ void DualViewPlugin::getEnrichmentAnalysis()
      //    }
      //}
 
+    // remove suffix "_dup+number" in _currentGeneSymbols, if exist
+    QStringList processedGeneSymbols = _currentGeneSymbols;
+
+    for (QString &gene : processedGeneSymbols) {
+        int pos = gene.lastIndexOf("_dup"); // search for the last occurrence of "_dup", -1 if not found
+        if (pos != -1) {
+
+            // Check if what follows _dup is an integer, if yes, remove the suffix
+            //bool ok = false;
+            //gene.mid(pos + 4).toInt(&ok);
+            //if (ok) {
+            //    gene.truncate(pos);  // remove "_dupN"
+            //}
+
+            //qDebug() << "Gene with _dup found:" << gene;
+            gene.truncate(pos);
+            qDebug() << "Removed suffix from gene:" << gene;
+
+        }
+    }
+
+
     if (!_currentGeneSymbols.isEmpty())
     {
         qDebug() << "DualViewPlugin: getEnrichmentAnalysis()";
-        _client->postGeneGprofiler(_currentGeneSymbols, _backgroundGeneNames, _currentEnrichmentSpecies, _currentSignificanceThresholdMethod);
+        //_client->postGeneGprofiler(_currentGeneSymbols, _backgroundGeneNames, _currentEnrichmentSpecies, _currentSignificanceThresholdMethod);
+        _client->postGeneGprofiler(processedGeneSymbols, _backgroundGeneNames, _currentEnrichmentSpecies, _currentSignificanceThresholdMethod);
     }
     else
     {
@@ -2260,6 +2284,19 @@ void DualViewPlugin::updateEnrichmentOrganism()
         qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
         getEnrichmentAnalysis();
     }
+    else if (selectedSpecies == "Callithrix jacchus")
+    {
+        _currentEnrichmentSpecies = "cjacchus";
+        qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
+        getEnrichmentAnalysis();
+    }
+    else if (selectedSpecies == "Macaca mulatta")
+    {
+        _currentEnrichmentSpecies = "mmulatta";
+        qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
+        getEnrichmentAnalysis();
+    }
+    // TODO: for other species
 }
 
 void DualViewPlugin::updateEnrichmentSignificanceThresholdMethod()
@@ -2308,8 +2345,15 @@ void DualViewPlugin::fromVariantMap(const QVariantMap& variantMap)
     {
         QString meanExpressionId = variantMap["meanExpressionScalars"].toString();
         _meanExpressionScalars = mv::data().getDataset<Points>(meanExpressionId);
+
+        // initialize _selectedGeneMeanExpression using mv::Dataset<Points> _meanExpressionScalars; 
+        _meanExpressionScalars->extractDataForDimension(_selectedGeneMeanExpression, 0);
+
         qDebug() << "DualViewPlugin: fromVariantMap meanExpressionScalars done";
     }
+
+    
+  
 
     if (_metaDatasetA.isValid())
         qDebug() << "DualViewPlugin: fromVariantMap _metaDatasetA = " << _metaDatasetA->getGuiName();

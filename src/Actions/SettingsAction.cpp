@@ -14,15 +14,15 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     _currentDatasetsAction(this, "Current datasets"),
     _embeddingAPointPlotAction(this, "Point Plot A"),
     _embeddingBPointPlotAction(this, "Point Plot B"),
-    _thresholdLinesAction(this, "Threshold Lines", 0.f, 1.f, 0.f, 5),
-    _log2FCThreshold(this, "log2FC Threshold", 0.f, 5.f, 1.5f, 2),
+    _lineSettingsAction(this, "Line Settings"),
     _coloringActionB(this, "Coloring B"),
     _coloringActionA(this, "Coloring A"),
     _selectionAction(this, "Selection"),
     _reversePointSizeBAction(this, "Reverse Point Size B"),
     _dimensionSelectionAction(this, "Gene search"),
     _enrichmentAction(this, "Enrich"),
-    _enrichmentSettingsAction(this, "Enrichment settings")
+    _enrichmentSettingsAction(this, "Enrichment settings"),
+    _selectionActionB(this, "Selection B")
 {
     setConnectionPermissionsToForceNone();
 
@@ -30,21 +30,11 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
 
     _selectionAction.initialize(_dualViewPlugin);
 
-    _thresholdLinesAction.setToolTip("Threshold lines");
-
-    _log2FCThreshold.setToolTip("log2FC Threshold");
-
-    connect(&_thresholdLinesAction, &DecimalAction::valueChanged, [this](float val) {
-		_dualViewPlugin->updateThresholdLines();
-	});
+    _selectionActionB.initialize(_dualViewPlugin);
 
     connect(&_reversePointSizeBAction, &ToggleAction::toggled, [this](bool val) {
 		_dualViewPlugin->reversePointSizeB(val);
 	});
-    
-    connect(&_log2FCThreshold, &DecimalAction::valueChanged, [this](float val) {
-        _dualViewPlugin->updateLog2FCThreshold();
-    });
 
 }
 
@@ -67,13 +57,14 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     _currentDatasetsAction.fromParentVariantMap(variantMap);
     _embeddingAPointPlotAction.fromParentVariantMap(variantMap);
     _embeddingBPointPlotAction.fromParentVariantMap(variantMap);
-    _thresholdLinesAction.fromParentVariantMap(variantMap);
     _coloringActionB.fromParentVariantMap(variantMap);
     _coloringActionA.fromParentVariantMap(variantMap);
     _selectionAction.fromParentVariantMap(variantMap);
     _enrichmentSettingsAction.fromParentVariantMap(variantMap);
 
-    // TODO: log2FC threshold
+    _lineSettingsAction.fromParentVariantMap(variantMap);
+    _selectionActionB.fromParentVariantMap(variantMap);
+
 }
 
 QVariantMap SettingsAction::toVariantMap() const
@@ -83,13 +74,14 @@ QVariantMap SettingsAction::toVariantMap() const
     _currentDatasetsAction.insertIntoVariantMap(variantMap);
     _embeddingAPointPlotAction.insertIntoVariantMap(variantMap);
     _embeddingBPointPlotAction.insertIntoVariantMap(variantMap);
-    _thresholdLinesAction.insertIntoVariantMap(variantMap);
     _coloringActionB.insertIntoVariantMap(variantMap);
     _coloringActionA.insertIntoVariantMap(variantMap);
     _selectionAction.insertIntoVariantMap(variantMap);
     _enrichmentSettingsAction.insertIntoVariantMap(variantMap);
 
-    // TODO: log2FC threshold
+    _lineSettingsAction.insertIntoVariantMap(variantMap);
+    _selectionActionB.insertIntoVariantMap(variantMap);
+
 
     return variantMap;
 }

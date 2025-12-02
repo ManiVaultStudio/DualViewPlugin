@@ -177,7 +177,7 @@ private:
 
     mv::Dataset<Clusters>      _topCellForEachGeneDataset; // Dragged in to color embedding A
 
-    float				       _thresholdLines = 0.f;
+    float				       _thresholdLines = 0.9f;
 
     std::vector<std::pair<uint32_t, uint32_t>>   _lines; // first: embedding A feature map, second: embedding B point map - both local indices?
 
@@ -189,7 +189,7 @@ private:
 
     bool                       _loadingFromProject = false;
 
-    bool                       _reversePointSizeB = false;
+    bool                       _reversePointSizeB = false; // TODO: remove if not needed
 
     // cached sample scope data, for later enrichment analysis
     QString _currentHtmlGeneInfo; // cached gene info for sample scope
@@ -221,14 +221,9 @@ protected:
     ColorMap1DAction          _colorMapAction;
     EmbeddingLinesWidget*     _embeddingLinesWidget;
 
-
-
     SettingsAction            _settingsAction;
     HorizontalToolbarAction   _embeddingAToolbarAction;   // Horizontal toolbar for embedding A
     HorizontalToolbarAction   _embeddingBToolbarAction;   // Horizontal toolbar for embedding B
-
-    HorizontalToolbarAction   _embeddingASecondaryToolbarAction;   
-    HorizontalToolbarAction   _embeddingBSecondaryToolbarAction;   
 
     HorizontalToolbarAction   _linesToolbarAction;   // Horizontal toolbar for lines
 
