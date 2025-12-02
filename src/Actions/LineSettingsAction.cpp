@@ -6,7 +6,7 @@ using namespace mv::gui;
 LineSettingsAction::LineSettingsAction(QObject* parent, const QString& title) :
     GroupAction(parent, title),
     _thresholdLinesAction(this, "Background", 0.f, 1.f, 0.9f, 3),
-    _log2FCThreshold(this, "log2FC", 0.f, 5.f, 1.5f, 2)
+    _log2FCThreshold(this, "log2FC", 0.f, 5.f, 2.f, 2)
 {
     setIconByName("sliders");
     setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
