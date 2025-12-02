@@ -189,7 +189,7 @@ private:
 
     bool                       _loadingFromProject = false;
 
-    bool                       _reversePointSizeB = false;
+    bool                       _reversePointSizeB = false; // TODO: remove if not needed
 
     // cached sample scope data, for later enrichment analysis
     QString _currentHtmlGeneInfo; // cached gene info for sample scope

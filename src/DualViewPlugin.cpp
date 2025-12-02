@@ -87,7 +87,7 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
 
     // toolbars B
     _embeddingBToolbarAction.addAction(&_settingsAction.getEmbeddingBPointPlotAction());
-    _embeddingBToolbarAction.addAction(&_settingsAction.getReversePointSizeBAction());
+    //_embeddingBToolbarAction.addAction(&_settingsAction.getReversePointSizeBAction()); // TODO: is this needed? If not, remove action too
     _embeddingBToolbarAction.addAction(&_settingsAction.getSelectionActionB());
 
     // toolbar line widget
