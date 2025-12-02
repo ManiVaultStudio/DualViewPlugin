@@ -472,7 +472,7 @@ void DualViewPlugin::init()
         if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
             return;
 
-        auto test = _embeddingDatasetA->getSelection<Points>()->indices.size();
+        //auto test = _embeddingDatasetA->getSelection<Points>()->indices.size();
         //qDebug() << "embeddingDatasetA dataSelectionChanged" << test;
 
         _isEmbeddingASelected = true;
@@ -490,6 +490,7 @@ void DualViewPlugin::init()
     connect(&_embeddingDatasetB, &Dataset<Points>::dataSelectionChanged, this, [this]() {
         if (!_embeddingDatasetA.isValid() || !_embeddingDatasetB.isValid())
             return;
+        _isEmbeddingASelected = false;
 
         if (_embeddingDatasetB->getSelection<Points>()->indices.size() != 0)
         {
@@ -497,7 +498,6 @@ void DualViewPlugin::init()
             sendDataToSampleScope();
         }
 
-        _isEmbeddingASelected = false;
         highlightSelectedLines(_embeddingDatasetB); // need to be put after updateEmbeddingASize if use diffselectionvsall for highlighting
         highlightSelectedEmbeddings(_embeddingWidgetB, _embeddingDatasetB);
         });
@@ -1133,6 +1133,7 @@ void DualViewPlugin::sendDataToSampleScope()
 {
     if (getSamplerAction().getEnabledAction().isChecked() == false)
         return;
+    qDebug() << "DualViewPlugin::sendDataToSampleScope()";
 
     QVariantList globalPointIndices;
     QStringList labels;
@@ -1143,7 +1144,7 @@ void DualViewPlugin::sendDataToSampleScope()
     if (_isEmbeddingASelected)
     {
         // A selected, send gene id and major cell type to samplerAction
-
+        qDebug() << "Embedding A selected, send gene ids and major cell types to samplerAction";
         auto selection = _embeddingDatasetA->getSelection<Points>();
 
         std::vector<std::uint32_t> localGlobalIndices;
@@ -1240,7 +1241,7 @@ void DualViewPlugin::sendDataToSampleScope()
         //        globalPointIndices << i;// gene index
         //    }
         //}
-
+        qDebug() << "Embedding B selected, send major cell types to samplerAction";
         if (_metaDatasetB.isValid())
         {
             QVector<Cluster> metadata = _metaDatasetB->getClusters();
@@ -1318,7 +1319,7 @@ void DualViewPlugin::sendDataToSampleScope()
     //    QString geneSymbol = dimensionNames[globalIndex];
     //    _currentGeneSymbols.append(geneSymbol);
     //}
-
+    qDebug() << "Number of gene symbols to send to SampleScope: " << _currentGeneSymbols.size();
 
 
     QString colorDatasetID = _settingsAction.getColoringActionB().getCurrentColorDataset().getDatasetId();
@@ -1337,6 +1338,7 @@ void DualViewPlugin::sendDataToSampleScope()
     // cache
     _currentHtmlGeneInfo.clear();
     _currentHtmlGeneInfo = html;
+    qDebug() << "DualViewPlugin::sendDataToSampleScope() finished.";
 }
 
 void DualViewPlugin::updateEmbeddingBSize()

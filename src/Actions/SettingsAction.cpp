@@ -65,8 +65,6 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     _lineSettingsAction.fromParentVariantMap(variantMap);
     _selectionActionB.fromParentVariantMap(variantMap);
 
-    // TODO: serialize selectionActionB
-
 }
 
 QVariantMap SettingsAction::toVariantMap() const
