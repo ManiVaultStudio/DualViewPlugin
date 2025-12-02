@@ -91,8 +91,6 @@ DualViewPlugin::DualViewPlugin(const PluginFactory* factory) :
     _embeddingBToolbarAction.addAction(&_settingsAction.getSelectionActionB());
 
     // toolbar line widget
-    /*_linesToolbarAction.addAction(&_settingsAction.getThresholdLinesAction());
-    _linesToolbarAction.addAction(&_settingsAction.getlog2FCThresholdAction());*/
     _linesToolbarAction.addAction(&_settingsAction.getLineSettingsAction());
 
     // context menu
