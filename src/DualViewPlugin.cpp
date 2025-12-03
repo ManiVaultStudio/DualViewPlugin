@@ -908,7 +908,7 @@ void DualViewPlugin::embeddingDatasetBChanged()
     qDebug() << "Mean expression for all cells computed" << _meanExpressionForAllCells.size();
 
     // set the background gene names for the enrichment analysis
-    if (_embeddingSourceDatasetB->getDimensionNames().size() < 19000) // FIXME: hard code the threshold for the number of genes
+    if (_embeddingSourceDatasetB->getDimensionNames().size() < 20000) // FIXME: hard code the threshold for the number of genes
     {
         if (_backgroundGeneNames.size() == _embeddingSourceDatasetB->getDimensionNames().size())
         {
@@ -925,7 +925,7 @@ void DualViewPlugin::embeddingDatasetBChanged()
         }
     }
     else
-        qDebug() << "Background gene names not set: genes more than 19000";
+        qDebug() << "Background gene names not set: genes at least 20000";
 
     // update 1D embedding
     bool oneDEmbeddingExists = false;
