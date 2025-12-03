@@ -6,7 +6,7 @@ using namespace mv::gui;
 EnrichmentSettingsAction::EnrichmentSettingsAction(QObject* parent, const QString& title) :
     GroupAction(parent, title),
     _organismPickerAction(this, "Organism"),
-    _significanceThresholdMethodAction(this, "Significance Threshold Method")
+    _significanceThresholdMethodAction(this, "Significance Correction Method")
 {
     setIconByName("dna");
     setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
