@@ -1896,10 +1896,8 @@ void DualViewPlugin::updateLog2FCThreshold()
     if (!_isEmbeddingASelected)
     {
         highlightSelectedLines(_embeddingDatasetB);
-        sendDataToSampleScope();
-
+        sendDataToSampleScope(); 
     }
-
 }
 
 void DualViewPlugin::computeTopCellForEachGene()
