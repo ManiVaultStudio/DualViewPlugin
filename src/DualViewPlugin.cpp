@@ -2432,7 +2432,11 @@ QVariantMap DualViewPlugin::toVariantMap() const
 // Plugin Factory 
 // =============================================================================
 
-
+DualViewPluginFactory::DualViewPluginFactory()
+{
+    setIconByName("bullseye");
+    getProjectsDsnsAction().addString("https://osf.io/3sezp/?action=download");
+}
 
 ViewPlugin* DualViewPluginFactory::produce()
 {

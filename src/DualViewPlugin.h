@@ -261,7 +261,7 @@ class DualViewPluginFactory : public ViewPluginFactory
 public:
 
     /** Default constructor */
-    DualViewPluginFactory() {}
+    DualViewPluginFactory();
 
     /** Destructor */
     ~DualViewPluginFactory() override {}
