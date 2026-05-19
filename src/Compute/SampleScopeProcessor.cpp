@@ -2,7 +2,7 @@
 
 namespace 
 {
-	const int fontSize = 13;
+	const int fontSize = 12;
 }
 
 
@@ -47,182 +47,131 @@ std::tuple<QStringList, QStringList, QStringList> computeMetadataCounts(QVector<
 
 QString buildHtmlForSelection(const bool isASelected, const QString colorDatasetName, const QStringList& geneSymbols, QStringList& labels, QStringList& data, QStringList& backgroundColors)
 {
-	QString html = "<html><head><style>"
-		"body { font-family: Arial; }"
-		".legend { list-style: none; padding: 0; }"
-		".legend li { display: flex; align-items: center; margin-bottom: 5px; }"
-		".legend-color { width: 16px; height: 16px; display: inline-block; margin-right: 5px; }"
-		"</style></head><body>";
 
-	// show first 80 genes and the rest in expandable box
-	QStringList geneSymbolsLessThan80;
-	QStringList additionalSymbols;
+	QString html = QString(R"(
+        <html><head><style>
+            body { font-family: Arial; font-size: %1px; }
+            .info-table { width: 100%; border-collapse: collapse; font-size: %1px;}
+            .info-table td { padding: 6px 8px 12px 0; vertical-align: top; font-size: %1px;}
+            .label-col { font-weight: bold; width: 25%; min-width: 140px; max-width: 220px; }
+            .value-col { width: 75%; }
+            .hint-text { font-size: 0.9em; margin-top: 6px; display: block; }
+            .action-text { font-size: 0.9em; color: #0066cc; margin-top: 6px; display: block; }
+            .legend { list-style: none; padding: 0; margin-top: 8px; margin-bottom: 0; }
+            .legend li { display: inline-block; margin-right: 15px; margin-bottom: 5px; font-size: %1px; }
+            .legend-color { width: 14px; height: 14px; display: inline-block; margin-right: 5px; vertical-align: middle; border: 1px solid #ccc;}
+            summary { font-size: %1px; cursor: pointer; color: #0066cc; margin-top: 4px; }
+        </style></head><body>
+        <table class='info-table'>
+    )").arg(fontSize);
 
-	bool hasMoreThan80;
-
-	if (geneSymbols.size() > 80)
-	{
-		hasMoreThan80 = true;
-		geneSymbolsLessThan80 = geneSymbols.mid(0, 80);
-		additionalSymbols = geneSymbols.mid(80);
-		qDebug() << "geneSymbols.size: " << geneSymbols.size();
-		qDebug() << "geneSymbolsLessThan80.size: " << geneSymbolsLessThan80.size();
-		qDebug() << "additionalSymbols.size: " << additionalSymbols.size();
-	}
-	else
-	{
-		hasMoreThan80 = false;
-		geneSymbolsLessThan80 = geneSymbols;
-		qDebug() << "geneSymbols.size: " << geneSymbols.size();
+	// ---------------------------------------------------------
+	// ROW 1: Current views
+	// ---------------------------------------------------------
+	QString viewStatus = isASelected ? "Gene embedding is selected." : "Cell embedding is selected.";
+	if (!colorDatasetName.isEmpty()) {
+		viewStatus += QString(" Cell embedding is colored by '%1'.").arg(colorDatasetName);
 	}
 
-	QString outputText;
-	QString chartTitle;
-	QString additionalGenesHtml;
+	html += QString("<tr><td class='label-col'>Current views:</td>"
+		"<td class='value-col'>%1</td></tr>").arg(viewStatus);
 
-	if (hasMoreThan80)
+
+	// ---------------------------------------------------------
+	// ROW 2: Selected/Connected genes
+	// ---------------------------------------------------------
+	QString geneLabel = isASelected ? "Selected genes:" : "Connected genes:";
+	QString genesHtml = "";
+
+	int limit = 80;
+	QStringList genesToDisplay = geneSymbols.mid(0, limit);
+	genesHtml += genesToDisplay.join(", ");
+
+	if (geneSymbols.size() > limit)
 	{
-		additionalGenesHtml = QString(
-			"<details><summary style='font-size:%1px; cursor:pointer;'>and more... </summary>"
-			"<p style='font-size:%1px;'>%2</p>"
-			"</details>")
-			.arg(fontSize)
+		QStringList additionalSymbols = geneSymbols.mid(limit);
+		genesHtml += QString(
+			"<details><summary>and %1 more... (click to expand)</summary>"
+			"<p style='margin-top:4px;'>%2</p></details>")
+			.arg(additionalSymbols.size())
 			.arg(additionalSymbols.join(", "));
 	}
 
-	if (isASelected) {
-		outputText = QString(
-			"<p style='font-size:%1px;'>Gene embedding is selected.</p>"
-			"<table style='font-size:%1px;'>"
-			"<tr>"
-			"<td><b>Selected Genes: </b></td>"
-			"<td>%2 %3</td>"  // add the expandable section right inside the same <td>
-			"</tr>"
-			"</table>"
-			"<p style='font-size:12px; color:#377fe4;'>" // TODO: hard coded font here
-			"Click the 'Enrich' button in the gene panel for more details.</p>")
-			.arg(fontSize)
-			.arg(geneSymbolsLessThan80.join(", "))
-			.arg(additionalGenesHtml);  // append the expandable section here
+	//genesHtml += "<span class='action-text'>Click the 'Enrich' button in the gene panel for more details.</span>";
 
-		chartTitle = "<b>Connected cell proportion (1% highest expression of avg. selected genes)</b>";
-	}
-	else {
-		outputText = QString(
-			"<p style='font-size:%1px;'>Cell embedding is selected.</p>"
-			"<table style='font-size:%1px;'>"
-			"<tr>"
-			"<td><b>Connected Genes: </b></td>"
-			"<td>%2 %3</td>"  // add the expandable section right inside the same <td>
-			"</tr>"
-			"</table>"
-			"<p style='font-size:12px; color:#377fe4;'>"// TODO: hard coded font here
-			"Click the 'Enrich' button in the gene panel for more details.</p>")
-			.arg(fontSize)
-			.arg(geneSymbolsLessThan80.join(", "))
-			.arg(additionalGenesHtml);
+	html += QString("<tr><td class='label-col'>%1</td>"
+		"<td class='value-col'>%2</td></tr>")
+		.arg(geneLabel)
+		.arg(genesHtml);
 
-		chartTitle = "<b>Cell proportion</b>";
-	}
-
-	// get current color dataset B name
-	QString colorDatasetIntro;
-
-	//if (colorDatasetID.isEmpty())
-	if (colorDatasetName.isEmpty())
+	// ---------------------------------------------------------
+	// ROW 3: Cell type proportions (Only if colorDatasetName exists)
+	// ---------------------------------------------------------
+	if (!colorDatasetName.isEmpty() && !data.isEmpty())
 	{
-		html += "<p>" + outputText + "</p>";
-	}
-	else
-	{
-		//colorDatasetName = mv::data().getDataset(colorDatasetID)->getGuiName();
-		colorDatasetIntro = QString("Cell embedding coloring by %1").arg(colorDatasetName);
+		QString chartTitle = isASelected ?
+			"Connected cell proportion:<span class='hint-text'>(1% highest expression)</span>" :
+			"Cell proportion:";
 
-		QVector<double> counts;
+		html += QString("<tr><td class='label-col'>%1</td><td class='value-col'>").arg(chartTitle);
 
 		// Convert data to numbers and calculate total sum
 		double totalCount = 0.0;
+		QVector<double> counts;
 		for (const QVariant& dataVar : data) {
 			double value = dataVar.toDouble();
 			counts.append(value);
 			totalCount += value;
 		}
 
-		html += outputText; // font size al set in the table style
-		html += QString("<p style='font-size:%1px;'>%2</p>")
-			.arg(fontSize)
-			.arg(colorDatasetIntro);
-		html += QString("<p style='font-size:%1px;'>%2</p>")
-			.arg(fontSize)
-			.arg(chartTitle);
+		if (totalCount > 0)
+		{
+			// HORIZONTAl stacked bar
+			int svgWidth = 300; 
+			int svgHeight = 24; 
+			double xOffset = 0.0;
 
-		// dimensions for the stacked bar
-		int barWidth = 50;
-		int barHeight = 200;
+			// Define a cutoff threshold. 
+		    // 0.05% rounds to 0.1%. Anything below 0.05% formats as 0.0%.
+			const double CUTOFF_PERCENT = 0.05;
 
-		int svgWidth = barWidth + 300;
+			html += QString("<svg width='%1' height='%2' style='border:none; border-radius:3px;'>")
+				.arg(svgWidth).arg(svgHeight);
 
-		html += QString("<svg width='%1' height='%2' style='border:none;'>")
-			.arg(svgWidth)
-			.arg(barHeight);
-
-		if (counts.size() == 1) {
-			// if there's only one category, fill the entire bar
-			html += QString("<rect x='0' y='0' width='%1' height='%2' fill='%3' stroke='none'></rect>")
-				.arg(barWidth)
-				.arg(barHeight)
-				.arg(backgroundColors[0]);
-
-			double labelX = barWidth + 5;
-			double labelY = barHeight / 2.0;
-
-			html += QString(
-				"<text x='%1' y='%2' font-family='Arial' font-size='12' " // TODO: hard coded font here
-				"fill='black' text-anchor='start' alignment-baseline='middle'>"
-				"%3</text>")
-				.arg(labelX)
-				.arg(labelY)
-				.arg(labels[0]);
-		}
-		else {
-			// if multiple categories, stack them vertically
-			double yOffset = 0.0;
+			QString legendHtml = "<ul class='legend'>";
 
 			for (int i = 0; i < counts.size(); ++i) {
 				double proportion = counts[i] / totalCount;
-				double sliceHeight = proportion * barHeight;
+				double percentage = proportion * 100.0;
 
-				html += QString("<rect x='0' y='%1' width='%2' height='%3' " "fill='%4' stroke='white' stroke-width='1'></rect>")
-					.arg(yOffset)
-					.arg(barWidth)
-					.arg(sliceHeight)
+				// Skip this category if it's too small to show
+				if (percentage < CUTOFF_PERCENT) {
+					continue;
+				}
+
+				double sliceWidth = proportion * svgWidth;
+
+				html += QString("<rect x='%1' y='0' width='%2' height='%3' fill='%4' stroke='white' stroke-width='1'></rect>")
+					.arg(xOffset)
+					.arg(sliceWidth)
+					.arg(svgHeight)
 					.arg(backgroundColors[i]);
 
-				// whether to show labels
-				double minPixelsForLabel = 10.0;
-				if (sliceHeight >= minPixelsForLabel)
-				{
-					double labelX = barWidth + 5;
-					double labelY = yOffset + (sliceHeight / 2.0);
+				xOffset += sliceWidth;
 
-					double percentage = (counts[i] / totalCount) * 100.0;
-
-					QString labelText = QString("%1 (%2%)").arg(labels[i])
-						.arg(QString::number(percentage, 'f', 1));
-
-					html += QString(
-						"<text x='%1' y='%2' font-family='Arial' font-size='12' "// TODO: hard coded font here
-						"fill='black' text-anchor='start' alignment-baseline='middle'>"
-						"%3</text>")
-						.arg(labelX)
-						.arg(labelY)
-						.arg(labelText);
-				}
-				yOffset += sliceHeight;
+				legendHtml += QString(
+					"<li><span class='legend-color' style='background-color:%1;'></span>%2 (%3%)</li>")
+					.arg(backgroundColors[i])
+					.arg(labels[i])
+					.arg(QString::number(percentage, 'f', 1));
 			}
+			html += "</svg>";
+			html += legendHtml + "</ul>";
 		}
-		html += "</svg>";
+		html += "</td></tr>";
 	}
+
+	html += "</table></body></html>";
 
 	return html;
 }
@@ -239,7 +188,7 @@ QString buildHtmlForEnrichmentResults(const QVariantList& data)
 		limitedData.append(data[i]);
 	}
 
-	QString tableHtml = QString("<p style='font-size:%1px;'>Enrichment Analysis Results</p>").arg(fontSize);
+	QString tableHtml = QString("<p style='font-size:%1px; font-weight:bold;'>Enrichment analysis results</p>").arg(fontSize);
 
 	tableHtml += QString("<table style='font-size:%1px; border-collapse: collapse; width:100%; font-family: Arial;' border='1'>"
 		"<tr>")
@@ -319,13 +268,14 @@ QString buildHtmlForEnrichmentResults(const QVariantList& data)
 QString buildHtmlForEmpty()
 {
 	// show no data message
-	QString tableHtml = "<p style='font-size:14px;'>Enrichment Analysis Results</p>";
+	QString tableHtml = QString("<p style='font-size:%1px; font-weight:bold;'>Enrichment analysis results</p>").arg(fontSize);
 
-	tableHtml += "<table style='font-size:14px; border-collapse: collapse; width:100%; font-family: Arial;' border='1'>"
-		"<tr>"
-		"<th style='padding: 5px; width: auto;'>No GO term available</th>"
-		"</tr>"
-		"</table>";
+	tableHtml += QString("<table style='font-size:%1px; border-collapse: collapse; width:100%; font-family: Arial;' border='1'>")
+		.arg(fontSize)
+		+ "<tr>"
+		+ "<th style='padding: 5px; width: auto;'>No GO term available</th>"
+		+ "</tr>"
+		+ "</table>";
 
 	return tableHtml;
 }
