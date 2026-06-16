@@ -404,9 +404,9 @@ void DualViewPlugin::init()
 
     // Add navigation widget to embedding A
     auto& navigationActionA = _embeddingWidgetA->getPointRendererNavigator().getNavigationAction();
-    navigationActionA.getActions()[0]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup); // force collapse each group
-    navigationActionA.getActions()[1]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
-    navigationActionA.getActions()[2]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
+
+    navigationActionA.getActions()[0]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
+
 
     if (auto navigationWidgetA = navigationActionA.createWidget(&getWidget()))
     {
@@ -449,9 +449,8 @@ void DualViewPlugin::init()
 
     // Add navigation widget to embedding B
     auto& navigationActionB = _embeddingWidgetB->getPointRendererNavigator().getNavigationAction();
-    navigationActionB.getActions()[0]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup); // force collapse each group
-    navigationActionB.getActions()[1]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
-    navigationActionB.getActions()[2]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
+
+    navigationActionB.getActions()[0]->setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup); 
 
     if (auto navigationWidgetB = navigationActionB.createWidget(&getWidget()))
     {
