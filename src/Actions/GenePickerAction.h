@@ -149,7 +149,7 @@ protected:
 protected:
     static constexpr std::uint32_t DEFAULT_SEARCH_THRESHOLD = 100;     /** Default search threshold */
 
-    friend class AbstractActionsManager;
+    friend class mv::AbstractActionsManager;
 };
 
 Q_DECLARE_METATYPE(GenePickerAction)

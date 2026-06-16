@@ -272,7 +272,7 @@ protected:
     std::int32_t            _currentIndex;          /** Currently selected index */
     QString                 _placeholderString;     /** Place holder string */
 
-    friend class AbstractActionsManager;
+    friend class mv::AbstractActionsManager;
 };
 
 

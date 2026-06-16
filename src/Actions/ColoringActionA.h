@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QStackedWidget>
 
+using namespace mv;
 using namespace mv::gui;
 
 class DualViewPlugin;

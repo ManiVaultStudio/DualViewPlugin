@@ -6,6 +6,7 @@
 #include <PointData/PointData.h>
 #include <ClusterData/ClusterData.h>
 
+using namespace mv;
 using namespace mv::gui;
 
 //const QColor ColoringAction::DEFAULT_CONSTANT_COLOR = qRgb(93, 93, 225);
