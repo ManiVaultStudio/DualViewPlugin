@@ -6,6 +6,8 @@
 
 #include <DatasetsMimeData.h>
 
+#include <util/Serialization.h>
+
 #include <vector>
 #include <random>
 #include <unordered_set>
