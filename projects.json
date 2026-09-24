@@ -1,0 +1,94 @@
+{
+	"projects": [
+		{
+			"title": "MERFISH section 38 Yao et al.",
+			"uuid": "f9de68d8-1251-437a-85ad-003a66205851",
+			"group": "",
+			"startup": true,
+			"url": "https://osf.io/qfzdh/?action=download",
+			"summary": "",
+			"requiredPlugins": [],
+			"coreVersion": {
+				"major": 1,
+				"minor": 4,
+				"patch": 0,
+				"suffix": ""
+			},
+			"tags": [],
+			"date": "2025-12-09 13:00:00",
+			"downloadSize": "4312082KB"
+		},
+		{
+			"title": "MERFISH ABCA4 Zhang et al.",
+			"uuid": "7795aa09-a59d-42ba-9118-19568b7a5a3b",
+			"group": "",
+			"startup": true,
+			"url": "https://osf.io/j2bmr/?action=download",
+			"summary": "",
+			"requiredPlugins": [],
+			"coreVersion": {
+				"major": 1,
+				"minor": 4,
+				"patch": 0,
+				"suffix": ""
+			},
+			"tags": [],
+			"date": "2025-12-09 13:00:00",
+			"downloadSize": "4893396KB"
+		},
+		{
+			"title": "MERFISH hypothalamus Yao et al.",
+			"uuid": "10014894-d03e-4bd1-ade1-b04706cec631",
+			"group": "",
+			"startup": true,
+			"url": "https://osf.io/95anv/?action=download",
+			"summary": "",
+			"requiredPlugins": [],
+			"coreVersion": {
+				"major": 1,
+				"minor": 4,
+				"patch": 0,
+				"suffix": ""
+			},
+			"tags": [],
+			"date": "2025-12-09 13:00:00",
+			"downloadSize": "4723669KB"
+		},
+		{
+			"title": "Xenium hemisphere",
+			"uuid": "618edcdd-3cc2-4094-b6a1-ff48d47cf836",
+			"group": "",
+			"startup": true,
+			"url": "https://osf.io/936fu/?action=download", 
+			"summary": "",
+			"requiredPlugins": [],
+			"coreVersion": {
+				"major": 1,
+				"minor": 4,
+				"patch": 0,
+				"suffix": ""
+			},
+			"tags": [],
+			"date": "2025-12-09 13:00:00",
+			"downloadSize": "180651KB"
+		},
+       {
+			"title": "Xenium hemisphere with MapMyCells annotation",
+			"uuid": "1e32fa57-da89-4c7a-8987-0e4f72d085d4",
+			"group": "",
+			"startup": true,
+			"url": "https://zenodo.org/records/22917816/files/XeniumPrime_hemisphere_wMapMyCellsAnno.mv?download=1&preview=1", 
+			"summary": "",
+			"requiredPlugins": [],
+			"coreVersion": {
+				"major": 1,
+				"minor": 4,
+				"patch": 0,
+				"suffix": ""
+			},
+			"tags": [],
+			"date": "2025-12-09 13:00:00",
+			"downloadSize": "161688KB"
+		}			
+	]
+}
