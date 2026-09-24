@@ -2436,7 +2436,7 @@ QVariantMap DualViewPlugin::toVariantMap() const
 DualViewPluginFactory::DualViewPluginFactory()
 {
     setIconByName("bullseye");
-    getProjectsDsnsAction().addString("https://osf.io/3sezp/?action=download");
+    getProjectsDsnsAction().addString("https://raw.githubusercontent.com/ManiVaultStudio/DualViewPlugin/refs/heads/master/projects.json");
 }
 
 ViewPlugin* DualViewPluginFactory::produce()
