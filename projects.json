@@ -23,7 +23,7 @@
 			"uuid": "7795aa09-a59d-42ba-9118-19568b7a5a3b",
 			"group": "",
 			"startup": true,
-			"url": "https://zenodo.org/records/22917816/files/MERFISH_ABCA4_Zhang_et_al.mv",
+			"url": "https://zenodo.org/api/records/22917816/files/MERFISH_section38_Yao_et_al.mv/content",
 			"summary": "",
 			"requiredPlugins": [],
 			"coreVersion": {
